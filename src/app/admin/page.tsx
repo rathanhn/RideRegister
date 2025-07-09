@@ -11,10 +11,11 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, FileText, BadgeHelp, Loader2 } from 'lucide-react';
+import { ScanLine, Users, FileText, Loader2 } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { FormManagement } from '@/components/admin/form-management';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -67,14 +68,11 @@ export default function AdminPage() {
                     Form Management
                 </CardTitle>
                 <CardDescription>
-                    Customize registration forms for future events. This feature is coming soon!
+                    Customize the fields for the rider registration form. Changes will apply to new registrations.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex items-center justify-center h-24 text-muted-foreground bg-secondary/80 rounded-md">
-                    <BadgeHelp className="h-5 w-5 mr-2"/>
-                    <p>The form builder is currently under development.</p>
-                </div>
+                <FormManagement />
             </CardContent>
         </Card>
 

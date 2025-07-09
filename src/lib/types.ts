@@ -76,4 +76,22 @@ export interface AppUser {
     photoURL?: string;
     role: UserRole;
     createdAt: any; // Firestore timestamp
+    accessRequest?: {
+        requestedAt: any;
+        status: 'pending_review' | 'approved' | 'rejected';
+    };
+}
+
+
+export type FormFieldType = 'text' | 'number' | 'email' | 'tel' | 'checkbox';
+
+export interface FormFieldDefinition {
+  id: string;
+  name: string; // e.g., 'fullName', 'age'
+  label: string;
+  type: FormFieldType;
+  required: boolean;
+  order: number;
+  placeholder?: string;
+  // We can add more options here later, like 'options' for a select dropdown.
 }
