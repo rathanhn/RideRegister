@@ -175,30 +175,22 @@ export default function DashboardPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button
-                        className={cn(buttonVariants({ variant: "outline" }), "h-auto p-6 flex flex-col items-center justify-center text-center gap-2")}
-                        onClick={() => setView('rider')}
-                    >
-                        <User className="h-8 w-8 text-primary" />
-                        <div>
-                            <p className="font-semibold">Register as a Rider</p>
-                            <p className="text-xs text-muted-foreground">
-                                Join the ride, get your digital ticket, and be part of the cycling community.
-                            </p>
-                        </div>
-                    </button>
-                    <button
-                        className={cn(buttonVariants({ variant: "outline" }), "h-auto p-6 flex flex-col items-center justify-center text-center gap-2")}
-                        onClick={() => setView('organizer')}
-                    >
-                        <Shield className="h-8 w-8 text-primary" />
-                        <div>
-                            <p className="font-semibold">Request Organizer Access</p>
-                            <p className="text-xs text-muted-foreground">
-                                Join the event staff as a volunteer or organizer to help manage the event.
-                            </p>
-                        </div>
-                    </button>
+                    <div className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group">
+                        <User className="h-8 w-8 text-primary mb-4" />
+                        <h3 className="font-semibold">Register as a Rider</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Join the ride, get your digital ticket, and be part of the cycling community.
+                        </p>
+                        <button onClick={() => setView('rider')} className="absolute inset-0 z-10" aria-label="Register as a Rider"></button>
+                    </div>
+                     <div className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group">
+                        <Shield className="h-8 w-8 text-primary mb-4" />
+                        <h3 className="font-semibold">Request Organizer Access</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Join the event staff as a volunteer or organizer to help manage the event.
+                        </p>
+                        <button onClick={() => setView('organizer')} className="absolute inset-0 z-10" aria-label="Request Organizer Access"></button>
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -217,3 +209,4 @@ export default function DashboardPage() {
             </main>
         </div>
     );
+}
