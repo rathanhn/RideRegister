@@ -41,6 +41,8 @@ export interface Registration {
     phoneNumber2?: string;
     createdAt: any; // Firestore timestamp
     status: 'pending' | 'approved' | 'rejected';
+    rider1CheckedIn?: boolean;
+    rider2CheckedIn?: boolean;
 }
 
 export interface QnaQuestion {

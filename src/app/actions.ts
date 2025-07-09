@@ -108,6 +108,33 @@ export async function updateRegistrationStatus(values: z.infer<typeof updateStat
     }
 }
 
+// Schema for checking in a rider
+const checkInSchema = z.object({
+  registrationId: z.string().min(1, "Registration ID is required."),
+  riderNumber: z.coerce.number().min(1).max(2),
+});
+
+export async function checkInRider(values: z.infer<typeof checkInSchema>) {
+    const parsed = checkInSchema.safeParse(values);
+
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided for check-in." };
+    }
+
+    try {
+        const { registrationId, riderNumber } = parsed.data;
+        const registrationRef = doc(db, "registrations", registrationId);
+        
+        const fieldToUpdate = riderNumber === 1 ? 'rider1CheckedIn' : 'rider2CheckedIn';
+
+        await updateDoc(registrationRef, { [fieldToUpdate]: true });
+        return { success: true, message: `Rider ${riderNumber} checked in successfully.` };
+    } catch (error) {
+        console.error("Error checking in rider: ", error);
+        return { success: false, message: "Could not process check-in." };
+    }
+}
+
 
 // Schema for adding a question
 const addQuestionSchema = z.object({

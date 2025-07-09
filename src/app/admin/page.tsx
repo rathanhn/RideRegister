@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
+import { QrScanner } from '@/components/admin/qr-scanner';
+import { ScanLine } from 'lucide-react';
 
 export default function AdminPage() {
   // NOTE: This is a placeholder page. In a real application, you would protect
@@ -19,33 +21,44 @@ export default function AdminPage() {
         
         <StatsOverview />
 
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-5">
-            <div className="lg:col-span-3">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Event Registrations</CardTitle>
+        <Card>
+            <CardHeader>
+            <CardTitle>Event Registrations</CardTitle>
+            <CardDescription>
+                Approve, reject, and manage all event registrations.
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+            <RegistrationsTable />
+            </CardContent>
+        </Card>
+
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ScanLine className="h-6 w-6 text-primary" />
+                        Ticket Scanner
+                    </CardTitle>
                     <CardDescription>
-                      Approve, reject, and manage all event registrations.
+                    Scan rider tickets for real-time check-in.
                     </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RegistrationsTable />
-                  </CardContent>
-                </Card>
-            </div>
-            <div className="lg:col-span-2">
-                <Card>
-                   <CardHeader>
-                    <CardTitle>Community Q&A</CardTitle>
-                    <CardDescription>
-                      Respond to user questions and manage conversations.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <AdminQna />
-                  </CardContent>
-                </Card>
-            </div>
+                </CardHeader>
+                <CardContent>
+                    <QrScanner />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                <CardTitle>Community Q&A</CardTitle>
+                <CardDescription>
+                    Respond to user questions and manage conversations.
+                </CardDescription>
+                </CardHeader>
+                <CardContent>
+                <AdminQna />
+                </CardContent>
+            </Card>
         </div>
 
       </main>
