@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -63,12 +65,16 @@ export async function registerRider(values: RegistrationInput) {
     return { success: false, message: "Invalid data provided." };
   }
 
-  // Here you would typically store the data in a database like Firebase Firestore or Google Sheets.
-  // For this example, we'll just log it and simulate success.
-  console.log("New Rider Registration:", parsed.data);
-
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return { success: true, message: "Registration successful!" };
+  try {
+    const dataToSave = {
+        ...parsed.data,
+        createdAt: new Date(),
+    };
+    const docRef = await addDoc(collection(db, "registrations"), dataToSave);
+    console.log("Document written with ID: ", docRef.id);
+    return { success: true, message: "Registration successful!" };
+  } catch (error) {
+    console.error("Error adding document: ", error);
+    return { success: false, message: "Could not save your registration. Please try again." };
+  }
 }

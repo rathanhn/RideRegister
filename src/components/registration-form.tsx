@@ -95,7 +95,9 @@ export function RegistrationForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
+      registrationType: "solo",
       fullName: "",
       age: 18,
       phoneNumber: "",
@@ -106,7 +108,6 @@ export function RegistrationForm() {
   });
 
   const registrationType = form.watch("registrationType");
-  const consent = form.watch("consent");
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -324,7 +325,7 @@ export function RegistrationForm() {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !consent}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmitting ? "Submitting..." : "Register Now"}
             </Button>
