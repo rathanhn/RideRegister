@@ -15,7 +15,6 @@ import { ScanLine, Users, FileText, Loader2 } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { FormManagement } from '@/components/admin/form-management';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -61,21 +60,6 @@ export default function AdminPage() {
           </CardContent>
         </Card>
         
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-6 w-6 text-primary"/>
-                    Form Management
-                </CardTitle>
-                <CardDescription>
-                    Customize the fields for the rider registration form. Changes will apply to new registrations.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <FormManagement />
-            </CardContent>
-        </Card>
-
         <Card>
             <CardHeader>
             <CardTitle>Event Registrations</CardTitle>
