@@ -3,10 +3,10 @@
 
 import { z } from "zod";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc, writeBatch } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc } from "firebase/firestore";
 import type { UserRole } from "./lib/types";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 // Helper to get a user's role
 async function getUserRole(uid: string): Promise<UserRole> {
@@ -30,6 +30,7 @@ const createAccountSchema = z.object({
     path: ["confirmPassword"]
 });
 
+
 // Server action to create a user. This will be called from the new CreateAccountForm
 export async function createUser(values: z.infer<typeof createAccountSchema>) {
     const parsed = createAccountSchema.safeParse(values);
@@ -38,25 +39,25 @@ export async function createUser(values: z.infer<typeof createAccountSchema>) {
     }
     
     try {
-        // This is a temporary auth instance on the server.
-        // The user will be created but not signed in on the server.
-        // The client will handle the sign-in state.
         const userCredential = await createUserWithEmailAndPassword(auth, parsed.data.email, parsed.data.password);
         const user = userCredential.user;
 
         // Create user document in Firestore
         const userRef = doc(db, "users", user.uid);
-        await setDoc(userRef, {
-            email: user.email,
-            displayName: user.email, // Use email as initial display name
-            role: 'user', // All new users get 'user' role by default
-            createdAt: serverTimestamp(),
-        });
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+             await setDoc(userRef, {
+                email: user.email,
+                displayName: user.email?.split('@')[0] || "New User",
+                role: 'user', 
+                createdAt: serverTimestamp(),
+            });
+        }
 
         return { success: true, message: "Account created successfully!", uid: user.uid };
     } catch (error: any) {
         console.error("Error creating user:", error);
-        // Provide a more user-friendly error message
         if (error.code === 'auth/email-already-in-use') {
             return { success: false, message: "This email address is already in use." };
         }
@@ -70,9 +71,6 @@ const registrationFormSchema = z
   .object({
     uid: z.string().min(1, "User ID is required."), // User ID from Firebase Auth
     email: z.string().email(),
-    registrationType: z.enum(["solo", "duo"], {
-      required_error: "You need to select a registration type.",
-    }),
     
     // Rider 1
     fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -87,6 +85,9 @@ const registrationFormSchema = z
     
     consent: z.boolean().refine((val) => val === true, {
       message: "You must agree to the rules.",
+    }),
+    registrationType: z.enum(["solo", "duo"], {
+      required_error: "You need to select a registration type.",
     }),
   })
   .superRefine((data, ctx) => {
@@ -128,22 +129,20 @@ export async function registerRider(values: RegistrationInput) {
   try {
     const { uid, email, ...registrationData } = parsed.data;
 
-    // Use a transaction to ensure both documents are created/updated successfully
     await runTransaction(db, async (transaction) => {
       const userRef = doc(db, "users", uid);
       const registrationRef = doc(db, "registrations", uid);
 
-      // 1. Update the user document with the full name
       transaction.update(userRef, {
         displayName: registrationData.fullName,
       });
 
-      // 2. Create the registration document
        const dataToSave = {
         ...registrationData,
+        email: email, // ensure email is saved
+        uid: uid, // ensure uid is saved
         status: "pending" as const,
         createdAt: serverTimestamp(),
-        // We no longer need accountType here as it's part of the user role
       };
       transaction.set(registrationRef, dataToSave);
     });
@@ -290,8 +289,11 @@ const updateUserRoleSchema = z.object({
 
 export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema>) {
   const adminRole = await getUserRole(values.adminId);
-  if (adminRole !== 'superadmin') {
-    return { success: false, message: "Permission denied: Only superadmins can change roles." };
+  if (adminRole !== 'superadmin' && values.newRole === 'superadmin') {
+    return { success: false, message: "Only superadmins can assign the superadmin role." };
+  }
+   if (adminRole !== 'superadmin' && adminRole !== 'admin') {
+    return { success: false, message: "Permission denied." };
   }
 
   const parsed = updateUserRoleSchema.safeParse(values);
@@ -301,9 +303,8 @@ export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema
   
   const { targetUserId, newRole } = parsed.data;
 
-  // Prevent a superadmin from demoting themselves
-  if (values.adminId === targetUserId && newRole !== 'superadmin') {
-    return { success: false, message: "Superadmins cannot demote themselves." };
+  if (values.adminId === targetUserId && newRole !== adminRole) {
+    return { success: false, message: "Admins cannot change their own role." };
   }
 
   try {

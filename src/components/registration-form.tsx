@@ -19,7 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { BikeIcon, Loader2, PartyPopper, User, Users } from "lucide-react";
+import { Loader2, PartyPopper, User, Users } from "lucide-react";
 import { registerRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
@@ -131,12 +131,12 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           description: "We're excited to have you join the ride. Your registration is now pending review.",
           action: <PartyPopper className="text-primary" />,
         });
-        // Call the parent component's success handler to update the dashboard UI
+        
         const newRegistrationData: Registration = {
             id: user.uid,
             ...values,
             status: 'pending',
-            createdAt: new Date(), // This is an approximation, Firestore will have the real one
+            createdAt: new Date(), 
             rider1CheckedIn: false,
             rider2CheckedIn: false,
         }
@@ -180,13 +180,13 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl><RadioGroupItem value="solo" id="solo" className="peer sr-only" /></FormControl>
-                        <FormLabel htmlFor="solo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                        <FormLabel htmlFor="solo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full cursor-pointer">
                             <User className="mb-3 h-6 w-6" /> Solo Rider
                         </FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl><RadioGroupItem value="duo" id="duo" className="peer sr-only" /></FormControl>
-                        <FormLabel htmlFor="duo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                        <FormLabel htmlFor="duo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full cursor-pointer">
                            <Users className="mb-3 h-6 w-6" /> Duo (2 Riders)
                         </FormLabel>
                       </FormItem>
@@ -262,6 +262,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                       <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>I agree to abide by the ride rules and safety measures.</FormLabel>
+                        <FormMessage />
                       </div>
                     </FormItem>
                   )}
