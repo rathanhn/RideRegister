@@ -58,4 +58,5 @@ export interface QnaReply {
     userName:string;
     userPhotoURL?: string | null;
     createdAt: any; // Firestore timestamp
+    isAdmin?: boolean;
 }

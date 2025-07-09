@@ -118,6 +118,7 @@ const addReplySchema = z.object({
     userId: z.string().min(1, "User ID is required."),
     userName: z.string().min(1, "User name is required."),
     userPhotoURL: z.string().url().optional().nullable(),
+    isAdmin: z.boolean().optional(),
 });
 
 export async function addReply(values: z.infer<typeof addReplySchema>) {
