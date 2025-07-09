@@ -24,9 +24,12 @@ const calculateTimeLeft = (targetDate: Date) => {
 };
 
 export function CountdownTimer({ targetDate }: { targetDate: Date }) {
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(targetDate));
+    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    const [isClient, setIsClient] = useState(false)
 
     useEffect(() => {
+        setIsClient(true)
+        setTimeLeft(calculateTimeLeft(targetDate));
         const timer = setInterval(() => {
             setTimeLeft(calculateTimeLeft(targetDate));
         }, 1000);
@@ -44,6 +47,10 @@ export function CountdownTimer({ targetDate }: { targetDate: Date }) {
             </div>
         );
     });
+
+    if (!isClient) {
+        return null;
+    }
 
     const hasTimeLeft = timeLeft.days > 0 || timeLeft.hours > 0 || timeLeft.minutes > 0 || timeLeft.seconds > 0;
 

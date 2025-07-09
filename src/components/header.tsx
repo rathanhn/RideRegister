@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ThemeToggle } from "./theme-toggle";
 
 const WavingFlag = () => (
   <div className="relative w-12 h-8">
@@ -26,7 +27,10 @@ export function Header() {
             <p className="text-sm text-muted-foreground">TeleFun Mobile Independence Day Ride</p>
           </div>
         </div>
-        <WavingFlag />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <WavingFlag />
+        </div>
       </div>
     </header>
   );
