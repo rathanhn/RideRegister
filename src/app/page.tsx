@@ -7,7 +7,7 @@ import { StoreDetails } from "@/components/store-details";
 import { RouteMap } from "@/components/route-map";
 
 export default function Home() {
-  const rideDate = new Date("2024-08-15T06:00:00");
+  const rideDate = new Date("2025-08-15T06:00:00");
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
