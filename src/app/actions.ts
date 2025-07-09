@@ -80,6 +80,10 @@ export async function registerRider(values: RegistrationInput & {email?: string;
   try {
     const { uid, ...registrationData } = parsed.data;
 
+    // Determine the user's role
+    const superAdminEmail = process.env.SUPERADMIN_EMAIL;
+    const role: UserRole = (superAdminEmail && values.email === superAdminEmail) ? 'superadmin' : 'user';
+
     // Use a transaction to ensure both documents are created successfully
     await runTransaction(db, async (transaction) => {
       const userRef = doc(db, "users", uid);
@@ -89,7 +93,7 @@ export async function registerRider(values: RegistrationInput & {email?: string;
       transaction.set(userRef, {
         email: values.email,
         displayName: registrationData.fullName,
-        role: 'user', // Default role
+        role: role,
         createdAt: serverTimestamp(),
       });
 
@@ -102,7 +106,7 @@ export async function registerRider(values: RegistrationInput & {email?: string;
       transaction.set(registrationRef, dataToSave);
     });
 
-    console.log("Document written for user ID: ", uid);
+    console.log(`Document written for user ID: ${uid} with role: ${role}`);
     return { success: true, message: "Registration successful!" };
   } catch (error) {
     console.error("Error adding document: ", error);
