@@ -12,8 +12,10 @@ import { Loader2, AlertTriangle, Clock, Ban, User, Shield } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Registration, AppUser } from '@/lib/types';
 import { RegistrationForm } from '@/components/registration-form';
-import { Button } from '@/components/ui/button';
 import { OrganizerAgreementForm } from '@/components/organizer-agreement-form';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 
 type ViewState = 'rider' | 'organizer' | null;
 
@@ -173,24 +175,30 @@ export default function DashboardPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button variant="outline" className="h-auto p-6" onClick={() => setView('rider')}>
-                        <div className="flex flex-col items-center justify-center gap-2">
-                            <User className="h-8 w-8 text-primary" />
-                            <div className="text-center">
-                                <p className="font-semibold">Register as a Rider</p>
-                                <p className="text-xs text-muted-foreground">Join the ride, get your digital ticket, and be part of the cycling community.</p>
-                            </div>
+                    <button
+                        className={cn(buttonVariants({ variant: "outline" }), "h-auto p-6 flex flex-col items-center justify-center text-center gap-2")}
+                        onClick={() => setView('rider')}
+                    >
+                        <User className="h-8 w-8 text-primary" />
+                        <div>
+                            <p className="font-semibold">Register as a Rider</p>
+                            <p className="text-xs text-muted-foreground">
+                                Join the ride, get your digital ticket, and be part of the cycling community.
+                            </p>
                         </div>
-                    </Button>
-                    <Button variant="outline" className="h-auto p-6" onClick={() => setView('organizer')}>
-                        <div className="flex flex-col items-center justify-center gap-2">
-                            <Shield className="h-8 w-8 text-primary" />
-                            <div className="text-center">
-                                <p className="font-semibold">Request Organizer Access</p>
-                                <p className="text-xs text-muted-foreground">Join the event staff as a volunteer or organizer to help manage the event.</p>
-                            </div>
+                    </button>
+                    <button
+                        className={cn(buttonVariants({ variant: "outline" }), "h-auto p-6 flex flex-col items-center justify-center text-center gap-2")}
+                        onClick={() => setView('organizer')}
+                    >
+                        <Shield className="h-8 w-8 text-primary" />
+                        <div>
+                            <p className="font-semibold">Request Organizer Access</p>
+                            <p className="text-xs text-muted-foreground">
+                                Join the event staff as a volunteer or organizer to help manage the event.
+                            </p>
                         </div>
-                    </Button>
+                    </button>
                 </CardContent>
             </Card>
         );
@@ -209,4 +217,3 @@ export default function DashboardPage() {
             </main>
         </div>
     );
-}
