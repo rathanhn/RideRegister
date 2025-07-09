@@ -213,7 +213,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-secondary/50">
+        <div className="flex flex-col min-h-screen bg-background">
             <Header />
             <main className="flex-grow container mx-auto p-4 md:p-8">
                 <div className="w-full max-w-2xl mx-auto space-y-4">
