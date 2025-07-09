@@ -2,7 +2,7 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import React, { useState } from 'react';
+import React, { useState, useRef, createRef } from 'react';
 import {
   Card,
   CardContent,
@@ -19,6 +19,7 @@ import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 
@@ -32,7 +33,6 @@ interface SingleTicketProps {
   riderNumber: 1 | 2;
 }
 
-// A simple function to generate a QR code placeholder URL
 const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
@@ -50,11 +50,11 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   });
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className="bg-card">
         <Card className="max-w-md mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
-            <div className="bg-primary/10 p-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div className="h-12 w-12 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center overflow-hidden bg-white">
+            <div className="bg-primary/10 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center overflow-hidden bg-white p-1">
                       <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="object-contain" />
                     </div>
                     <div>
@@ -84,15 +84,15 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 <div className="grid grid-cols-3 gap-6 p-6">
                     <div className="col-span-2 space-y-4">
                         <div className="space-y-2">
-                             <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-2"><UserIcon className="h-4 w-4" /> Rider Details</h4>
+                            <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-2"><UserIcon className="h-4 w-4" /> Rider Details</h4>
                             <p className="font-bold text-lg">{riderName}, {riderAge} years</p>
-                            <div className="text-sm text-muted-foreground" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Phone className="h-3 w-3" /> {riderPhone}</div>
+                            <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
                         </div>
 
                         <div className="flex gap-8 pt-2">
                             <div>
                                 <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
-                                <div className="mt-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div className="mt-1 flex items-center gap-2">
                                   {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
                                   <p className="font-bold text-lg">
                                       {registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}
@@ -106,8 +106,8 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                         </div>
                     </div>
                     <div className="flex items-center justify-center">
-                         <div className="w-[120px] h-[120px] p-2 bg-white rounded-md">
-                            <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={120} height={120} />
+                         <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center">
+                            <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
                         </div>
                     </div>
                 </div>
@@ -115,9 +115,9 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 <Separator />
 
                 <div className="p-6 grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}><Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }} className="col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
+                    <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
+                    <div className="flex items-start gap-2"><Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
+                    <div className="flex items-start gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
                 </div>
             </CardContent>
         </Card>
@@ -131,148 +131,42 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [isDownloading, setIsDownloading] = useState(false);
-
-  const getBase64ImageFromURL = (url: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new window.Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          return reject(new Error('Canvas context not found'));
-        }
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
-  };
+  const ticketRefs = useRef<React.RefObject<HTMLDivElement>[]>([]);
+  
+  if (registration.registrationType === 'duo') {
+    ticketRefs.current = [createRef<HTMLDivElement>(), createRef<HTMLDivElement>()];
+  } else {
+    ticketRefs.current = [createRef<HTMLDivElement>()];
+  }
 
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-        const currentSlide = registration.registrationType === 'duo' ? (carouselApi?.selectedScrollSnap() ?? 0) : 0;
+        const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
         const riderNumber = (currentSlide + 1) as 1 | 2;
         const riderName = riderNumber === 1 ? registration.fullName : (registration.fullName2 || 'Rider2');
-        const riderAge = riderNumber === 1 ? registration.age : registration.age2;
-        const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
-        const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
-        const qrData = JSON.stringify({ registrationId: registration.id, rider: riderNumber });
-        const qrUrl = generateQrCodeUrl(qrData);
+        const elementToCapture = ticketRefs.current[currentSlide]?.current;
 
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'px', format: [350, 550] });
-
-        // Colors and Fonts
-        const primaryColor = '#FF9933'; 
-        const textColor = '#1E293B';
-        const mutedColor = '#64748B';
-
-        // --- Drawing the ticket ---
-        doc.setDrawColor(primaryColor);
-        doc.setLineWidth(1.5);
-        doc.rect(5, 5, 340, 540, 'S'); // Outer border
-
-        // Header
-        doc.setFillColor(255, 247, 237); // A light orange, approximation of primary/10
-        doc.rect(6, 6, 338, 50, 'F');
-
-        const logoBase64 = await getBase64ImageFromURL(Logo.src);
-        doc.addImage(logoBase64, 'PNG', 15, 12, 35, 35);
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.setTextColor(primaryColor);
-        doc.text('TeleFun Mobile', 60, 25);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(mutedColor);
-        doc.text('Independence Day Ride 2025', 60, 40);
-
-        // Status Badges
-        doc.setFillColor('#E2E8F0'); // secondary bg
-        doc.roundedRect(250, 15, 85, 16, 8, 8, 'F');
-        doc.setTextColor(textColor);
-        doc.setFontSize(9);
-        doc.text(`Status: ${registration.status.toUpperCase()}`, 255, 26);
-        
-        doc.setFillColor(isCheckedIn ? '#D1FAE5' : '#E2E8F0'); // green or secondary bg
-        doc.roundedRect(250, 35, 85, 16, 8, 8, 'F');
-        doc.setTextColor(isCheckedIn ? '#065F46' : textColor);
-        doc.text(isCheckedIn ? 'Checked-in' : 'Not Checked-in', 255, 46);
-
-        // Main content
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text('Your Ride Ticket', 15, 80);
-        if(registration.registrationType === 'duo') {
-            doc.setFontSize(12);
-            doc.setTextColor(mutedColor);
-            doc.text(`(Rider ${riderNumber} of 2)`, 150, 80);
+        if (!elementToCapture) {
+            throw new Error("Could not find the ticket element to capture.");
         }
 
-        // Rider Details
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text('Rider Details', 15, 110);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(14);
-        doc.text(`${riderName}, ${riderAge} years`, 15, 130);
+        const canvas = await html2canvas(elementToCapture, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true, // Important for external images like QR codes
+            allowTaint: true,
+        });
         
-        doc.setFontSize(10);
-        doc.setTextColor(mutedColor);
-        doc.text(`Phone: ${riderPhone}`, 15, 145);
-
-        // QR Code
-        const qrBase64 = await getBase64ImageFromURL(qrUrl);
-        doc.addImage(qrBase64, 'PNG', 220, 100, 110, 110);
-
-        // Registration Info
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text('Registration Info', 15, 180);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width / 2, canvas.height / 2] // Set PDF size based on canvas
+        });
         
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(12);
-        doc.text(`Type: ${registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}`, 15, 195);
-        doc.text(`ID: ${registration.id.substring(0, 10).toUpperCase()}`, 15, 210);
-
-        // Separator
-        doc.setDrawColor(mutedColor);
-        doc.setLineWidth(0.5);
-        doc.line(15, 240, 335, 240);
-
-        // Event Details
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text('Event Details', 15, 260);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(mutedColor);
-        doc.text('Date:', 15, 275);
-        doc.setTextColor(textColor);
-        doc.text('August 15, 2025', 55, 275);
-
-        doc.setTextColor(mutedColor);
-        doc.text('Assembly:', 15, 290);
-        doc.setTextColor(textColor);
-        doc.text('6:00 AM', 55, 290);
-
-        doc.setTextColor(mutedColor);
-        doc.text('Location:', 15, 305);
-        doc.setTextColor(textColor);
-        doc.text('Telefun Mobiles: Mahadevpet, Madikeri', 15, 318, { maxWidth: 320 });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+        pdf.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
         
-        doc.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
-
     } catch(err) {
         console.error("Error generating PDF:", err);
         toast({ variant: 'destructive', title: 'Download Failed', description: 'There was an issue creating the PDF.' });
@@ -287,10 +181,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
                 <CarouselContent>
                     <CarouselItem>
-                        <SingleTicket registration={registration} riderNumber={1} />
+                        <SingleTicket ref={ticketRefs.current[0]} registration={registration} riderNumber={1} />
                     </CarouselItem>
                     <CarouselItem>
-                         <SingleTicket registration={registration} riderNumber={2} />
+                         <SingleTicket ref={ticketRefs.current[1]} registration={registration} riderNumber={2} />
                     </CarouselItem>
                 </CarouselContent>
                 <CarouselPrevious className="left-[-10px] sm:left-[-50px]" />
@@ -308,7 +202,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
   return (
     <div className="space-y-4">
-        <SingleTicket registration={registration} riderNumber={1} />
+        <SingleTicket ref={ticketRefs.current[0]} registration={registration} riderNumber={1} />
         <div className="flex justify-center">
             <Button onClick={handleDownload} disabled={isDownloading}>
                 {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
