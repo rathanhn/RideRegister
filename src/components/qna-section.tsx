@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addQuestion } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, HelpCircle, MessageSquare } from 'lucide-react';
+import { Loader2, MessageSquare } from 'lucide-react';
 import type { QnaQuestion } from '@/lib/types';
 import { QnaItem } from './qna-item';
 import Link from 'next/link';
@@ -35,7 +36,7 @@ export function QnaSection() {
   const { isSubmitting } = form.formState;
 
   const [questions, questionsLoading, questionsError] = useCollection(
-    query(collection(db, 'qna'), orderBy('createdAt', 'desc'))
+    query(collection(db, 'qna'), orderBy('isPinned', 'desc'), orderBy('createdAt', 'desc'))
   );
 
   async function onSubmit(values: z.infer<typeof questionFormSchema>) {
@@ -75,7 +76,7 @@ export function QnaSection() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline">
           <MessageSquare className="h-6 w-6 text-primary" />
-          Community Q&A
+          Community Q&amp;A
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

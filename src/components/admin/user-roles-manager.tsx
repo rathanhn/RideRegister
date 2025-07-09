@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, getDoc, where } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import {
   Table,
@@ -32,8 +32,17 @@ export function UserRolesManager() {
   const [loggedInUser, authLoading] = useAuthState(auth);
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  
+  // Query for users who have a role that is NOT 'user'
+  const usersQuery = useMemo(() => {
+    return query(
+      collection(db, 'users'), 
+      where('role', 'in', ['superadmin', 'admin', 'viewer']), 
+      orderBy('createdAt', 'desc')
+    );
+  }, []);
 
-  const [users, usersLoading, usersError] = useCollection(query(collection(db, 'users'), orderBy('createdAt', 'desc')));
+  const [users, usersLoading, usersError] = useCollection(usersQuery);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
@@ -142,7 +151,7 @@ export function UserRolesManager() {
           ) : (
             <TableRow>
               <TableCell colSpan={4} className="text-center h-24">
-                No users found.
+                No users with administrative roles found.
               </TableCell>
             </TableRow>
           )}

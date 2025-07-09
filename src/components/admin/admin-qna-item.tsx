@@ -14,12 +14,23 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { addReply } from "@/app/actions";
+import { addReply, deleteQuestion, togglePinQuestion } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, User } from "lucide-react";
+import { Loader2, Pin, PinOff, ShieldCheck, Trash2, User } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "../ui/badge";
 import { useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const replyFormSchema = z.object({
   text: z.string().min(1, "Reply cannot be empty.").max(500),
@@ -39,6 +50,8 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
   const { isSubmitting } = form.formState;
 
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
 
    useEffect(() => {
     const fetchUserRole = async () => {
@@ -52,7 +65,7 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
     fetchUserRole();
   }, [user]);
 
-  const canReply = userRole === 'admin' || userRole === 'superadmin';
+  const canModerate = userRole === 'admin' || userRole === 'superadmin';
 
   const [replies, repliesLoading] = useCollection(
     query(collection(db, 'qna', question.id, 'replies'), orderBy('createdAt', 'asc'))
@@ -63,7 +76,7 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
         toast({ variant: "destructive", title: "Error", description: "You must be logged in to reply." });
         return;
     };
-    if (!canReply) {
+    if (!canModerate) {
        toast({ variant: "destructive", title: "Error", description: "You don't have permission to reply." });
         return;
     }
@@ -82,6 +95,28 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
       toast({ variant: "destructive", title: "Error", description: result.message });
     }
   }
+
+  const handlePin = async () => {
+    if (!user || !canModerate) return;
+    setIsProcessing(true);
+    const result = await togglePinQuestion({ adminId: user.uid, questionId: question.id });
+    if (!result.success) {
+      toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+    setIsProcessing(false);
+  }
+
+  const handleDelete = async () => {
+    if (!user || !canModerate) return;
+    setIsProcessing(true);
+    const result = await deleteQuestion({ adminId: user.uid, questionId: question.id });
+    if (result.success) {
+       toast({ title: "Success", description: "Question has been deleted." });
+    } else {
+       toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+    // No need to set isProcessing to false, as the component will unmount
+  }
   
   if (authLoading) return <Loader2 className="h-5 w-5 animate-spin" />
 
@@ -95,7 +130,10 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
             </Avatar>
             <div className="w-full">
                 <div className="flex items-center justify-between">
-                    <p className="font-semibold">{question.userName}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="font-semibold">{question.userName}</p>
+                        {question.isPinned && <Badge variant="secondary" className="bg-primary/10 text-primary"><Pin className="h-3 w-3 mr-1"/> Pinned</Badge>}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                         {question.createdAt ? formatDistanceToNow(question.createdAt.toDate(), { addSuffix: true }) : 'just now'}
                     </p>
@@ -133,30 +171,56 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
         )}
         {repliesLoading && <div className="flex justify-center pl-16"><Loader2 className="h-5 w-5 animate-spin" /></div>}
 
-        {/* Reply Form */}
-       {canReply && (
+        {/* Reply Form & Actions */}
+       {canModerate && (
          <div className="pl-16">
             <Separator />
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onReplySubmit)} className="space-y-2 pt-4">
-                <FormField
-                control={form.control}
-                name="text"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormControl>
-                        <Textarea placeholder="Write an official reply..." {...field} rows={2}/>
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <Button type="submit" size="sm" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Post Reply
-                </Button>
-            </form>
-            </Form>
+            <div className="flex justify-between items-end pt-4 gap-4">
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onReplySubmit)} className="space-y-2 flex-grow">
+                        <FormField
+                        control={form.control}
+                        name="text"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormControl>
+                                <Textarea placeholder="Write an official reply..." {...field} rows={2}/>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <Button type="submit" size="sm" disabled={isSubmitting || isProcessing}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Post Reply
+                        </Button>
+                    </form>
+                </Form>
+                <div className="flex gap-2">
+                    <Button onClick={handlePin} variant="outline" size="icon" disabled={isProcessing}>
+                        {question.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                    </Button>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon" disabled={isProcessing}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete the question and all of its replies. This action cannot be undone.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </div>
         </div>
        )}
     </div>

@@ -1,4 +1,5 @@
 
+
 export interface Announcement {
   id: number;
   message: string;
@@ -44,6 +45,7 @@ export interface Registration {
     status: 'pending' | 'approved' | 'rejected';
     rider1CheckedIn?: boolean;
     rider2CheckedIn?: boolean;
+    accountType: 'rider' | 'organization';
 }
 
 export interface QnaQuestion {
@@ -53,6 +55,7 @@ export interface QnaQuestion {
     userName: string;
     userPhotoURL?: string | null;
     createdAt: any; // Firestore timestamp
+    isPinned?: boolean;
 }
 
 export interface QnaReply {

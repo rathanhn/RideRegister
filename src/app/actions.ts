@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc, writeBatch } from "firebase/firestore";
 import type { UserRole } from "./lib/types";
 
 // Helper to get a user's role
@@ -22,6 +22,7 @@ const phoneRegex = new RegExp(
 const registrationFormSchema = z
   .object({
     uid: z.string().min(1, "User ID is required."), // User ID from Firebase Auth
+    accountType: z.enum(['rider', 'organization']),
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
     }),
@@ -80,8 +81,8 @@ export async function registerRider(values: RegistrationInput & {email?: string;
   try {
     const { uid, ...registrationData } = parsed.data;
 
-    // By default, all new users are just 'user'
-    const role: UserRole = 'user';
+    // Organization members requesting access get 'viewer' role, others get 'user'.
+    const role: UserRole = registrationData.accountType === 'organization' ? 'viewer' : 'user';
 
     // Use a transaction to ensure both documents are created successfully
     await runTransaction(db, async (transaction) => {
@@ -195,6 +196,7 @@ export async function addQuestion(values: z.infer<typeof addQuestionSchema>) {
     try {
         await addDoc(collection(db, "qna"), {
             ...parsed.data,
+            isPinned: false,
             createdAt: serverTimestamp(),
         });
         return { success: true, message: "Question posted successfully!" };
@@ -270,4 +272,46 @@ export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema
     console.error("Error updating user role:", error);
     return { success: false, message: "Failed to update user role." };
   }
+}
+
+// Schema for QnA moderation
+const qnaModSchema = z.object({
+  adminId: z.string().min(1, "Admin ID is required."),
+  questionId: z.string().min(1, "Question ID is required."),
+});
+
+// Action to delete a question
+export async function deleteQuestion(values: z.infer<typeof qnaModSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+    try {
+        await deleteDoc(doc(db, "qna", values.questionId));
+        return { success: true, message: "Question deleted." };
+    } catch (error) {
+        console.error("Error deleting question:", error);
+        return { success: false, message: "Failed to delete question." };
+    }
+}
+
+// Action to toggle pin status of a question
+export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+        return { success: false, message: "Permission denied." };
+    }
+    try {
+        const questionRef = doc(db, "qna", values.questionId);
+        const questionSnap = await getDoc(questionRef);
+        if (!questionSnap.exists()) {
+            return { success: false, message: "Question not found." };
+        }
+        const currentPinStatus = questionSnap.data().isPinned || false;
+        await updateDoc(questionRef, { isPinned: !currentPinStatus });
+        return { success: true, message: `Question ${!currentPinStatus ? 'pinned' : 'unpinned'}.` };
+    } catch (error) {
+        console.error("Error pinning question:", error);
+        return { success: false, message: "Failed to update pin status." };
+    }
 }

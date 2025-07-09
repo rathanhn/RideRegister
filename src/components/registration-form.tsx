@@ -19,13 +19,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Loader2, PartyPopper, User, Users } from "lucide-react";
+import { BikeIcon, Building, Loader2, PartyPopper, User, Users } from "lucide-react";
 import { registerRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
 import { auth } from "@/lib/firebase";
 import { useCreateUserWithEmailAndPassword, useUpdateProfile } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 
 const phoneRegex = new RegExp(
@@ -37,6 +38,10 @@ const formSchema = z
     // Account creation fields
     email: z.string().email("Invalid email address."),
     password: z.string().min(6, "Password must be at least 6 characters."),
+
+    accountType: z.enum(['rider', 'organization'], {
+      required_error: "Please select an account type."
+    }),
 
     // Registration fields
     registrationType: z.enum(["solo", "duo"], {
@@ -96,6 +101,7 @@ export function RegistrationForm() {
     resolver: zodResolver(formSchema),
     mode: "onChange",
     defaultValues: {
+      accountType: "rider",
       registrationType: "solo",
       fullName: "",
       age: 18,
@@ -108,6 +114,7 @@ export function RegistrationForm() {
   });
 
   const registrationType = form.watch("registrationType");
+  const accountType = form.watch("accountType");
   const phoneNumber = form.watch("phoneNumber");
 
   useEffect(() => {
@@ -162,7 +169,7 @@ export function RegistrationForm() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="font-headline text-3xl">Create Your Account & Register</CardTitle>
+        <CardTitle className="font-headline text-3xl">Create Your Account &amp; Register</CardTitle>
         <CardDescription>Event Date: 15th August at TeleFun Mobile Store</CardDescription>
       </CardHeader>
       <CardContent>
@@ -170,6 +177,46 @@ export function RegistrationForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
             <h3 className="text-lg font-medium text-primary">Step 1: Account Details</h3>
+            <FormField
+              control={form.control}
+              name="accountType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Are you registering as a rider or an organization member?</FormLabel>
+                   <FormControl>
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormItem>
+                        <FormControl>
+                            <RadioGroupItem value="rider" id="rider" className="peer sr-only" />
+                        </FormControl>
+                        <FormLabel htmlFor="rider" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                            <BikeIcon className="mb-3 h-6 w-6" /> Normal Rider
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem>
+                         <FormControl>
+                            <RadioGroupItem value="organization" id="organization" className="peer sr-only" />
+                        </FormControl>
+                         <FormLabel htmlFor="organization" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                            <Building className="mb-3 h-6 w-6" /> Organization Member
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {accountType === 'organization' && (
+              <Alert>
+                <AlertTitle>Organization Access</AlertTitle>
+                <AlertDescription>
+                  Your account will be created with 'Viewer' permissions. A superadmin will need to grant you 'Admin' privileges from the dashboard to manage the event.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
                     control={form.control}
@@ -211,13 +258,13 @@ export function RegistrationForm() {
                     <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl><RadioGroupItem value="solo" id="solo" className="peer sr-only" /></FormControl>
-                        <FormLabel htmlFor="solo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                        <FormLabel htmlFor="solo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
                             <User className="mb-3 h-6 w-6" /> Solo Rider
                         </FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl><RadioGroupItem value="duo" id="duo" className="peer sr-only" /></FormControl>
-                        <FormLabel htmlFor="duo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                        <FormLabel htmlFor="duo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
                            <Users className="mb-3 h-6 w-6" /> Duo (2 Riders)
                         </FormLabel>
                       </FormItem>
@@ -272,7 +319,7 @@ export function RegistrationForm() {
                     <h3 className="text-lg font-medium text-primary">Rider 2 Information</h3>
                     <FormField control={form.control} name="fullName2" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Jane Smith" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="age2" render={({ field }) => (<FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="18" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : +e.target.value)} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="age2" render={({ field }) => (<FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="18" onChange={e => field.onChange(e.target.value === '' ? undefined : +e.target.value)} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="phoneNumber2" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="9876543210" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                 </>
@@ -300,7 +347,7 @@ export function RegistrationForm() {
             </div>
             <Button type="submit" className="w-full" disabled={loading || updating || !form.formState.isValid}>
               {(loading || updating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading || updating ? "Creating Account..." : "Create Account & Register"}
+              {loading || updating ? "Creating Account..." : "Create Account &amp; Register"}
             </Button>
           </form>
         </Form>
