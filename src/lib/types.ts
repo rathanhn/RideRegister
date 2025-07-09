@@ -40,6 +40,7 @@ export interface Registration {
     age2?: number;
     phoneNumber2?: string;
     createdAt: any; // Firestore timestamp
+    status: 'pending' | 'approved' | 'rejected';
 }
 
 export interface QnaQuestion {

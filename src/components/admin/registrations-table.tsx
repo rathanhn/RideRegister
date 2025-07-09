@@ -1,8 +1,9 @@
 
 "use client";
 
+import { useState } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
   Table,
@@ -12,15 +13,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, MoreHorizontal } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from '../ui/button';
+import { updateRegistrationStatus } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export function RegistrationsTable() {
-  const [value, loading, error] = useCollection(collection(db, 'registrations'));
+  const [value, loading, error] = useCollection(query(collection(db, 'registrations'), orderBy('createdAt', 'desc')));
+  const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   const registrations = value?.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Registration[] || [];
+
+  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
+    setIsUpdating(id);
+    const result = await updateRegistrationStatus({ registrationId: id, status });
+    if (result.success) {
+        toast({ title: "Success", description: result.message });
+    } else {
+        toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+    setIsUpdating(null);
+  }
 
   const handleExport = () => {
     if (!registrations.length) return;
@@ -28,6 +51,7 @@ export function RegistrationsTable() {
     const headers = [
       "ID",
       "Registration Type",
+      "Status",
       "Rider 1 Name",
       "Rider 1 Age",
       "Rider 1 Phone",
@@ -47,6 +71,7 @@ export function RegistrationsTable() {
         const row = [
           reg.id,
           reg.registrationType,
+          reg.status ?? 'pending',
           rider1Name,
           reg.age,
           reg.phoneNumber,
@@ -100,8 +125,8 @@ export function RegistrationsTable() {
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Rider 2 Name</TableHead>
-                <TableHead>Registered On</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
             </TableRow>
             </TableHeader>
             <TableBody>
@@ -115,9 +140,44 @@ export function RegistrationsTable() {
                     </Badge>
                     </TableCell>
                     <TableCell>{reg.phoneNumber}</TableCell>
-                    <TableCell>{reg.fullName2 || 'N/A'}</TableCell>
                     <TableCell>
-                    {reg.createdAt?.toDate().toLocaleDateString()}
+                        <Badge 
+                            variant={
+                                reg.status === 'approved' ? 'default' 
+                                : reg.status === 'rejected' ? 'destructive' 
+                                : 'secondary'
+                            }
+                            className="capitalize"
+                        >
+                            {isUpdating === reg.id ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                            {reg.status}
+                        </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0" disabled={isUpdating === reg.id}>
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateStatus(reg.id, 'approved')}
+                              disabled={reg.status === 'approved'}
+                            >
+                              Approve
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateStatus(reg.id, 'rejected')}
+                              disabled={reg.status === 'rejected'}
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                            >
+                              Reject
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                     </TableCell>
                 </TableRow>
                 ))

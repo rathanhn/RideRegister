@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { DigitalTicket } from '@/components/digital-ticket';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Clock, Ban } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -76,29 +76,81 @@ export default function DashboardPage() {
         )
     }
 
+    const renderContent = () => {
+        if (!registrationData) {
+            return (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Registration Not Found</CardTitle>
+                        <CardDescription>
+                            It looks like you haven't registered for the ride yet.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild>
+                            <Link href="/register">Register for the Ride</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        switch (registrationData.status) {
+            case 'approved':
+                return <DigitalTicket registration={registrationData} user={user!} />;
+            case 'pending':
+                return (
+                    <Card className="text-center">
+                        <CardHeader>
+                             <CardTitle className="flex items-center justify-center gap-2">
+                                <Clock className="text-primary"/> Registration Pending
+                            </CardTitle>
+                            <CardDescription>
+                                Your registration is being reviewed by our team. Please check back later. We'll notify you once it's approved.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                );
+            case 'rejected':
+                 return (
+                    <Card className="text-center">
+                        <CardHeader>
+                             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
+                                <Ban /> Registration Rejected
+                            </CardTitle>
+                            <CardDescription>
+                               Unfortunately, your registration could not be approved. If you believe this is an error, please contact the event organizers.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                );
+            default:
+                 return (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Registration Not Found</CardTitle>
+                            <CardDescription>
+                                It looks like you haven't registered for the ride yet.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button asChild>
+                                <Link href="/register">Register for the Ride</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                 )
+        }
+    }
+
+
     return (
         <div className="flex flex-col min-h-screen bg-secondary/50">
             <Header />
             <main className="flex-grow container mx-auto p-4 md:p-8">
                 <div className="space-y-4">
                     <h1 className="text-3xl font-bold font-headline">Your Dashboard</h1>
-                    {registrationData ? (
-                        <DigitalTicket registration={registrationData} user={user} />
-                    ) : (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Registration Not Found</CardTitle>
-                                <CardDescription>
-                                    It looks like you haven't registered for the ride yet.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Button asChild>
-                                    <Link href="/register">Register for the Ride</Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    )}
+                    {renderContent()}
                 </div>
             </main>
         </div>

@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -71,6 +71,7 @@ export async function registerRider(values: RegistrationInput) {
     const { uid, ...registrationData } = parsed.data;
     const dataToSave = {
       ...registrationData,
+      status: "pending" as const,
       createdAt: new Date(),
     };
     // Use the user's UID as the document ID for easy lookup
@@ -82,6 +83,31 @@ export async function registerRider(values: RegistrationInput) {
     return { success: false, message: "Could not save your registration. Please try again." };
   }
 }
+
+// Schema for updating a registration status
+const updateStatusSchema = z.object({
+  registrationId: z.string().min(1, "Registration ID is required."),
+  status: z.enum(["approved", "rejected", "pending"]),
+});
+
+export async function updateRegistrationStatus(values: z.infer<typeof updateStatusSchema>) {
+    const parsed = updateStatusSchema.safeParse(values);
+
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided." };
+    }
+
+    try {
+        const { registrationId, status } = parsed.data;
+        const registrationRef = doc(db, "registrations", registrationId);
+        await updateDoc(registrationRef, { status });
+        return { success: true, message: `Registration status updated to ${status}.` };
+    } catch (error) {
+        console.error("Error updating registration status: ", error);
+        return { success: false, message: "Could not update registration status." };
+    }
+}
+
 
 // Schema for adding a question
 const addQuestionSchema = z.object({

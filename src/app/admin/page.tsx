@@ -13,8 +13,8 @@ export default function AdminPage() {
       <Header />
       <main className="flex-grow container mx-auto p-4 md:p-8 space-y-8">
         <div className="space-y-2">
-            <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
-            <p className="text-muted-foreground">A complete overview of your event.</p>
+            <h1 className="text-3xl font-bold font-headline">Admin Management</h1>
+            <p className="text-muted-foreground">Manage event registrations, Q&A, and view statistics.</p>
         </div>
         
         <StatsOverview />
@@ -25,7 +25,7 @@ export default function AdminPage() {
                   <CardHeader>
                     <CardTitle>Event Registrations</CardTitle>
                     <CardDescription>
-                      View and manage all event registrations.
+                      Approve, reject, and manage all event registrations.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
