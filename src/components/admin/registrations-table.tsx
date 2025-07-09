@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, query, orderBy, doc, getDoc, where } from 'firebase/firestore';
@@ -14,24 +14,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, MoreHorizontal, ShieldAlert, Check, X } from 'lucide-react';
+import { Loader2, AlertTriangle, Check, X } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { updateRegistrationStatus } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export function RegistrationsTable() {
-  // Query for registrations that are still pending
+  // Query for all registrations, we will filter locally.
   const [registrations, loading, error] = useCollection(
-      query(collection(db, 'registrations'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'))
+      query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
   );
   const [user, authLoading] = useAuthState(auth);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -49,8 +42,14 @@ export function RegistrationsTable() {
     };
     fetchUserRole();
   }, [user]);
+  
+  const pendingRegistrations = useMemo(() => {
+    if (!registrations) return [];
+    return registrations.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as Registration))
+        .filter(reg => reg.status === 'pending');
+  }, [registrations]);
 
-  const pendingRegistrations = registrations?.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Registration[] || [];
   const canEdit = userRole === 'admin' || userRole === 'superadmin';
 
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
@@ -108,7 +107,7 @@ export function RegistrationsTable() {
                     <TableCell className="text-right">
                        {!canEdit ? (
                         <div className='flex justify-end items-center gap-2 text-muted-foreground'>
-                          <ShieldAlert className="h-4 w-4"/>
+                          {/* <ShieldAlert className="h-4 w-4"/> */}
                           <span>View Only</span>
                         </div>
                        ) : (

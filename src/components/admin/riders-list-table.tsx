@@ -31,14 +31,17 @@ const formatWhatsAppLink = (phone: string) => {
 };
 
 export function RidersListTable() {
-  // Query for registrations that are approved
+  // Query for all registrations, we will filter locally
   const [registrations, loading, error] = useCollection(
-    query(collection(db, 'registrations'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'))
+    query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
   );
   const [searchTerm, setSearchTerm] = useState('');
 
   const approvedRegistrations = useMemo(() => {
-    return registrations?.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Registration[] || [];
+    if (!registrations) return [];
+    return registrations.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as Registration))
+      .filter(reg => reg.status === 'approved');
   }, [registrations]);
 
   const filteredRegistrations = useMemo(() => {
@@ -119,7 +122,7 @@ export function RidersListTable() {
             <TableRow>
                 <TableHead>Rider(s)</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Check-in Status</TableHead>
                 <TableHead className="text-right">Contact</TableHead>
             </TableRow>
             </TableHeader>
@@ -138,11 +141,11 @@ export function RidersListTable() {
                     </TableCell>
                     <TableCell>
                         <div className="flex flex-col gap-1">
-                            <Badge variant="outline" className="justify-center">
+                            <Badge variant="outline" className={`justify-center ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>
                                 P1: {reg.rider1CheckedIn ? 'Checked-in' : 'Pending'}
                             </Badge>
                            {reg.registrationType === 'duo' && (
-                             <Badge variant="outline" className="justify-center">
+                             <Badge variant="outline" className={`justify-center ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>
                                 P2: {reg.rider2CheckedIn ? 'Checked-in' : 'Pending'}
                             </Badge>
                            )}
