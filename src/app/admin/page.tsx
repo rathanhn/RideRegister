@@ -1,17 +1,37 @@
 
+"use client";
+
+import { useEffect, useState } from 'react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users } from 'lucide-react';
+import { ScanLine, Users, FileText, BadgeHelp, Loader2 } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
+import type { UserRole } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 export default function AdminPage() {
-  // NOTE: In a real app, you'd fetch the user's role here and conditionally
-  // render components based on their permissions. For this prototype, we will
-  // show all components and handle permissions within each component itself.
+  const [user, loading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role as UserRole);
+        }
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
   return (
     <div className="flex flex-col min-h-screen bg-secondary/50">
       <Header />
@@ -19,6 +39,11 @@ export default function AdminPage() {
         <div className="space-y-2">
             <h1 className="text-3xl font-bold font-headline">Admin Management</h1>
             <p className="text-muted-foreground">Manage event registrations, Q&A, and view statistics.</p>
+            {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+            ) : userRole ? (
+                 <Badge variant="outline">Logged in as: <span className="capitalize ml-1 font-semibold">{userRole}</span></Badge>
+            ) : null}
         </div>
         
         <StatsOverview />
@@ -33,6 +58,24 @@ export default function AdminPage() {
           <CardContent>
             <UserRolesManager />
           </CardContent>
+        </Card>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-6 w-6 text-primary"/>
+                    Form Management
+                </CardTitle>
+                <CardDescription>
+                    Customize registration forms for future events. This feature is coming soon!
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-center h-24 text-muted-foreground bg-secondary/80 rounded-md">
+                    <BadgeHelp className="h-5 w-5 mr-2"/>
+                    <p>The form builder is currently under development.</p>
+                </div>
+            </CardContent>
         </Card>
 
         <Card>
