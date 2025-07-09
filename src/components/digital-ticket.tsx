@@ -62,7 +62,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                         <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
+                <div className="flex flex-col items-end gap-2">
                    <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize">{registration.status}</Badge>
                    {isCheckedIn ? (
                         <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center">
@@ -92,14 +92,16 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                         <div className="flex gap-8 pt-2">
                             <div>
                                 <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
-                                <p className="font-bold text-lg flex items-center gap-2">
-                                    {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                    <span>{registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}</span>
-                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+                                  <p className="font-bold text-lg">
+                                      {registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}
+                                  </p>
+                                </div>
                             </div>
                             <div>
                                 <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
-                                <p className="font-mono text-sm pt-0.5">{registration.id.substring(0, 10).toUpperCase()}</p>
+                                <p className="font-mono text-base pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
                             </div>
                         </div>
                     </div>
@@ -111,9 +113,9 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 <Separator />
 
                 <div className="p-6 grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
-                    <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
-                    <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
-                    <div className="flex items-center gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
+                    <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
+                    <div className="flex items-start gap-2"><Clock className="h-4 w-4 text-primary mt-0.5" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
+                    <div className="flex items-start gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
                 </div>
             </CardContent>
         </Card>
