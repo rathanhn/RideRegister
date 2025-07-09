@@ -36,7 +36,7 @@ interface SingleTicketProps {
 
 // A simple function to generate a QR code placeholder URL
 const generateQrCodeUrl = (text: string) => {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(text)}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
 const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber }, ref) => {
@@ -53,23 +53,25 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
 
   return (
     <div ref={ref}>
-        <Card className="max-w-2xl mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
+        <Card className="max-w-md mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
             <div className="bg-primary/10 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full border border-primary/20" />
+                    <div className="h-10 w-10 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="object-cover" />
+                    </div>
                     <div>
                         <h3 className="font-bold text-primary">TeleFun Mobile</h3>
                         <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col items-end gap-1.5">
                    <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize">{registration.status}</Badge>
                    {isCheckedIn ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center gap-1">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center gap-1 py-1">
                             <CheckCircle className="h-3 w-3"/> Checked-in
                         </Badge>
                    ) : (
-                        <Badge variant="secondary" className="flex items-center">Not Checked-in</Badge>
+                        <Badge variant="secondary" className="flex items-center py-1">Not Checked-in</Badge>
                    )}
                 </div>
             </div>
@@ -81,8 +83,8 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                     <CardDescription>Present this ticket at the check-in counter.</CardDescription>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-                    <div className="md:col-span-2 space-y-4">
+                <div className="grid grid-cols-3 gap-6 p-6">
+                    <div className="col-span-2 space-y-4">
                         <div className="space-y-2">
                             <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-2"><UserIcon className="h-4 w-4" /> Rider Details</h4>
                             <p className="font-bold text-lg">{riderName}, {riderAge} years</p>
@@ -106,16 +108,18 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                         </div>
                     </div>
                     <div className="flex items-center justify-center">
-                        <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={150} height={150} />
+                         <div className="w-[120px] h-[120px]">
+                            <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={120} height={120} />
+                        </div>
                     </div>
                 </div>
 
                 <Separator />
 
                 <div className="p-6 grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
-                    <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
-                    <div className="flex items-start gap-2"><Clock className="h-4 w-4 text-primary mt-0.5" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
-                    <div className="flex items-start gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
+                    <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
+                    <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
+                    <div className="flex items-center gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
                 </div>
             </CardContent>
         </Card>
@@ -149,7 +153,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     }
 
     try {
-        const canvas = await html2canvas(element, { scale: 3, useCORS: true });
+        const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: null });
         const imgData = canvas.toDataURL('image/png');
         
         const pdf = new jsPDF({
@@ -174,7 +178,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   if (registration.registrationType === 'duo') {
     return (
         <div className="space-y-4">
-            <Carousel setApi={setCarouselApi} className="w-full max-w-2xl mx-auto">
+            <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
                 <CarouselContent>
                     <CarouselItem>
                         <SingleTicket ref={el => ticketRefs.current[0] = el} registration={registration} user={user} riderNumber={1} />
