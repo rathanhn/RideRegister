@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, MoreHorizontal, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, AlertTriangle, MoreHorizontal, CheckCircle, XCircle, PlusCircle } from 'lucide-react';
 import type { FormFieldDefinition } from '@/lib/types';
 import { Button } from '../ui/button';
 import {
@@ -24,9 +24,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { FormFieldDialog } from './form-field-dialog';
 
 export function FormManagement() {
   const [fields, loading, error] = useCollection(query(collection(db, 'formFields'), orderBy('order', 'asc')));
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const allFields = fields?.docs.map(doc => ({ id: doc.id, ...doc.data() })) as FormFieldDefinition[] || [];
 
@@ -46,9 +48,16 @@ export function FormManagement() {
   return (
     <div>
         <div className="flex justify-end mb-4">
-            <Button>
-                Add New Field
-            </Button>
+            <FormFieldDialog
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onSuccess={() => setIsDialogOpen(false)}
+            >
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add New Field
+                </Button>
+            </FormFieldDialog>
         </div>
         <div className="border rounded-lg">
         <Table>

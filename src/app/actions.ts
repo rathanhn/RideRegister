@@ -3,8 +3,8 @@
 
 import { z } from "zod";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc } from "firebase/firestore";
-import type { UserRole } from "./lib/types";
+import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc, query, orderBy, getDocs } from "firebase/firestore";
+import type { UserRole, FormFieldDefinition } from "./lib/types";
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 
@@ -389,4 +389,51 @@ export async function requestOrganizerAccess(values: z.infer<typeof requestOrgan
     console.error("Error requesting organizer access:", error);
     return { success: false, message: "Failed to submit your request." };
   }
+}
+
+// Schema for a form field
+const formFieldSchema = z.object({
+  adminId: z.string().min(1, "Admin ID is required."),
+  label: z.string().min(2, "Label must be at least 2 characters."),
+  name: z.string().min(2, "Name must be at least 2 characters.")
+         .regex(/^[a-z][a-zA-Z0-9]*$/, "Name must be in camelCase, e.g., 'fullName'"),
+  type: z.enum(['text', 'number', 'email', 'tel', 'checkbox']),
+  required: z.boolean(),
+  placeholder: z.string().optional(),
+});
+
+type FormFieldInput = z.infer<typeof formFieldSchema>;
+
+// Action to add a new form field
+export async function addFormField(values: FormFieldInput) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+    
+    const parsed = formFieldSchema.safeParse(values);
+    if (!parsed.success) {
+      return { success: false, message: "Invalid data provided.", errors: parsed.error.flatten() };
+    }
+    
+    const { adminId, ...fieldData } = parsed.data;
+
+    try {
+        const fieldsRef = collection(db, 'formFields');
+        const q = query(fieldsRef, orderBy('order', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const lastField = querySnapshot.docs[0]?.data();
+        const newOrder = lastField ? lastField.order + 1 : 1;
+        
+        const newField: Omit<FormFieldDefinition, 'id'> = {
+            ...fieldData,
+            order: newOrder,
+        };
+
+        await addDoc(fieldsRef, newField);
+        return { success: true, message: "Form field added successfully." };
+    } catch (error) {
+        console.error("Error adding form field: ", error);
+        return { success: false, message: "Could not add form field." };
+    }
 }
