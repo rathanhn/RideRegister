@@ -2,7 +2,7 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -167,13 +167,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'px', format: [350, 550] });
 
         // Colors and Fonts
-        const primaryColor = '#F9A825'; // A gold-like color from your theme
-        const textColor = '#1E293B'; // A dark gray
-        const mutedColor = '#64748B'; // A lighter gray
+        const primaryColor = '#FF9933'; 
+        const textColor = '#1E293B';
+        const mutedColor = '#64748B';
 
-        doc.addFont('/fonts/Inter-Regular.ttf', 'Inter', 'normal');
-        doc.addFont('/fonts/Inter-Bold.ttf', 'Inter', 'bold');
-        
         // --- Drawing the ticket ---
         doc.setDrawColor(primaryColor);
         doc.setLineWidth(1.5);
@@ -188,12 +185,12 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         const logoBase64 = await getBase64ImageFromURL(Logo.src);
         doc.addImage(logoBase64, 'PNG', 15, 12, 35, 35);
 
-        doc.setFont('Inter', 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
         doc.setTextColor(primaryColor);
         doc.text('TeleFun Mobile', 60, 25);
         doc.setFontSize(10);
-        doc.setFont('Inter', 'normal');
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(mutedColor);
         doc.text('Independence Day Ride 2025', 60, 40);
 
@@ -211,7 +208,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
         // Main content
         doc.setFontSize(20);
-        doc.setFont('Inter', 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(textColor);
         doc.text('Your Ride Ticket', 15, 80);
         if(registration.registrationType === 'duo') {
@@ -222,10 +219,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
         // Rider Details
         doc.setFontSize(12);
-        doc.setFont('Inter', 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(textColor);
         doc.text('Rider Details', 15, 110);
-
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(14);
         doc.text(`${riderName}, ${riderAge} years`, 15, 130);
         
@@ -239,12 +236,12 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
         // Registration Info
         doc.setFontSize(12);
-        doc.setFont('Inter', 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(textColor);
         doc.text('Registration Info', 15, 180);
         
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(12);
-        doc.setFont('Inter', 'normal');
         doc.text(`Type: ${registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}`, 15, 195);
         doc.text(`ID: ${registration.id.substring(0, 10).toUpperCase()}`, 15, 210);
 
@@ -255,12 +252,12 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
         // Event Details
         doc.setFontSize(12);
-        doc.setFont('Inter', 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(textColor);
         doc.text('Event Details', 15, 260);
 
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.setFont('Inter', 'normal');
         doc.setTextColor(mutedColor);
         doc.text('Date:', 15, 275);
         doc.setTextColor(textColor);
@@ -292,10 +289,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
                 <CarouselContent>
                     <CarouselItem>
-                        <SingleTicket registration={registration} user={user} riderNumber={1} />
+                        <SingleTicket registration={registration} riderNumber={1} />
                     </CarouselItem>
                     <CarouselItem>
-                         <SingleTicket registration={registration} user={user} riderNumber={2} />
+                         <SingleTicket registration={registration} riderNumber={2} />
                     </CarouselItem>
                 </CarouselContent>
                 <CarouselPrevious className="left-[-10px] sm:left-[-50px]" />
@@ -313,7 +310,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
   return (
     <div className="space-y-4">
-        <SingleTicket registration={registration} user={user} riderNumber={1} />
+        <SingleTicket registration={registration} riderNumber={1} />
         <div className="flex justify-center">
             <Button onClick={handleDownload} disabled={isDownloading}>
                 {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
