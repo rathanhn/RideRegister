@@ -11,11 +11,10 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, FileText, Loader2, List, FileCheck } from 'lucide-react';
+import { ScanLine, Users, FileText, Loader2, List, FileCheck, MessageSquare } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RidersListTable } from '@/components/admin/riders-list-table';
 
 export default function AdminPage() {
@@ -50,6 +49,60 @@ export default function AdminPage() {
         
         <StatsOverview />
 
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-5">
+           <div className="lg:col-span-3 space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Approvals</CardTitle>
+                        <CardDescription>
+                            Review and approve or reject new registration applications.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <RegistrationsTable />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Registered Riders</CardTitle>
+                        <CardDescription>
+                            View and contact all approved riders for the event.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <RidersListTable />
+                    </CardContent>
+                </Card>
+           </div>
+           <div className="lg:col-span-2 space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ScanLine className="h-6 w-6 text-primary" />
+                            Ticket Scanner
+                        </CardTitle>
+                        <CardDescription>
+                        Scan rider tickets for real-time check-in.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <QrScanner />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&A</CardTitle>
+                    <CardDescription>
+                        Respond to user questions and manage conversations.
+                    </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                    <AdminQna />
+                    </CardContent>
+                </Card>
+           </div>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
@@ -62,56 +115,6 @@ export default function AdminPage() {
           </CardContent>
         </Card>
         
-        <Card>
-            <CardHeader>
-            <CardTitle>Event Registrations</CardTitle>
-            <CardDescription>
-                View registered riders or manage new registration approvals.
-            </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Tabs defaultValue="riders-list">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="riders-list"><List className="mr-2 h-4 w-4"/>Registered Riders</TabsTrigger>
-                        <TabsTrigger value="manage-approvals"><FileCheck className="mr-2 h-4 w-4"/>Manage Approvals</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="riders-list" className="mt-4">
-                        <RidersListTable />
-                    </TabsContent>
-                    <TabsContent value="manage-approvals" className="mt-4">
-                        <RegistrationsTable />
-                    </TabsContent>
-                </Tabs>
-            </CardContent>
-        </Card>
-
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <ScanLine className="h-6 w-6 text-primary" />
-                        Ticket Scanner
-                    </CardTitle>
-                    <CardDescription>
-                    Scan rider tickets for real-time check-in.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <QrScanner />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                <CardTitle>Community Q&A</CardTitle>
-                <CardDescription>
-                    Respond to user questions and manage conversations.
-                </CardDescription>
-                </CardHeader>
-                <CardContent>
-                <AdminQna />
-                </CardContent>
-            </Card>
-        </div>
       </main>
     </div>
   );
