@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { Loader2, Phone } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { auth } from '@/lib/firebase';
 import { useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { useRouter } from "next/navigation";
@@ -96,12 +96,6 @@ export function LoginForm() {
             <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={onGoogleSignIn}>
                 {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                 Sign in with Google
-            </Button>
-            <Button asChild variant="outline" className="w-full" disabled={isSubmitting}>
-                <Link href="/phone-auth">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Sign in with Phone
-                </Link>
             </Button>
         </div>
         

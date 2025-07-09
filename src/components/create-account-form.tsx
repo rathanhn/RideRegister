@@ -17,13 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Loader2, PartyPopper, Phone } from "lucide-react";
+import { Loader2, PartyPopper } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createUser } from "@/app/actions";
 import { useSignInWithEmailAndPassword, useSignInWithGoogle } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import Link from 'next/link';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -140,12 +139,6 @@ export function CreateAccountForm() {
             <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={() => signInWithGoogle()}>
                 {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                 Sign up with Google
-            </Button>
-            <Button asChild variant="outline" className="w-full" disabled={isSubmitting}>
-                <Link href="/phone-auth">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Sign up with Phone
-                </Link>
             </Button>
         </div>
         
