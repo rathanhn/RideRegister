@@ -41,3 +41,21 @@ export interface Registration {
     phoneNumber2?: string;
     createdAt: any; // Firestore timestamp
 }
+
+export interface QnaQuestion {
+    id: string;
+    text: string;
+    userId: string;
+    userName: string;
+    userPhotoURL?: string | null;
+    createdAt: any; // Firestore timestamp
+}
+
+export interface QnaReply {
+    id: string;
+    text: string;
+    userId: string;
+    userName:string;
+    userPhotoURL?: string | null;
+    createdAt: any; // Firestore timestamp
+}

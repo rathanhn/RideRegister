@@ -9,6 +9,7 @@ import { Organizers } from "@/components/organizers";
 import { EventSchedule } from "@/components/event-schedule";
 import { Hero } from "@/components/hero";
 import { Faq } from "@/components/faq";
+import { QnaSection } from "@/components/qna-section";
 
 export default function Home() {
   const rideDate = new Date("2025-08-15T06:00:00");
@@ -32,6 +33,7 @@ export default function Home() {
              <EventSchedule />
              <RouteMap />
              <Faq />
+             <QnaSection />
           </div>
           <div className="flex flex-col gap-8">
             <Announcements />

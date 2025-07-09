@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -81,4 +81,62 @@ export async function registerRider(values: RegistrationInput) {
     console.error("Error adding document: ", error);
     return { success: false, message: "Could not save your registration. Please try again." };
   }
+}
+
+// Schema for adding a question
+const addQuestionSchema = z.object({
+  text: z.string().min(10, "Question must be at least 10 characters.").max(500, "Question cannot be longer than 500 characters."),
+  userId: z.string().min(1, "User ID is required."),
+  userName: z.string().min(1, "User name is required."),
+  userPhotoURL: z.string().url().optional().nullable(),
+});
+
+export async function addQuestion(values: z.infer<typeof addQuestionSchema>) {
+    const parsed = addQuestionSchema.safeParse(values);
+
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided." };
+    }
+    
+    try {
+        await addDoc(collection(db, "qna"), {
+            ...parsed.data,
+            createdAt: serverTimestamp(),
+        });
+        return { success: true, message: "Question posted successfully!" };
+    } catch (error) {
+        console.error("Error adding question: ", error);
+        return { success: false, message: "Could not post your question. Please try again." };
+    }
+}
+
+
+// Schema for adding a reply
+const addReplySchema = z.object({
+    questionId: z.string().min(1, "Question ID is required."),
+    text: z.string().min(1, "Reply cannot be empty.").max(500, "Reply cannot be longer than 500 characters."),
+    userId: z.string().min(1, "User ID is required."),
+    userName: z.string().min(1, "User name is required."),
+    userPhotoURL: z.string().url().optional().nullable(),
+});
+
+export async function addReply(values: z.infer<typeof addReplySchema>) {
+    const parsed = addReplySchema.safeParse(values);
+
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided." };
+    }
+
+    try {
+        const { questionId, ...replyData } = parsed.data;
+        const replyCollectionRef = collection(db, "qna", questionId, "replies");
+        await addDoc(replyCollectionRef, {
+            ...replyData,
+            createdAt: serverTimestamp(),
+        });
+        return { success: true, message: "Reply posted successfully!" };
+    } catch (error) {
+        console.error("Error adding reply: ", error);
+        return { success: false, message: "Could not post your reply. Please try again." };
+    }
 }
