@@ -13,8 +13,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { ensureUserDocument } from "@/app/actions";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Terminal } from "lucide-react";
 
 // Attach reCAPTCHA verifier to window
 declare global {
@@ -25,7 +26,7 @@ declare global {
 }
 
 const phoneFormSchema = z.object({
-  phone: z.string().min(10, "Please enter a valid phone number including country code (e.g., +1... or +91...)."),
+  phone: z.string().length(10, "Please enter a valid 10-digit phone number."),
 });
 
 const otpFormSchema = z.object({
@@ -68,13 +69,18 @@ export function PhoneAuthForm() {
       if (!window.recaptchaVerifier) {
         throw new Error("reCAPTCHA verifier not initialized.");
       }
-      const result = await signInWithPhoneNumber(auth, values.phone, window.recaptchaVerifier);
+      const fullPhoneNumber = `+91${values.phone}`;
+      const result = await signInWithPhoneNumber(auth, fullPhoneNumber, window.recaptchaVerifier);
       setConfirmationResult(result);
       setShowOtpInput(true);
-      toast({ title: "Verification code sent", description: `An SMS has been sent to ${values.phone}` });
+      toast({ title: "Verification code sent", description: `An SMS has been sent to ${fullPhoneNumber}` });
     } catch (error: any) {
       console.error("SMS sending error:", error);
-      toast({ variant: "destructive", title: "Error", description: error.message.replace('Firebase: ', '') });
+       if (error.code === 'auth/missing-client-identifier' || error.code === 'auth/billing-not-enabled') {
+            toast({ variant: "destructive", title: "Project Configuration Error", description: "Phone Auth requires the Blaze plan on Firebase and a configured SHA-256 fingerprint. Please check your project settings." });
+       } else {
+            toast({ variant: "destructive", title: "Error", description: error.message.replace('Firebase: ', '') });
+       }
     } finally {
       setLoading(false);
     }
@@ -92,7 +98,6 @@ export function PhoneAuthForm() {
       const userCredential = await confirmationResult.confirm(values.otp);
       const user = userCredential.user;
       
-      // Ensure user document exists in Firestore
       await ensureUserDocument(user.uid, user.phoneNumber);
 
       toast({ title: "Success!", description: "You have been logged in." });
@@ -101,7 +106,6 @@ export function PhoneAuthForm() {
     } catch (error: any) {
       console.error("OTP verification error:", error);
       toast({ variant: "destructive", title: "Error", description: "Invalid OTP or request expired. Please try again." });
-      // Optionally reset the view
       setShowOtpInput(false);
       setConfirmationResult(null);
       phoneForm.reset();
@@ -114,6 +118,13 @@ export function PhoneAuthForm() {
 
   return (
     <div>
+        <Alert className="mb-4">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Developer Note</AlertTitle>
+            <AlertDescription>
+                Firebase Phone Authentication requires your project to be on the **Blaze (pay-as-you-go) plan**. If you encounter an `auth/billing-not-enabled` error, please upgrade your Firebase plan.
+            </AlertDescription>
+        </Alert>
       {!showOtpInput ? (
         <Form {...phoneForm}>
           <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
@@ -124,7 +135,12 @@ export function PhoneAuthForm() {
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+91 98765 43210" {...field} />
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-10 w-auto items-center justify-center rounded-md border border-input bg-background px-3 text-sm">
+                            +91
+                        </div>
+                        <Input placeholder="98765 43210" {...field} type="tel" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
