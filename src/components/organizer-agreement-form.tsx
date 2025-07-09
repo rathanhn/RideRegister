@@ -18,9 +18,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { requestOrganizerAccess } from "@/app/actions";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import type { AppUser } from "@/lib/types";
+import { doc, getDoc } from "firebase/firestore";
 
 const formSchema = z.object({
   consent: z.boolean().refine((val) => val === true, {
@@ -73,12 +74,11 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
           action: <ShieldCheck className="text-primary" />,
         });
         
-        // Pass back the optimistic new user data
-        const newUserData: AppUser = {
-          id: user.uid,
-          role: 'viewer', // Optimistically update role to viewer
-        };
-        onSuccess(newUserData);
+        // Fetch the existing user data to pass back, since the role isn't changing.
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+           onSuccess({id: user.uid, ...userDoc.data()} as AppUser);
+        }
 
       } else {
         throw new Error(result.message || "An unknown error occurred.");

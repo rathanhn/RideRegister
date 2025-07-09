@@ -376,7 +376,14 @@ export async function requestOrganizerAccess(values: z.infer<typeof requestOrgan
 
   try {
     const userRef = doc(db, "users", values.userId);
-    await updateDoc(userRef, { role: 'viewer' });
+    // This action now only flags the user's document for an admin to review.
+    // It does NOT change their role.
+    await updateDoc(userRef, {
+      accessRequest: {
+        requestedAt: serverTimestamp(),
+        status: 'pending_review',
+      }
+    });
     return { success: true, message: "Your request has been submitted. An admin will review it shortly." };
   } catch (error) {
     console.error("Error requesting organizer access:", error);
