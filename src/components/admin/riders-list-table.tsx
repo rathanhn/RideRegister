@@ -121,6 +121,7 @@ export function RidersListTable() {
             <TableHeader>
             <TableRow>
                 <TableHead>Rider(s)</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Check-in Status</TableHead>
                 <TableHead className="text-right">Contact</TableHead>
@@ -131,8 +132,12 @@ export function RidersListTable() {
                 filteredRegistrations.map((reg) => (
                 <TableRow key={reg.id}>
                     <TableCell className="font-medium">
-                        <div>{reg.fullName} ({reg.phoneNumber})</div>
-                        {reg.registrationType === 'duo' && reg.fullName2 && <div className="text-xs text-muted-foreground">{reg.fullName2} ({reg.phoneNumber2})</div>}
+                        <div>{reg.fullName}</div>
+                        {reg.registrationType === 'duo' && reg.fullName2 && <div className="text-xs text-muted-foreground">{reg.fullName2}</div>}
+                    </TableCell>
+                    <TableCell>
+                         <div>{reg.phoneNumber}</div>
+                        {reg.registrationType === 'duo' && reg.phoneNumber2 && <div className="text-xs text-muted-foreground">{reg.phoneNumber2}</div>}
                     </TableCell>
                     <TableCell>
                     <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'}>
@@ -173,7 +178,7 @@ export function RidersListTable() {
                 ))
             ) : (
                 <TableRow>
-                <TableCell colSpan={4} className="text-center h-24">
+                <TableCell colSpan={5} className="text-center h-24">
                     {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
                 </TableCell>
                 </TableRow>
