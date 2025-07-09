@@ -37,8 +37,9 @@ export function UserRolesManager() {
   const usersQuery = useMemo(() => {
     return query(
       collection(db, 'users'), 
-      where('role', 'in', ['superadmin', 'admin', 'viewer']), 
-      orderBy('createdAt', 'desc')
+      where('role', 'in', ['superadmin', 'admin', 'viewer'])
+      // NOTE: Removed orderBy('createdAt', 'desc') to avoid needing a composite index.
+      // The user can create this index in Firebase for sorting functionality if desired.
     );
   }, []);
 
