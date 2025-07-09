@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
@@ -15,16 +16,39 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { LayoutDashboard, LogOut, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, LogOut, User as UserIcon, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { UserRole } from '@/lib/types';
+import { doc, getDoc } from 'firebase/firestore';
 
 export function AuthButton() {
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
 
   const handleLogout = async () => {
     await signOut(auth);
+    setUserRole(null);
     router.push('/');
   };
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role as UserRole);
+        } else {
+          setUserRole('user');
+        }
+      } else {
+        setUserRole(null);
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
+  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
   if (loading) {
     return <Button variant="outline" size="sm" disabled>...</Button>;
@@ -57,8 +81,14 @@ export function AuthButton() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/dashboard')}>
                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
+                    <span>User Dashboard</span>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => router.push('/admin')}>
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
