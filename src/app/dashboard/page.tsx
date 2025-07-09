@@ -111,7 +111,11 @@ export default function DashboardPage() {
         if (registrationData) {
             switch (registrationData.status) {
                 case 'approved':
-                    return <DigitalTicket registration={registrationData} user={user!} />;
+                     return (
+                        <div className="w-full mx-auto space-y-4">
+                           <DigitalTicket registration={registrationData} user={user!} />
+                        </div>
+                    );
                 case 'pending':
                     return (
                         <Card className="text-center">
