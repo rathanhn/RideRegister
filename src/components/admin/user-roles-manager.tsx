@@ -82,7 +82,8 @@ export function UserRolesManager() {
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  if (currentUserRole !== 'superadmin') {
+  // Only superadmins and admins can view this component
+  if (currentUserRole !== 'superadmin' && currentUserRole !== 'admin') {
     return (
       <div className="text-muted-foreground flex items-center justify-center gap-2 p-4 bg-secondary rounded-md">
         <ShieldAlert className="h-5 w-5" />
@@ -142,7 +143,12 @@ export function UserRolesManager() {
                         <SelectItem value="user">User</SelectItem>
                         <SelectItem value="viewer">Viewer</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="superadmin">Super Admin</SelectItem>
+                        <SelectItem 
+                          value="superadmin"
+                          disabled={currentUserRole !== 'superadmin'}
+                        >
+                          Super Admin
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   )}
