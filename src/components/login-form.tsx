@@ -21,7 +21,7 @@ import { Loader2, Phone } from "lucide-react";
 import { auth } from '@/lib/firebase';
 import { useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { useRouter } from "next/navigation";
-import { Separator } from "./ui/separator";
+import Link from 'next/link';
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -67,13 +67,6 @@ export function LoginForm() {
     await signInWithGoogle();
   }
 
-  const onPhoneSignIn = () => {
-    toast({
-        title: "Coming Soon!",
-        description: "Phone sign-in functionality is not yet implemented."
-    });
-  }
-
   useEffect(() => {
     if (user || googleUser) {
       router.push('/dashboard');
@@ -104,9 +97,11 @@ export function LoginForm() {
                 {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                 Sign in with Google
             </Button>
-            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={onPhoneSignIn}>
-                <Phone className="mr-2 h-4 w-4" />
-                Sign in with Phone
+            <Button asChild variant="outline" className="w-full" disabled={isSubmitting}>
+                <Link href="/phone-auth">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Sign in with Phone
+                </Link>
             </Button>
         </div>
         

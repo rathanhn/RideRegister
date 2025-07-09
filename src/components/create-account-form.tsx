@@ -23,6 +23,7 @@ import { createUser } from "@/app/actions";
 import { useSignInWithEmailAndPassword, useSignInWithGoogle } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import Link from 'next/link';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -128,13 +129,6 @@ export function CreateAccountForm() {
     }
   }
 
-  const onPhoneSignIn = () => {
-    toast({
-        title: "Coming Soon!",
-        description: "Phone sign-up functionality is not yet implemented."
-    });
-  }
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -147,9 +141,11 @@ export function CreateAccountForm() {
                 {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                 Sign up with Google
             </Button>
-            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={onPhoneSignIn}>
-                <Phone className="mr-2 h-4 w-4" />
-                Sign up with Phone
+            <Button asChild variant="outline" className="w-full" disabled={isSubmitting}>
+                <Link href="/phone-auth">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Sign up with Phone
+                </Link>
             </Button>
         </div>
         

@@ -358,3 +358,18 @@ export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
         return { success: false, message: "Failed to update pin status." };
     }
 }
+
+export async function ensureUserDocument(uid: string, phoneNumber: string | null) {
+    const userRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists()) {
+        await setDoc(userRef, {
+            displayName: phoneNumber,
+            role: 'user', 
+            createdAt: serverTimestamp(),
+        });
+        return { success: true, message: "User document created." };
+    }
+    return { success: true, message: "User document already exists." };
+}
