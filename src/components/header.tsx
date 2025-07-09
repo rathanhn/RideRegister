@@ -1,4 +1,4 @@
-import { Bike } from "lucide-react";
+import Image from "next/image";
 
 const WavingFlag = () => (
   <div className="relative w-12 h-8">
@@ -15,10 +15,10 @@ const WavingFlag = () => (
 
 export function Header() {
   return (
-    <header className="bg-card shadow-md">
+    <header className="bg-card shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <Bike className="h-8 w-8 text-primary" />
+        <div className="flex items-center gap-3">
+          <Image src="/telefun-logo.png" alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full" />
           <div>
             <h1 className="text-2xl font-bold text-primary font-headline">
               RideRegister
