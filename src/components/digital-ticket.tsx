@@ -177,10 +177,8 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.rect(5, 5, 340, 540, 'S'); // Outer border
 
         // Header
-        doc.setFillColor(primaryColor);
-        doc.setOpacity(0.1);
-        doc.rect(5, 5, 340, 50, 'F');
-        doc.setOpacity(1);
+        doc.setFillColor(255, 247, 237); // A light orange, approximation of primary/10
+        doc.rect(6, 6, 338, 50, 'F');
 
         const logoBase64 = await getBase64ImageFromURL(Logo.src);
         doc.addImage(logoBase64, 'PNG', 15, 12, 35, 35);
