@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { auth } from '@/lib/firebase';
 import { useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
@@ -66,18 +67,23 @@ export function LoginForm() {
     await signInWithGoogle();
   }
 
-  if (user || googleUser) {
-    router.push('/dashboard');
-  }
+  useEffect(() => {
+    if (user || googleUser) {
+      router.push('/dashboard');
+    }
+  }, [user, googleUser, router]);
   
   const authError = error || googleError;
-  if(authError){
-     toast({
+  useEffect(() => {
+    if (authError) {
+      toast({
         variant: "destructive",
         title: "Login Failed",
         description: authError.message,
       });
-  }
+    }
+  }, [authError, toast]);
+
 
   return (
     <Card className="w-full">
