@@ -63,7 +63,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   });
 
   return (
-    <div ref={ref} className="bg-background">
+    <div ref={ref}>
       <Card className="max-w-md mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
         <CardHeader className="p-4 bg-primary/10">
           <div className="flex items-center justify-between">
