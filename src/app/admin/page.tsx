@@ -68,7 +68,7 @@ export default function AdminPage() {
                 <CardDescription>
                     Respond to user questions and manage conversations.
                 </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                 <AdminQna />
                 </CardContent>
