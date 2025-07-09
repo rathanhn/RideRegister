@@ -1,8 +1,18 @@
+
 "use server";
 
 import { z } from "zod";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction } from "firebase/firestore";
+import type { UserRole } from "./lib/types";
+
+// Helper to get a user's role
+async function getUserRole(uid: string): Promise<UserRole> {
+    if (!uid) return 'user';
+    const userDoc = await getDoc(doc(db, "users", uid));
+    if (!userDoc.exists()) return 'user';
+    return userDoc.data()?.role || 'user';
+}
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -59,7 +69,7 @@ const registrationFormSchema = z
 
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
-export async function registerRider(values: RegistrationInput) {
+export async function registerRider(values: RegistrationInput & {email?: string;}) {
   const parsed = registrationFormSchema.safeParse(values);
 
   if (!parsed.success) {
@@ -69,13 +79,29 @@ export async function registerRider(values: RegistrationInput) {
 
   try {
     const { uid, ...registrationData } = parsed.data;
-    const dataToSave = {
-      ...registrationData,
-      status: "pending" as const,
-      createdAt: new Date(),
-    };
-    // Use the user's UID as the document ID for easy lookup
-    await setDoc(doc(db, "registrations", uid), dataToSave);
+
+    // Use a transaction to ensure both documents are created successfully
+    await runTransaction(db, async (transaction) => {
+      const userRef = doc(db, "users", uid);
+      const registrationRef = doc(db, "registrations", uid);
+
+      // 1. Create the user document
+      transaction.set(userRef, {
+        email: values.email,
+        displayName: registrationData.fullName,
+        role: 'user', // Default role
+        createdAt: serverTimestamp(),
+      });
+
+      // 2. Create the registration document
+       const dataToSave = {
+        ...registrationData,
+        status: "pending" as const,
+        createdAt: serverTimestamp(),
+      };
+      transaction.set(registrationRef, dataToSave);
+    });
+
     console.log("Document written for user ID: ", uid);
     return { success: true, message: "Registration successful!" };
   } catch (error) {
@@ -88,9 +114,15 @@ export async function registerRider(values: RegistrationInput) {
 const updateStatusSchema = z.object({
   registrationId: z.string().min(1, "Registration ID is required."),
   status: z.enum(["approved", "rejected", "pending"]),
+  adminId: z.string().min(1, "Admin ID is required."),
 });
 
 export async function updateRegistrationStatus(values: z.infer<typeof updateStatusSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+
     const parsed = updateStatusSchema.safeParse(values);
 
     if (!parsed.success) {
@@ -112,9 +144,15 @@ export async function updateRegistrationStatus(values: z.infer<typeof updateStat
 const checkInSchema = z.object({
   registrationId: z.string().min(1, "Registration ID is required."),
   riderNumber: z.coerce.number().min(1).max(2),
+  adminId: z.string().min(1, "Admin ID is required."),
 });
 
 export async function checkInRider(values: z.infer<typeof checkInSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+
     const parsed = checkInSchema.safeParse(values);
 
     if (!parsed.success) {
@@ -171,7 +209,6 @@ const addReplySchema = z.object({
     userId: z.string().min(1, "User ID is required."),
     userName: z.string().min(1, "User name is required."),
     userPhotoURL: z.string().url().optional().nullable(),
-    isAdmin: z.boolean().optional(),
 });
 
 export async function addReply(values: z.infer<typeof addReplySchema>) {
@@ -180,12 +217,14 @@ export async function addReply(values: z.infer<typeof addReplySchema>) {
     if (!parsed.success) {
         return { success: false, message: "Invalid data provided." };
     }
+    const userRole = await getUserRole(values.userId);
 
     try {
         const { questionId, ...replyData } = parsed.data;
         const replyCollectionRef = collection(db, "qna", questionId, "replies");
         await addDoc(replyCollectionRef, {
             ...replyData,
+            isAdmin: userRole === 'admin' || userRole === 'superadmin',
             createdAt: serverTimestamp(),
         });
         return { success: true, message: "Reply posted successfully!" };
@@ -193,4 +232,39 @@ export async function addReply(values: z.infer<typeof addReplySchema>) {
         console.error("Error adding reply: ", error);
         return { success: false, message: "Could not post your reply. Please try again." };
     }
+}
+
+// Schema for updating a user's role
+const updateUserRoleSchema = z.object({
+  adminId: z.string().min(1, "Performing user ID is required."),
+  targetUserId: z.string().min(1, "Target user ID is required."),
+  newRole: z.enum(['superadmin', 'admin', 'viewer', 'user']),
+});
+
+export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema>) {
+  const adminRole = await getUserRole(values.adminId);
+  if (adminRole !== 'superadmin') {
+    return { success: false, message: "Permission denied: Only superadmins can change roles." };
+  }
+
+  const parsed = updateUserRoleSchema.safeParse(values);
+  if (!parsed.success) {
+    return { success: false, message: "Invalid data." };
+  }
+  
+  const { targetUserId, newRole } = parsed.data;
+
+  // Prevent a superadmin from demoting themselves
+  if (values.adminId === targetUserId && newRole !== 'superadmin') {
+    return { success: false, message: "Superadmins cannot demote themselves." };
+  }
+
+  try {
+    const userRef = doc(db, "users", targetUserId);
+    await updateDoc(userRef, { role: newRole });
+    return { success: true, message: `User role updated to ${newRole}.`};
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    return { success: false, message: "Failed to update user role." };
+  }
 }

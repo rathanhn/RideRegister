@@ -1,3 +1,4 @@
+
 export interface Announcement {
   id: number;
   message: string;
@@ -62,4 +63,15 @@ export interface QnaReply {
     userPhotoURL?: string | null;
     createdAt: any; // Firestore timestamp
     isAdmin?: boolean;
+}
+
+export type UserRole = 'superadmin' | 'admin' | 'viewer' | 'user';
+
+export interface AppUser {
+    id: string; // Corresponds to Firebase Auth UID
+    email?: string;
+    displayName?: string;
+    photoURL?: string;
+    role: UserRole;
+    createdAt: any; // Firestore timestamp
 }

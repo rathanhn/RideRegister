@@ -1,15 +1,17 @@
+
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine } from 'lucide-react';
+import { ScanLine, Users } from 'lucide-react';
+import { UserRolesManager } from '@/components/admin/user-roles-manager';
 
 export default function AdminPage() {
-  // NOTE: This is a placeholder page. In a real application, you would protect
-  // this route to ensure only authenticated administrators can access it.
-  // This could be done using Next.js Middleware or a higher-order component.
+  // NOTE: In a real app, you'd fetch the user's role here and conditionally
+  // render components based on their permissions. For this prototype, we will
+  // show all components and handle permissions within each component itself.
   return (
     <div className="flex flex-col min-h-screen bg-secondary/50">
       <Header />
@@ -20,6 +22,18 @@ export default function AdminPage() {
         </div>
         
         <StatsOverview />
+
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
+            <CardDescription>
+              Assign roles to users. This section is only visible to Super Admins.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <UserRolesManager />
+          </CardContent>
+        </Card>
 
         <Card>
             <CardHeader>
@@ -54,7 +68,7 @@ export default function AdminPage() {
                 <CardDescription>
                     Respond to user questions and manage conversations.
                 </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                 <AdminQna />
                 </CardContent>

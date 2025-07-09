@@ -24,7 +24,7 @@ import { registerRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
 import { auth } from "@/lib/firebase";
-import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
+import { useCreateUserWithEmailAndPassword, useUpdateProfile } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 
 
@@ -88,6 +88,7 @@ export function RegistrationForm() {
     loading,
     error,
   ] = useCreateUserWithEmailAndPassword(auth);
+  const [updateProfile, updating] = useUpdateProfile(auth);
   const [sameAsPhone, setSameAsPhone] = useState(false);
 
 
@@ -121,18 +122,21 @@ export function RegistrationForm() {
       // 1. Create the user account
       const newUser = await createUserWithEmailAndPassword(values.email, values.password);
       if (!newUser) {
-        // Error is handled by the hook, but we can add a specific toast
         if (error) {
             throw new Error(error.message.replace("Firebase: ", ""));
         }
         throw new Error("Could not create user account.");
       }
 
+      // Update the new user's profile with their name
+      await updateProfile({ displayName: values.fullName });
+
       // 2. Submit the registration details with the new user's ID
-      const { email, password, ...registrationData } = values;
+      const { password, ...registrationData } = values;
       const result = await registerRider({
           ...registrationData,
           uid: newUser.user.uid,
+          email: newUser.user.email ?? undefined,
       });
 
       if (result.success) {
@@ -226,7 +230,7 @@ export function RegistrationForm() {
             
             <Separator />
             <h3 className="text-lg font-medium text-primary">Rider 1 Information</h3>
-            <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormDescription>This will be your account display name.</FormDescription><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="age" render={({ field }) => (<FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="18" {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="9876543210" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -294,9 +298,9 @@ export function RegistrationForm() {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={loading || !form.formState.isValid}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading ? "Creating Account..." : "Create Account & Register"}
+            <Button type="submit" className="w-full" disabled={loading || updating || !form.formState.isValid}>
+              {(loading || updating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading || updating ? "Creating Account..." : "Create Account & Register"}
             </Button>
           </form>
         </Form>

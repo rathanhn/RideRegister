@@ -1,14 +1,16 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import jsQR from 'jsqr';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck } from 'lucide-react';
+import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import type { Registration } from '@/lib/types';
+import { db, auth } from '@/lib/firebase';
+import type { Registration, UserRole } from '@/lib/types';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,8 @@ type ScannedQrData = {
 };
 
 export function QrScanner() {
+  const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<ScannedQrData | null>(null);
@@ -42,6 +46,20 @@ export function QrScanner() {
   const animationFrameId = useRef<number>();
   
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role);
+        }
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
+  const canEdit = userRole === 'admin' || userRole === 'superadmin';
 
   const getCameraPermission = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -152,11 +170,12 @@ export function QrScanner() {
   }, [scannedData]);
   
   const handleCheckIn = async () => {
-    if (!scannedData || !scannedRegistration) return;
+    if (!scannedData || !scannedRegistration || !user) return;
     setIsCheckingIn(true);
     const result = await checkInRider({
         registrationId: scannedData.registrationId,
         riderNumber: scannedData.rider,
+        adminId: user.uid,
     });
     if (result.success) {
         toast({
@@ -174,6 +193,19 @@ export function QrScanner() {
   const riderIsCheckedIn = scannedRegistration && scannedData ? 
     (scannedData.rider === 1 ? scannedRegistration.rider1CheckedIn : scannedRegistration.rider2CheckedIn)
     : false;
+
+  if (authLoading) {
+    return <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+  }
+
+  if (!canEdit) {
+     return (
+      <div className="text-muted-foreground flex items-center justify-center gap-2 p-4 bg-secondary rounded-md h-full">
+        <ShieldAlert className="h-5 w-5" />
+        <p>You do not have permission to check-in riders.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -226,7 +258,7 @@ export function QrScanner() {
                     <AlertDialogCancel>Close</AlertDialogCancel>
                     <AlertDialogAction 
                         onClick={handleCheckIn} 
-                        disabled={isCheckingIn || riderIsCheckedIn || scannedRegistration?.status !== 'approved'}
+                        disabled={isCheckingIn || riderIsCheckedIn || scannedRegistration?.status !== 'approved' || !canEdit}
                     >
                         {isCheckingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {riderIsCheckedIn ? 'Checked In' : 'Mark as Checked-in'}

@@ -1,9 +1,10 @@
+
 "use client";
 
-import type { QnaQuestion, QnaReply } from "@/lib/types";
+import type { QnaQuestion, QnaReply, UserRole } from "@/lib/types";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from 'date-fns';
@@ -18,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShieldCheck, User } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "../ui/badge";
+import { useEffect, useState } from "react";
 
 const replyFormSchema = z.object({
   text: z.string().min(1, "Reply cannot be empty.").max(500),
@@ -28,13 +30,29 @@ interface AdminQnaItemProps {
 }
 
 export function AdminQnaItem({ question }: AdminQnaItemProps) {
-  const [user] = useAuthState(auth);
+  const [user, authLoading] = useAuthState(auth);
   const { toast } = useToast();
   const form = useForm<z.infer<typeof replyFormSchema>>({
     resolver: zodResolver(replyFormSchema),
     defaultValues: { text: "" },
   });
   const { isSubmitting } = form.formState;
+
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+
+   useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role);
+        }
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
+  const canReply = userRole === 'admin' || userRole === 'superadmin';
 
   const [replies, repliesLoading] = useCollection(
     query(collection(db, 'qna', question.id, 'replies'), orderBy('createdAt', 'asc'))
@@ -45,6 +63,10 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
         toast({ variant: "destructive", title: "Error", description: "You must be logged in to reply." });
         return;
     };
+    if (!canReply) {
+       toast({ variant: "destructive", title: "Error", description: "You don't have permission to reply." });
+        return;
+    }
     
     const result = await addReply({
       ...values,
@@ -52,7 +74,6 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
       userId: user.uid,
       userName: user.displayName || "Admin",
       userPhotoURL: user.photoURL,
-      isAdmin: true, // Mark reply as from an admin
     });
 
     if (result.success) {
@@ -62,6 +83,8 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
     }
   }
   
+  if (authLoading) return <Loader2 className="h-5 w-5 animate-spin" />
+
   return (
     <div className="p-4 border rounded-lg bg-background space-y-4">
         {/* Question */}
@@ -111,7 +134,8 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
         {repliesLoading && <div className="flex justify-center pl-16"><Loader2 className="h-5 w-5 animate-spin" /></div>}
 
         {/* Reply Form */}
-        <div className="pl-16">
+       {canReply && (
+         <div className="pl-16">
             <Separator />
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onReplySubmit)} className="space-y-2 pt-4">
@@ -134,6 +158,7 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
             </form>
             </Form>
         </div>
+       )}
     </div>
   );
 }

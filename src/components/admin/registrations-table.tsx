@@ -1,10 +1,11 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import {
   Table,
   TableBody,
@@ -21,22 +22,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, MoreHorizontal } from 'lucide-react';
-import type { Registration } from '@/lib/types';
+import { Loader2, AlertTriangle, Download, MoreHorizontal, ShieldAlert } from 'lucide-react';
+import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { updateRegistrationStatus } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export function RegistrationsTable() {
-  const [value, loading, error] = useCollection(query(collection(db, 'registrations'), orderBy('createdAt', 'desc')));
+  const [registrations, loading, error] = useCollection(query(collection(db, 'registrations'), orderBy('createdAt', 'desc')));
+  const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  const registrations = value?.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Registration[] || [];
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role);
+        }
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
+  const allRegistrations = registrations?.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Registration[] || [];
+  const canEdit = userRole === 'admin' || userRole === 'superadmin';
 
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
+    if (!user || !canEdit) {
+      toast({ variant: "destructive", title: "Error", description: "You don't have permission to perform this action." });
+      return;
+    }
+
     setIsUpdating(id);
-    const result = await updateRegistrationStatus({ registrationId: id, status });
+    const result = await updateRegistrationStatus({ registrationId: id, status, adminId: user.uid });
     if (result.success) {
         toast({ title: "Success", description: result.message });
     } else {
@@ -46,7 +67,7 @@ export function RegistrationsTable() {
   }
 
   const handleExport = () => {
-    if (!registrations.length) return;
+    if (!allRegistrations.length) return;
 
     const headers = [
       "ID",
@@ -63,8 +84,7 @@ export function RegistrationsTable() {
 
     const csvRows = [
       headers.join(','),
-      ...registrations.map(reg => {
-        // Escape commas in names by wrapping them in quotes
+      ...allRegistrations.map(reg => {
         const rider1Name = `"${reg.fullName}"`;
         const rider2Name = reg.fullName2 ? `"${reg.fullName2}"` : "N/A";
 
@@ -97,7 +117,7 @@ export function RegistrationsTable() {
   };
 
 
-  if (loading) {
+  if (loading || authLoading) {
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
@@ -113,7 +133,7 @@ export function RegistrationsTable() {
   return (
     <div>
         <div className="flex justify-end mb-4">
-            <Button onClick={handleExport} disabled={registrations.length === 0}>
+            <Button onClick={handleExport} disabled={allRegistrations.length === 0}>
                 <Download className="mr-2 h-4 w-4" />
                 Export to CSV
             </Button>
@@ -130,8 +150,8 @@ export function RegistrationsTable() {
             </TableRow>
             </TableHeader>
             <TableBody>
-            {registrations.length > 0 ? (
-                registrations.map((reg) => (
+            {allRegistrations.length > 0 ? (
+                allRegistrations.map((reg) => (
                 <TableRow key={reg.id}>
                     <TableCell className="font-medium">{reg.fullName}</TableCell>
                     <TableCell>
@@ -154,30 +174,37 @@ export function RegistrationsTable() {
                         </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                       <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0" disabled={isUpdating === reg.id}>
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => handleUpdateStatus(reg.id, 'approved')}
-                              disabled={reg.status === 'approved'}
-                            >
-                              Approve
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUpdateStatus(reg.id, 'rejected')}
-                              disabled={reg.status === 'rejected'}
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            >
-                              Reject
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                       {!canEdit ? (
+                        <div className='flex justify-end items-center gap-2 text-muted-foreground'>
+                          <ShieldAlert className="h-4 w-4"/>
+                          <span>View Only</span>
+                        </div>
+                       ) : (
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={isUpdating === reg.id}>
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => handleUpdateStatus(reg.id, 'approved')}
+                                disabled={reg.status === 'approved'}
+                              >
+                                Approve
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleUpdateStatus(reg.id, 'rejected')}
+                                disabled={reg.status === 'rejected'}
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              >
+                                Reject
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                       )}
                     </TableCell>
                 </TableRow>
                 ))
