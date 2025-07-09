@@ -32,28 +32,31 @@ export function UserRolesManager() {
   const [loggedInUser, authLoading] = useAuthState(auth);
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
+  const [isRoleLoading, setIsRoleLoading] = useState(true);
+
   
   // Query for users who have a role that is NOT 'user'
   const usersQuery = useMemo(() => {
+    // This query now fetches users who have requested access or have an elevated role.
     return query(
       collection(db, 'users'), 
       where('role', 'in', ['superadmin', 'admin', 'viewer'])
-      // NOTE: Removed orderBy('createdAt', 'desc') to avoid needing a composite index.
-      // The user can create this index in Firebase for sorting functionality if desired.
     );
   }, []);
 
   const [users, usersLoading, usersError] = useCollection(usersQuery);
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     const fetchUserRole = async () => {
+      setIsRoleLoading(true);
       if (loggedInUser) {
         const userDoc = await getDoc(doc(db, "users", loggedInUser.uid));
         if (userDoc.exists()) {
           setCurrentUserRole(userDoc.data().role);
         }
       }
+      setIsRoleLoading(false);
     };
     fetchUserRole();
   }, [loggedInUser]);
@@ -78,16 +81,16 @@ export function UserRolesManager() {
     setIsUpdating(null);
   };
 
-  if (authLoading || (!currentUserRole && !authLoading)) {
+  if (authLoading || isRoleLoading) {
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   // Only superadmins and admins can view this component
-  if (currentUserRole !== 'superadmin' && currentUserRole !== 'admin') {
+  if (currentUserRole !== 'superadmin') {
     return (
       <div className="text-muted-foreground flex items-center justify-center gap-2 p-4 bg-secondary rounded-md">
         <ShieldAlert className="h-5 w-5" />
-        <p>You do not have permission to manage user roles.</p>
+        <p>You do not have permission to manage user roles. Only Super Admins can.</p>
       </div>
     );
   }
@@ -123,8 +126,12 @@ export function UserRolesManager() {
                 <TableCell className="font-medium">{user.displayName || 'N/A'}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  <Badge variant={user.role === 'superadmin' ? 'default' : user.role === 'admin' ? 'secondary' : 'outline'} className="capitalize">
+                  <Badge 
+                    variant={user.role === 'superadmin' ? 'default' : user.role === 'admin' ? 'secondary' : 'outline'} 
+                    className="capitalize"
+                  >
                     {user.role}
+                    {user.accessRequest?.status === 'pending_review' && ' (Requested)'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -134,7 +141,7 @@ export function UserRolesManager() {
                     <Select
                       defaultValue={user.role}
                       onValueChange={(newRole) => handleRoleChange(user.id, newRole as UserRole)}
-                      disabled={user.id === loggedInUser?.uid} // Disable changing own role
+                      disabled={user.id === loggedInUser?.uid || currentUserRole !== 'superadmin'}
                     >
                       <SelectTrigger className="w-[180px] ml-auto">
                         <SelectValue placeholder="Select a role" />
@@ -158,7 +165,7 @@ export function UserRolesManager() {
           ) : (
             <TableRow>
               <TableCell colSpan={4} className="text-center h-24">
-                No users with administrative roles found.
+                No users with administrative or pending roles found.
               </TableCell>
             </TableRow>
           )}
