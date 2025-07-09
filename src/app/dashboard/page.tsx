@@ -140,7 +140,7 @@ export default function DashboardPage() {
         }
         
         // 2. If user is already an admin/viewer, show a specific message.
-        if (userData && userData.role !== 'user') {
+        if (userData && (userData.role === 'admin' || userData.role === 'superadmin' || userData.role === 'viewer')) {
             return (
                  <Card className="text-center">
                     <CardHeader>
@@ -173,19 +173,23 @@ export default function DashboardPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2 items-center justify-center" onClick={() => setView('rider')}>
-                        <User className="h-8 w-8 text-primary" />
-                        <div className="text-center">
-                            <p className="font-semibold">Register as a Rider</p>
-                            <p className="text-xs text-muted-foreground">Join the ride, get your digital ticket, and be part of the cycling community.</p>
+                    <Button variant="outline" className="h-auto p-6" onClick={() => setView('rider')}>
+                        <div className="flex flex-col items-center justify-center gap-2">
+                            <User className="h-8 w-8 text-primary" />
+                            <div className="text-center">
+                                <p className="font-semibold">Register as a Rider</p>
+                                <p className="text-xs text-muted-foreground">Join the ride, get your digital ticket, and be part of the cycling community.</p>
+                            </div>
                         </div>
                     </Button>
-                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2 items-center justify-center" onClick={() => setView('organizer')}>
-                         <Shield className="h-8 w-8 text-primary" />
-                         <div className="text-center">
-                            <p className="font-semibold">Request Organizer Access</p>
-                            <p className="text-xs text-muted-foreground">Join the event staff as a volunteer or organizer to help manage the event.</p>
-                         </div>
+                    <Button variant="outline" className="h-auto p-6" onClick={() => setView('organizer')}>
+                        <div className="flex flex-col items-center justify-center gap-2">
+                            <Shield className="h-8 w-8 text-primary" />
+                            <div className="text-center">
+                                <p className="font-semibold">Request Organizer Access</p>
+                                <p className="text-xs text-muted-foreground">Join the event staff as a volunteer or organizer to help manage the event.</p>
+                            </div>
+                        </div>
                     </Button>
                 </CardContent>
             </Card>
