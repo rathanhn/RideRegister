@@ -2,7 +2,7 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import React, { useState, useRef, createRef } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -29,6 +29,7 @@ interface DigitalTicketProps {
 interface SingleTicketProps {
   registration: Registration;
   riderNumber: 1 | 2;
+  user: User;
 }
 
 const generateQrCodeUrl = (text: string) => {
@@ -50,7 +51,7 @@ const toDataURL = async (url: string) => {
 };
 
 
-const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber }, ref) => {
+const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber, user }, ref) => {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
   const riderAge = riderNumber === 1 ? registration.age : registration.age2;
@@ -63,91 +64,92 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   });
 
   return (
-    <div ref={ref} className="bg-card p-0.5">
-        <Card className="max-w-md mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
-            <CardHeader className="p-4 flex-row items-center justify-between bg-primary/10">
-                 <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center overflow-hidden bg-white p-1">
-                      <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="object-contain" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-primary">TeleFun Mobile</h3>
-                        <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
-                    </div>
-                </div>
-                <div className="flex flex-col items-end gap-1.5">
-                   <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize">{registration.status}</Badge>
-                   {isCheckedIn ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center gap-1 py-1">
-                            <CheckCircle className="h-3 w-3"/> Checked-in
-                        </Badge>
-                   ) : (
-                        <Badge variant="secondary" className="flex items-center py-1">Not Checked-in</Badge>
-                   )}
-                </div>
-            </CardHeader>
-            <CardContent className="p-4">
-                <div className="mb-4">
-                    <CardTitle className="text-2xl font-headline">
-                        Your Ride Ticket {isDuo ? `(Rider ${riderNumber} of 2)` : ''}
-                    </CardTitle>
-                    <CardDescription>Present this ticket at the check-in counter.</CardDescription>
-                </div>
+    <div ref={ref} className="bg-background">
+      <Card className="max-w-md mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
+        <CardHeader className="p-4 bg-primary/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center bg-white p-1">
+                <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="object-contain" />
+              </div>
+              <div>
+                <h3 className="font-bold text-primary">TeleFun Mobile</h3>
+                <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1.5">
+              <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize">{registration.status}</Badge>
+              {isCheckedIn ? (
+                <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center gap-1 py-1">
+                  <CheckCircle className="h-3 w-3" /> Checked-in
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="flex items-center py-1">Not Checked-in</Badge>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="mb-4">
+            <CardTitle className="text-2xl font-headline">
+              Your Ride Ticket {isDuo ? `(Rider ${riderNumber} of 2)` : ''}
+            </CardTitle>
+            <CardDescription>Present this ticket at the check-in counter.</CardDescription>
+          </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-2 space-y-4">
-                        <div className="space-y-2">
-                             <div className="flex items-center gap-2">
-                                <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                <h4 className="font-semibold text-muted-foreground text-sm">Rider Details</h4>
-                            </div>
-                            <p className="font-bold text-lg">{riderName}, {riderAge} years</p>
-                            <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
-                        </div>
-
-                        <div className="flex gap-8 pt-2">
-                            <div>
-                                <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
-                                <div className="mt-1 flex items-center gap-2">
-                                  {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                  <p className="font-bold text-lg capitalize">
-                                      {registration.registrationType}
-                                  </p>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
-                                <p className="font-mono text-base pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-center">
-                         <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center">
-                            <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
-                        </div>
-                    </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2 space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <UserIcon className="h-4 w-4 text-muted-foreground" />
+                  <h4 className="font-semibold text-muted-foreground text-sm">Rider Details</h4>
                 </div>
+                <p className="font-bold text-lg">{riderName}, {riderAge} years</p>
+                <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
+              </div>
 
-                <Separator className="my-4" />
-
-                <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
-                    <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
-                    <div className="flex items-start gap-2"><Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
-                    <div className="flex items-start gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
+              <div className="flex gap-8 pt-2">
+                <div>
+                  <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
+                  <div className="mt-1 flex items-center gap-2">
+                    {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+                    <p className="font-bold text-lg capitalize">
+                      {registration.registrationType}
+                    </p>
+                  </div>
                 </div>
-            </CardContent>
-        </Card>
+                <div>
+                  <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
+                  <p className="font-mono text-base pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center">
+                <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
+            <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
+            <div className="flex items-start gap-2"><Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
+            <div className="flex items-start gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 });
 SingleTicket.displayName = 'SingleTicket';
 
-
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [isDownloading, setIsDownloading] = useState(false);
-  
+
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
@@ -177,7 +179,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.setFillColor(255, 255, 255);
         doc.setDrawColor(primaryColor);
         doc.setLineWidth(1.5);
-
+        
         // Header Background
         doc.setFillColor(255, 247, 237); // primary/10
         doc.rect(6, 6, 338, 55, 'F');
@@ -298,41 +300,40 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     }
   };
 
-
   if (registration.registrationType === 'duo') {
     return (
-        <div className="space-y-4">
-            <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
-                <CarouselContent>
-                    <CarouselItem>
-                        <SingleTicket registration={registration} riderNumber={1} />
-                    </CarouselItem>
-                    <CarouselItem>
-                         <SingleTicket registration={registration} riderNumber={2} />
-                    </CarouselItem>
-                </CarouselContent>
-                <CarouselPrevious className="left-[-10px] sm:left-[-50px]" />
-                <CarouselNext className="right-[-10px] sm:right-[-50px]" />
-            </Carousel>
-             <div className="flex justify-center">
-                <Button onClick={handleDownload} disabled={isDownloading}>
-                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                    Download Current Ticket
-                </Button>
-            </div>
+      <div className="space-y-4">
+        <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
+          <CarouselContent>
+            <CarouselItem>
+              <SingleTicket registration={registration} riderNumber={1} user={user} />
+            </CarouselItem>
+            <CarouselItem>
+              <SingleTicket registration={registration} riderNumber={2} user={user} />
+            </CarouselItem>
+          </CarouselContent>
+          <CarouselPrevious className="left-[-10px] sm:left-[-50px]" />
+          <CarouselNext className="right-[-10px] sm:right-[-50px]" />
+        </Carousel>
+        <div className="flex justify-center">
+          <Button onClick={handleDownload} disabled={isDownloading}>
+            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Download Current Ticket
+          </Button>
         </div>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
-        <SingleTicket registration={registration} riderNumber={1} />
-        <div className="flex justify-center">
-            <Button onClick={handleDownload} disabled={isDownloading}>
-                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                Download Ticket
-            </Button>
-        </div>
+      <SingleTicket registration={registration} riderNumber={1} user={user} />
+      <div className="flex justify-center">
+        <Button onClick={handleDownload} disabled={isDownloading}>
+          {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+          Download Ticket
+        </Button>
+      </div>
     </div>
   );
 }
