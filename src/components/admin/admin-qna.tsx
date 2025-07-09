@@ -10,7 +10,7 @@ import { AdminQnaItem } from './admin-qna-item';
 
 export function AdminQna() {
   const [questions, questionsLoading, questionsError] = useCollection(
-    query(collection(db, 'qna'), orderBy('isPinned', 'desc'), orderBy('createdAt', 'desc'))
+    query(collection(db, 'qna'), orderBy('isPinned', 'desc'))
   );
 
   return (

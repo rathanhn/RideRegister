@@ -36,7 +36,7 @@ export function QnaSection() {
   const { isSubmitting } = form.formState;
 
   const [questions, questionsLoading, questionsError] = useCollection(
-    query(collection(db, 'qna'), orderBy('isPinned', 'desc'), orderBy('createdAt', 'desc'))
+    query(collection(db, 'qna'), orderBy('isPinned', 'desc'))
   );
 
   async function onSubmit(values: z.infer<typeof questionFormSchema>) {
