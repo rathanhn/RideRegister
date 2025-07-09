@@ -6,6 +6,8 @@ import { CountdownTimer } from "@/components/countdown-timer";
 import { StoreDetails } from "@/components/store-details";
 import { RouteMap } from "@/components/route-map";
 import { MapPin } from "lucide-react";
+import { Organizers } from "@/components/organizers";
+import { EventSchedule } from "@/components/event-schedule";
 
 export default function Home() {
   const rideDate = new Date("2025-08-15T06:00:00");
@@ -22,7 +24,7 @@ export default function Home() {
         </div>
       </div>
       <CountdownTimer targetDate={rideDate} />
-      <main className="flex-grow container mx-auto p-4 md:p-8">
+      <main className="flex-grow container mx-auto p-4 md:p-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <RegistrationForm />
@@ -33,9 +35,11 @@ export default function Home() {
             <StoreDetails />
           </div>
         </div>
-        <div className="mt-8">
-          <RouteMap />
-        </div>
+        
+        <EventSchedule />
+        <Organizers />
+        <RouteMap />
+
       </main>
       <footer className="text-center p-4 text-muted-foreground text-sm">
         <p>&copy; {new Date().getFullYear()} TeleFun Mobile. All Rights Reserved.</p>

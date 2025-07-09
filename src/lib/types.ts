@@ -12,3 +12,19 @@ export interface Offer {
   imageUrl: string;
   imageHint: string;
 }
+
+export interface Organizer {
+  id: number;
+  name: string;
+  role: string;
+  imageUrl: string;
+  imageHint: string;
+}
+
+export interface ScheduleEvent {
+    id: number;
+    time: string;
+    title: string;
+    description: string;
+    icon: React.ElementType;
+}
