@@ -80,9 +80,8 @@ export async function registerRider(values: RegistrationInput & {email?: string;
   try {
     const { uid, ...registrationData } = parsed.data;
 
-    // Determine the user's role
-    const superAdminEmail = process.env.SUPERADMIN_EMAIL;
-    const role: UserRole = (superAdminEmail && values.email === superAdminEmail) ? 'superadmin' : 'user';
+    // By default, all new users are just 'user'
+    const role: UserRole = 'user';
 
     // Use a transaction to ensure both documents are created successfully
     await runTransaction(db, async (transaction) => {
