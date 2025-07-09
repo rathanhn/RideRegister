@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,7 +18,6 @@ import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 
@@ -36,6 +34,19 @@ interface SingleTicketProps {
 const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
+
+// Helper to fetch an image and convert it to a Base64 Data URI
+const toDataURL = async (url: string) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+};
+
 
 const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber }, ref) => {
   const isDuo = registration.registrationType === 'duo';
@@ -138,34 +149,138 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   } else {
     ticketRefs.current = [createRef<HTMLDivElement>()];
   }
-
+  
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
         const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
         const riderNumber = (currentSlide + 1) as 1 | 2;
-        const riderName = riderNumber === 1 ? registration.fullName : (registration.fullName2 || 'Rider2');
-        const elementToCapture = ticketRefs.current[currentSlide]?.current;
+        const riderName = riderNumber === 1 ? registration.fullName : (registration.fullName2 || 'Rider 2');
+        const riderAge = riderNumber === 1 ? registration.age : registration.age2;
+        const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
+        const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
 
-        if (!elementToCapture) {
-            throw new Error("Could not find the ticket element to capture.");
-        }
+        const qrData = JSON.stringify({
+            registrationId: registration.id,
+            rider: riderNumber,
+        });
 
-        const canvas = await html2canvas(elementToCapture, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true, // Important for external images like QR codes
-            allowTaint: true,
-        });
+        // Pre-fetch images
+        const logoDataUrl = await toDataURL(Logo.src);
+        const qrCodeDataUrl = await toDataURL(generateQrCodeUrl(qrData));
+
+        const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [350, 550] });
+
+        const primaryColor = '#FF9933';
+        const textColor = '#1A202C';
+        const mutedColor = '#64748B';
+
+        // --- Card Background ---
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(primaryColor);
+        doc.setLineWidth(1.5);
+        doc.roundedRect(5, 5, 340, 540, 8, 8, 'FD');
+
+        // --- Header ---
+        doc.setFillColor(255, 247, 237); // primary/10
+        doc.rect(6, 6, 338, 50, 'F');
+        doc.addImage(logoDataUrl, 'PNG', 15, 16, 30, 30);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(primaryColor);
+        doc.setFontSize(12);
+        doc.text('TeleFun Mobile', 55, 28);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(mutedColor);
+        doc.setFontSize(9);
+        doc.text('Independence Day Ride 2025', 55, 42);
+
+        // --- Status Badges ---
+        // Approved/Rejected Badge
+        doc.setFillColor(registration.status === 'approved' ? primaryColor : '#E53E3E');
+        doc.roundedRect(260, 15, 75, 14, 7, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.text(registration.status.toUpperCase(), 300, 24, { align: 'center' });
+
+        // Checked-in Badge
+        doc.setFillColor(isCheckedIn ? '#C6F6D5' : '#E2E8F0'); // green-100 or gray-200
+        doc.roundedRect(260, 33, 75, 14, 7, 7, 'F');
+        doc.setTextColor(isCheckedIn ? '#22543D' : '#4A5568'); // green-800 or gray-600
+        doc.text(isCheckedIn ? 'CHECKED-IN' : 'NOT CHECKED-IN', 300, 42, { align: 'center' });
         
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'px',
-            format: [canvas.width / 2, canvas.height / 2] // Set PDF size based on canvas
-        });
+        // --- Main Content ---
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(textColor);
+        doc.setFontSize(18);
+        doc.text('Your Ride Ticket', 20, 85);
+        doc.setFontSize(10);
+        doc.setTextColor(mutedColor);
+        doc.text('Present this ticket at the check-in counter.', 20, 98);
+
+        // --- Rider Details ---
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Rider Details', 20, 130);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(textColor);
+        doc.text(`${riderName}, ${riderAge} years`, 20, 148);
+        doc.setFontSize(10);
+        doc.setTextColor(mutedColor);
+        doc.text(riderPhone || '', 20, 162);
+
+        // --- Reg Type & ID ---
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(mutedColor);
+        doc.text('Reg. Type', 20, 190);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(textColor);
+        doc.text(registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1), 20, 205);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(mutedColor);
+        doc.text('Reg. ID', 120, 190);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+        doc.setTextColor(textColor);
+        doc.text(registration.id.substring(0, 10).toUpperCase(), 120, 205);
         
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
-        pdf.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
+        // --- QR Code ---
+        doc.addImage(qrCodeDataUrl, 'PNG', 220, 120, 100, 100);
+
+        // --- Separator ---
+        doc.setDrawColor(226, 232, 240); // border color
+        doc.setLineWidth(0.5);
+        doc.line(20, 240, 330, 240);
+
+        // --- Footer Details ---
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(textColor);
+        doc.text('Date', 20, 260);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(mutedColor);
+        doc.text('August 15, 2025', 20, 275);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(textColor);
+        doc.text('Assembly Time', 180, 260);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(mutedColor);
+        doc.text('6:00 AM', 180, 275);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(textColor);
+        doc.text('Starting Point', 20, 300);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(mutedColor);
+        doc.text('Telefun Mobiles: Mahadevpet, Madikeri', 20, 315);
+        
+        doc.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
         
     } catch(err) {
         console.error("Error generating PDF:", err);
@@ -174,6 +289,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         setIsDownloading(false);
     }
   };
+
 
   if (registration.registrationType === 'duo') {
     return (
