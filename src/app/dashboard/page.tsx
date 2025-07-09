@@ -8,18 +8,23 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { DigitalTicket } from '@/components/digital-ticket';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Clock, Ban } from 'lucide-react';
+import { Loader2, AlertTriangle, Clock, Ban, User, Shield } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Registration } from '@/lib/types';
+import type { Registration, AppUser } from '@/lib/types';
 import { RegistrationForm } from '@/components/registration-form';
+import { Button } from '@/components/ui/button';
+import { OrganizerAgreementForm } from '@/components/organizer-agreement-form';
 
+type ViewState = 'rider' | 'organizer' | null;
 
 export default function DashboardPage() {
     const [user, loading, error] = useAuthState(auth);
     const router = useRouter();
     const [registrationData, setRegistrationData] = useState<Registration | null>(null);
+    const [userData, setUserData] = useState<AppUser | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
+    const [view, setView] = useState<ViewState>(null);
 
     useEffect(() => {
         if (loading) return; // Wait until auth state is loaded
@@ -28,32 +33,49 @@ export default function DashboardPage() {
             return;
         }
 
-        const fetchRegistrationData = async () => {
+        const fetchData = async () => {
             if (!user) return;
+            setIsLoadingData(true);
             try {
-                const docRef = doc(db, 'registrations', user.uid);
-                const docSnap = await getDoc(docRef);
+                const regDocRef = doc(db, 'registrations', user.uid);
+                const userDocRef = doc(db, 'users', user.uid);
+                
+                const [regDocSnap, userDocSnap] = await Promise.all([
+                    getDoc(regDocRef),
+                    getDoc(userDocRef)
+                ]);
 
-                if (docSnap.exists()) {
-                    setRegistrationData({ id: docSnap.id, ...docSnap.data() } as Registration);
+                if (regDocSnap.exists()) {
+                    setRegistrationData({ id: regDocSnap.id, ...regDocSnap.data() } as Registration);
                 } else {
-                    setRegistrationData(null); // No registration found for this user
+                    setRegistrationData(null);
                 }
+
+                if (userDocSnap.exists()) {
+                    setUserData({ id: userDocSnap.id, ...userDocSnap.data() } as AppUser);
+                }
+
             } catch (err) {
-                console.error("Error fetching registration data:", err);
-                setFetchError("Failed to load your registration details. Please try again later.");
+                console.error("Error fetching data:", err);
+                setFetchError("Failed to load your details. Please try again later.");
             } finally {
                 setIsLoadingData(false);
             }
         };
 
-        fetchRegistrationData();
+        fetchData();
 
     }, [user, loading, router]);
 
 
     const handleRegistrationSuccess = (newData: Registration) => {
         setRegistrationData(newData);
+        setView(null); // Return to dashboard status view
+    }
+    
+    const handleOrganizerRequestSuccess = (newUserData: AppUser) => {
+        setUserData(newUserData);
+        setView(null); // Return to dashboard status view
     }
 
     if (loading || isLoadingData) {
@@ -80,48 +102,91 @@ export default function DashboardPage() {
             </div>
         )
     }
-
+    
+    // The main logic for what to show on the dashboard
     const renderContent = () => {
-        if (!registrationData) {
-            // If there's no registration, show the form
+        // 1. If user has a registration, show ticket/status. This is the highest priority.
+        if (registrationData) {
+            switch (registrationData.status) {
+                case 'approved':
+                    return <DigitalTicket registration={registrationData} user={user!} />;
+                case 'pending':
+                    return (
+                        <Card className="text-center">
+                            <CardHeader>
+                                <CardTitle className="flex items-center justify-center gap-2">
+                                    <Clock className="text-primary"/> Registration Pending
+                                </CardTitle>
+                                <CardDescription>
+                                    Your registration is being reviewed by our team. Please check back later. We'll notify you once it's approved.
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    );
+                case 'rejected':
+                    return (
+                        <Card className="text-center">
+                            <CardHeader>
+                                <CardTitle className="flex items-center justify-center gap-2 text-destructive">
+                                    <Ban /> Registration Rejected
+                                </CardTitle>
+                                <CardDescription>
+                                    Unfortunately, your registration could not be approved. If you believe this is an error, please contact the event organizers.
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    );
+            }
+        }
+        
+        // 2. If user is already an admin/viewer, show a specific message.
+        if (userData && userData.role !== 'user') {
+            return (
+                 <Card className="text-center">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-center gap-2">
+                            <Shield className="text-primary"/> Organizer Account
+                        </CardTitle>
+                        <CardDescription>
+                            Your account has <span className='font-bold'>{userData.role}</span> permissions. You can access the admin panel via the header menu.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+            )
+        }
+
+        // 3. If a view (rider/organizer form) is explicitly selected, show it.
+        if (view === 'rider') {
             return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
         }
-
-        // Otherwise, show status or ticket
-        switch (registrationData.status) {
-            case 'approved':
-                return <DigitalTicket registration={registrationData} user={user!} />;
-            case 'pending':
-                return (
-                    <Card className="text-center">
-                        <CardHeader>
-                             <CardTitle className="flex items-center justify-center gap-2">
-                                <Clock className="text-primary"/> Registration Pending
-                            </CardTitle>
-                            <CardDescription>
-                                Your registration is being reviewed by our team. Please check back later. We'll notify you once it's approved.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                );
-            case 'rejected':
-                 return (
-                    <Card className="text-center">
-                        <CardHeader>
-                             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-                                <Ban /> Registration Rejected
-                            </CardTitle>
-                            <CardDescription>
-                               Unfortunately, your registration could not be approved. If you believe this is an error, please contact the event organizers.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                );
-            default:
-                 return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
+        if (view === 'organizer') {
+            return <OrganizerAgreementForm onSuccess={handleOrganizerRequestSuccess} />;
         }
-    }
 
+        // 4. If none of the above, show the initial choice.
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Welcome to the Ride!</CardTitle>
+                    <CardDescription>
+                        How would you like to participate in this event? Please select an option below.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2" onClick={() => setView('rider')}>
+                        <User className="h-8 w-8 text-primary" />
+                        <span className="font-semibold">Register as a Rider</span>
+                        <span className="text-xs text-muted-foreground text-center">Join the ride, get your digital ticket, and be part of the cycling community.</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2" onClick={() => setView('organizer')}>
+                         <Shield className="h-8 w-8 text-primary" />
+                         <span className="font-semibold">Request Organizer Access</span>
+                         <span className="text-xs text-muted-foreground text-center">Join the event staff as a volunteer or organizer to help manage the event.</span>
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <div className="flex flex-col min-h-screen bg-secondary/50">
@@ -129,7 +194,7 @@ export default function DashboardPage() {
             <main className="flex-grow container mx-auto p-4 md:p-8">
                 <div className="w-full max-w-2xl mx-auto space-y-4">
                     <h1 className="text-3xl font-bold font-headline">
-                      {registrationData ? "Your Dashboard" : "Register for the Ride"}
+                      Your Dashboard
                     </h1>
                     {renderContent()}
                 </div>

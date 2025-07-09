@@ -358,3 +358,28 @@ export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
         return { success: false, message: "Failed to update pin status." };
     }
 }
+
+
+// Schema for requesting organizer access
+const requestOrganizerAccessSchema = z.object({
+  userId: z.string().min(1, "User ID is required."),
+  consent: z.boolean().refine(val => val === true, {
+    message: "You must agree to the terms."
+  }),
+});
+
+export async function requestOrganizerAccess(values: z.infer<typeof requestOrganizerAccessSchema>) {
+  const parsed = requestOrganizerAccessSchema.safeParse(values);
+  if (!parsed.success) {
+    return { success: false, message: "Invalid data provided." };
+  }
+
+  try {
+    const userRef = doc(db, "users", values.userId);
+    await updateDoc(userRef, { role: 'viewer' });
+    return { success: true, message: "Your request has been submitted. An admin will review it shortly." };
+  } catch (error) {
+    console.error("Error requesting organizer access:", error);
+    return { success: false, message: "Failed to submit your request." };
+  }
+}
