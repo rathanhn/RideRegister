@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
     if (loading || isLoadingData) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
+            <div className="flex min-h-screen items-center justify-center bg-secondary/50">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
             </div>
         );
@@ -90,7 +90,7 @@ export default function DashboardPage() {
     
     if (error || fetchError) {
         return (
-            <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="flex min-h-screen items-center justify-center p-4 bg-secondary/50">
                  <Card className="w-full max-w-md text-center">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-center gap-2 text-destructive">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-background">
+        <div className="flex flex-col min-h-screen bg-secondary/50">
             <Header />
             <main className="flex-grow container mx-auto p-4 md:p-8">
                 <div className="w-full max-w-2xl mx-auto space-y-4">
