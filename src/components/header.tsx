@@ -10,12 +10,9 @@ export function Header() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3">
           <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full" />
-          <div>
-            <h1 className="text-2xl font-bold text-primary font-headline">
-              RideRegister
-            </h1>
-            <p className="text-sm text-muted-foreground">TeleFun Mobile Independence Day Ride</p>
-          </div>
+          <h1 className="text-xl md:text-2xl font-bold text-primary font-headline">
+            RideRegister
+          </h1>
         </Link>
         <div className="flex items-center gap-4">
           <AuthButton />
