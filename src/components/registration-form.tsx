@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, PartyPopper, User, Users } from "lucide-react";
 import { registerRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -87,6 +88,7 @@ export function RegistrationForm() {
     loading,
     error,
   ] = useCreateUserWithEmailAndPassword(auth);
+  const [sameAsPhone, setSameAsPhone] = useState(false);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -105,6 +107,14 @@ export function RegistrationForm() {
   });
 
   const registrationType = form.watch("registrationType");
+  const phoneNumber = form.watch("phoneNumber");
+
+  useEffect(() => {
+    if (sameAsPhone) {
+      form.setValue("whatsappNumber", phoneNumber, { shouldValidate: true });
+    }
+  }, [sameAsPhone, phoneNumber, form]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -221,9 +231,36 @@ export function RegistrationForm() {
               <FormField control={form.control} name="age" render={({ field }) => (<FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="18" {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="9876543210" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="whatsappNumber" render={({ field }) => (<FormItem><FormLabel>WhatsApp Number (Optional)</FormLabel><FormControl><Input placeholder="Same as phone" {...field} /></FormControl></FormItem>)} />
+            
+            <div className="space-y-2">
+                <FormField
+                    control={form.control}
+                    name="whatsappNumber"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>WhatsApp Number (Optional)</FormLabel>
+                        <FormControl>
+                        <Input placeholder="Same as phone" {...field} disabled={sameAsPhone} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="sameAsPhone"
+                        checked={sameAsPhone}
+                        onCheckedChange={(checked) => setSameAsPhone(!!checked)}
+                    />
+                    <label
+                        htmlFor="sameAsPhone"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                        Same as phone number
+                    </label>
+                </div>
             </div>
+
 
             {registrationType === "duo" && (
                 <>
