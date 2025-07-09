@@ -173,15 +173,19 @@ export default function DashboardPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2" onClick={() => setView('rider')}>
+                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2 items-center justify-center" onClick={() => setView('rider')}>
                         <User className="h-8 w-8 text-primary" />
-                        <span className="font-semibold">Register as a Rider</span>
-                        <span className="text-xs text-muted-foreground text-center">Join the ride, get your digital ticket, and be part of the cycling community.</span>
+                        <div className="text-center">
+                            <p className="font-semibold">Register as a Rider</p>
+                            <p className="text-xs text-muted-foreground">Join the ride, get your digital ticket, and be part of the cycling community.</p>
+                        </div>
                     </Button>
-                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2" onClick={() => setView('organizer')}>
+                    <Button variant="outline" className="h-auto p-6 flex flex-col gap-2 items-center justify-center" onClick={() => setView('organizer')}>
                          <Shield className="h-8 w-8 text-primary" />
-                         <span className="font-semibold">Request Organizer Access</span>
-                         <span className="text-xs text-muted-foreground text-center">Join the event staff as a volunteer or organizer to help manage the event.</span>
+                         <div className="text-center">
+                            <p className="font-semibold">Request Organizer Access</p>
+                            <p className="text-xs text-muted-foreground">Join the event staff as a volunteer or organizer to help manage the event.</p>
+                         </div>
                     </Button>
                 </CardContent>
             </Card>
