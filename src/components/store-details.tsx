@@ -20,11 +20,12 @@ export function StoreDetails() {
       </CardHeader>
       <CardContent className="flex flex-col items-center text-center gap-4">
         <Image
-          src="/telefun-logo.png"
+          src="https://placehold.co/100x100.png"
           alt="TeleFun Mobile Logo"
           width={100}
           height={100}
           className="rounded-full border-2 border-primary p-1"
+          data-ai-hint="logo"
         />
         <div className="space-y-1">
             <h3 className="font-bold text-xl text-primary">Telefun Mobiles</h3>
