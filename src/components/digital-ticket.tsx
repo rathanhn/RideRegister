@@ -14,12 +14,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
-import { Bike, Calendar, Clock, MapPin, CheckCircle, Users, Download, Phone, User as UserIcon } from 'lucide-react';
+import { Bike, Calendar, Clock, MapPin, CheckCircle, Users, Download, Phone, User as UserIcon, Loader2 } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 
@@ -30,7 +29,6 @@ interface DigitalTicketProps {
 
 interface SingleTicketProps {
   registration: Registration;
-  user: User;
   riderNumber: 1 | 2;
 }
 
@@ -86,9 +84,9 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 <div className="grid grid-cols-3 gap-6 p-6">
                     <div className="col-span-2 space-y-4">
                         <div className="space-y-2">
-                            <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-2"><UserIcon className="h-4 w-4" /> Rider Details</h4>
+                             <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-2"><UserIcon className="h-4 w-4" /> Rider Details</h4>
                             <p className="font-bold text-lg">{riderName}, {riderAge} years</p>
-                            <p className="text-sm text-muted-foreground" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Phone className="h-3 w-3" /> {riderPhone}</p>
+                            <div className="text-sm text-muted-foreground" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Phone className="h-3 w-3" /> {riderPhone}</div>
                         </div>
 
                         <div className="flex gap-8 pt-2">
@@ -131,59 +129,160 @@ SingleTicket.displayName = 'SingleTicket';
 
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
-  const ticketRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  useEffect(() => {
-    // Initialize refs array based on number of tickets
-    const ticketCount = registration.registrationType === 'duo' ? 2 : 1;
-    ticketRefs.current = ticketRefs.current.slice(0, ticketCount);
-  }, [registration.registrationType]);
+  const getBase64ImageFromURL = (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Canvas context not found'));
+        }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  };
 
   const handleDownload = async () => {
-    const currentSlide = registration.registrationType === 'duo' 
-      ? (carouselApi?.selectedScrollSnap() ?? 0) 
-      : 0;
-    
-    const element = ticketRefs.current[currentSlide];
-
-    if (!element) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not find ticket to download.' });
-      return;
-    }
-
+    setIsDownloading(true);
     try {
-        // Temporarily change background to white for PDF generation
-        const originalBg = element.style.backgroundColor;
-        element.style.backgroundColor = 'white';
+        const currentSlide = registration.registrationType === 'duo' ? (carouselApi?.selectedScrollSnap() ?? 0) : 0;
+        const riderNumber = (currentSlide + 1) as 1 | 2;
+        const riderName = riderNumber === 1 ? registration.fullName : (registration.fullName2 || 'Rider2');
+        const riderAge = riderNumber === 1 ? registration.age : registration.age2;
+        const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
+        const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
+        const qrData = JSON.stringify({ registrationId: registration.id, rider: riderNumber });
+        const qrUrl = generateQrCodeUrl(qrData);
 
-        const canvas = await html2canvas(element, { 
-            scale: 3, 
-            useCORS: true, 
-            backgroundColor: '#ffffff'
-        });
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'px', format: [350, 550] });
 
-        // Restore original background
-        element.style.backgroundColor = originalBg;
+        // Colors and Fonts
+        const primaryColor = '#F9A825'; // A gold-like color from your theme
+        const textColor = '#1E293B'; // A dark gray
+        const mutedColor = '#64748B'; // A lighter gray
 
-        const imgData = canvas.toDataURL('image/png');
+        doc.addFont('/fonts/Inter-Regular.ttf', 'Inter', 'normal');
+        doc.addFont('/fonts/Inter-Bold.ttf', 'Inter', 'bold');
         
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'px',
-          format: [canvas.width, canvas.height]
-        });
+        // --- Drawing the ticket ---
+        doc.setDrawColor(primaryColor);
+        doc.setLineWidth(1.5);
+        doc.rect(5, 5, 340, 540, 'S'); // Outer border
+
+        // Header
+        doc.setFillColor(primaryColor);
+        doc.setOpacity(0.1);
+        doc.rect(5, 5, 340, 50, 'F');
+        doc.setOpacity(1);
+
+        const logoBase64 = await getBase64ImageFromURL(Logo.src);
+        doc.addImage(logoBase64, 'PNG', 15, 12, 35, 35);
+
+        doc.setFont('Inter', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(primaryColor);
+        doc.text('TeleFun Mobile', 60, 25);
+        doc.setFontSize(10);
+        doc.setFont('Inter', 'normal');
+        doc.setTextColor(mutedColor);
+        doc.text('Independence Day Ride 2025', 60, 40);
+
+        // Status Badges
+        doc.setFillColor('#E2E8F0'); // secondary bg
+        doc.roundedRect(250, 15, 85, 16, 8, 8, 'F');
+        doc.setTextColor(textColor);
+        doc.setFontSize(9);
+        doc.text(`Status: ${registration.status.toUpperCase()}`, 255, 26);
         
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        doc.setFillColor(isCheckedIn ? '#D1FAE5' : '#E2E8F0'); // green or secondary bg
+        doc.roundedRect(250, 35, 85, 16, 8, 8, 'F');
+        doc.setTextColor(isCheckedIn ? '#065F46' : textColor);
+        doc.text(isCheckedIn ? 'Checked-in' : 'Not Checked-in', 255, 46);
+
+        // Main content
+        doc.setFontSize(20);
+        doc.setFont('Inter', 'bold');
+        doc.setTextColor(textColor);
+        doc.text('Your Ride Ticket', 15, 80);
+        if(registration.registrationType === 'duo') {
+            doc.setFontSize(12);
+            doc.setTextColor(mutedColor);
+            doc.text(`(Rider ${riderNumber} of 2)`, 150, 80);
+        }
+
+        // Rider Details
+        doc.setFontSize(12);
+        doc.setFont('Inter', 'bold');
+        doc.setTextColor(textColor);
+        doc.text('Rider Details', 15, 110);
+
+        doc.setFontSize(14);
+        doc.text(`${riderName}, ${riderAge} years`, 15, 130);
         
-        const riderName = currentSlide === 0 
-          ? registration.fullName 
-          : (registration.fullName2 || 'Rider2');
-          
-        pdf.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
+        doc.setFontSize(10);
+        doc.setTextColor(mutedColor);
+        doc.text(`Phone: ${riderPhone}`, 15, 145);
+
+        // QR Code
+        const qrBase64 = await getBase64ImageFromURL(qrUrl);
+        doc.addImage(qrBase64, 'PNG', 220, 100, 110, 110);
+
+        // Registration Info
+        doc.setFontSize(12);
+        doc.setFont('Inter', 'bold');
+        doc.setTextColor(textColor);
+        doc.text('Registration Info', 15, 180);
+        
+        doc.setFontSize(12);
+        doc.setFont('Inter', 'normal');
+        doc.text(`Type: ${registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}`, 15, 195);
+        doc.text(`ID: ${registration.id.substring(0, 10).toUpperCase()}`, 15, 210);
+
+        // Separator
+        doc.setDrawColor(mutedColor);
+        doc.setLineWidth(0.5);
+        doc.line(15, 240, 335, 240);
+
+        // Event Details
+        doc.setFontSize(12);
+        doc.setFont('Inter', 'bold');
+        doc.setTextColor(textColor);
+        doc.text('Event Details', 15, 260);
+
+        doc.setFontSize(10);
+        doc.setFont('Inter', 'normal');
+        doc.setTextColor(mutedColor);
+        doc.text('Date:', 15, 275);
+        doc.setTextColor(textColor);
+        doc.text('August 15, 2025', 55, 275);
+
+        doc.setTextColor(mutedColor);
+        doc.text('Assembly:', 15, 290);
+        doc.setTextColor(textColor);
+        doc.text('6:00 AM', 55, 290);
+
+        doc.setTextColor(mutedColor);
+        doc.text('Location:', 15, 305);
+        doc.setTextColor(textColor);
+        doc.text('Telefun Mobiles: Mahadevpet, Madikeri', 15, 318, { maxWidth: 320 });
+        
+        doc.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
+
     } catch(err) {
         console.error("Error generating PDF:", err);
         toast({ variant: 'destructive', title: 'Download Failed', description: 'There was an issue creating the PDF.' });
+    } finally {
+        setIsDownloading(false);
     }
   };
 
@@ -193,18 +292,18 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
                 <CarouselContent>
                     <CarouselItem>
-                        <SingleTicket ref={el => ticketRefs.current[0] = el} registration={registration} user={user} riderNumber={1} />
+                        <SingleTicket registration={registration} user={user} riderNumber={1} />
                     </CarouselItem>
                     <CarouselItem>
-                         <SingleTicket ref={el => ticketRefs.current[1] = el} registration={registration} user={user} riderNumber={2} />
+                         <SingleTicket registration={registration} user={user} riderNumber={2} />
                     </CarouselItem>
                 </CarouselContent>
                 <CarouselPrevious className="left-[-10px] sm:left-[-50px]" />
                 <CarouselNext className="right-[-10px] sm:right-[-50px]" />
             </Carousel>
              <div className="flex justify-center">
-                <Button onClick={handleDownload}>
-                    <Download className="mr-2 h-4 w-4" />
+                <Button onClick={handleDownload} disabled={isDownloading}>
+                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     Download Current Ticket
                 </Button>
             </div>
@@ -214,14 +313,13 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
   return (
     <div className="space-y-4">
-        <SingleTicket ref={el => ticketRefs.current[0] = el} registration={registration} user={user} riderNumber={1} />
+        <SingleTicket registration={registration} user={user} riderNumber={1} />
         <div className="flex justify-center">
-            <Button onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
+            <Button onClick={handleDownload} disabled={isDownloading}>
+                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 Download Ticket
             </Button>
         </div>
     </div>
   );
 }
-
