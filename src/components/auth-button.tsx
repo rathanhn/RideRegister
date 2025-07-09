@@ -74,7 +74,7 @@ export function AuthButton() {
       <Button asChild size="sm">
         <Link href="/login">Login</Link>
       </Button>
-      <Button asChild variant="outline" size="sm">
+      <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
         <Link href="/register">Register</Link>
       </Button>
     </div>
