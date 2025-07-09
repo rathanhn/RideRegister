@@ -81,8 +81,9 @@ export async function registerRider(values: RegistrationInput & {email?: string;
   try {
     const { uid, ...registrationData } = parsed.data;
 
-    // Organization members requesting access get 'viewer' role, others get 'user'.
-    const role: UserRole = registrationData.accountType === 'organization' ? 'viewer' : 'user';
+    // All new users, regardless of accountType, get 'user' role by default.
+    // A superadmin must manually promote them.
+    const role: UserRole = 'user';
 
     // Use a transaction to ensure both documents are created successfully
     await runTransaction(db, async (transaction) => {

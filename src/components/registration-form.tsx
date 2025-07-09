@@ -212,7 +212,7 @@ export function RegistrationForm() {
               <Alert>
                 <AlertTitle>Organization Access</AlertTitle>
                 <AlertDescription>
-                  Your account will be created with 'Viewer' permissions. A superadmin will need to grant you 'Admin' privileges from the dashboard to manage the event.
+                  Your account will be created with a standard 'User' role. Please contact a superadmin to have your role upgraded for event management access.
                 </AlertDescription>
               </Alert>
             )}

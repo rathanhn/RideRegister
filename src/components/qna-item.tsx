@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { QnaQuestion, QnaReply } from "@/lib/types";
@@ -16,7 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addReply } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { CornerDownRight, Loader2, ShieldCheck, User } from "lucide-react";
+import { CornerDownRight, Loader2, Pin, ShieldCheck, User } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 
@@ -71,7 +72,10 @@ export function QnaItem({ question }: QnaItemProps) {
             </Avatar>
             <div className="w-full">
                 <div className="flex items-center justify-between">
-                    <p className="font-semibold">{question.userName}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="font-semibold">{question.userName}</p>
+                        {question.isPinned && <Badge variant="secondary" className="bg-primary/10 text-primary"><Pin className="h-3 w-3 mr-1"/> Pinned</Badge>}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                         {question.createdAt ? formatDistanceToNow(question.createdAt.toDate(), { addSuffix: true }) : 'just now'}
                     </p>
