@@ -8,7 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Smartphone, Watch, Wrench, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import Logo from "@/Logo.png";
 
 export function StoreDetails() {
   return (
@@ -20,7 +21,7 @@ export function StoreDetails() {
       </CardHeader>
       <CardContent className="flex flex-col items-center text-center gap-4">
         <Image
-          src="/Logo.png"
+          src={Logo}
           alt="TeleFun Mobile Logo"
           width={100}
           height={100}
