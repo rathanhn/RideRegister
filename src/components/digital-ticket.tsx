@@ -65,8 +65,8 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 <div className="flex flex-col items-end gap-2">
                    <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize">{registration.status}</Badge>
                    {isCheckedIn ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center">
-                            <CheckCircle className="h-3 w-3 mr-1"/> Checked-in
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3"/> Checked-in
                         </Badge>
                    ) : (
                         <Badge variant="secondary" className="flex items-center">Not Checked-in</Badge>
