@@ -106,6 +106,7 @@ export function RegistrationForm() {
   });
 
   const registrationType = form.watch("registrationType");
+  const consent = form.watch("consent");
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -323,7 +324,7 @@ export function RegistrationForm() {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || !consent}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmitting ? "Submitting..." : "Register Now"}
             </Button>

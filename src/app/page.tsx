@@ -4,6 +4,7 @@ import { Announcements } from "@/components/announcements";
 import { Offers } from "@/components/offers";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { StoreDetails } from "@/components/store-details";
+import { RouteMap } from "@/components/route-map";
 
 export default function Home() {
   const rideDate = new Date("2024-08-15T06:00:00");
@@ -22,6 +23,9 @@ export default function Home() {
             <Offers />
             <StoreDetails />
           </div>
+        </div>
+        <div className="mt-8">
+          <RouteMap />
         </div>
       </main>
       <footer className="text-center p-4 text-muted-foreground text-sm">
