@@ -65,11 +65,11 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 <div className="flex flex-col items-end gap-1">
                    <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize">{registration.status}</Badge>
                    {isCheckedIn ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center">
                             <CheckCircle className="h-3 w-3 mr-1"/> Checked-in
                         </Badge>
                    ) : (
-                        <Badge variant="secondary">Not Checked-in</Badge>
+                        <Badge variant="secondary" className="flex items-center">Not Checked-in</Badge>
                    )}
                 </div>
             </div>
@@ -94,12 +94,12 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                                 <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
                                 <p className="font-bold text-lg flex items-center gap-2">
                                     {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                    <span className="mt-1">{registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}</span>
+                                    <span>{registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}</span>
                                 </p>
                             </div>
                             <div>
                                 <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
-                                <p className="font-mono text-sm mt-1.5">{registration.id.substring(0, 10).toUpperCase()}</p>
+                                <p className="font-mono text-sm pt-0.5">{registration.id.substring(0, 10).toUpperCase()}</p>
                             </div>
                         </div>
                     </div>
@@ -110,7 +110,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
 
                 <Separator />
 
-                <div className="p-6 grid grid-cols-2 gap-4 text-sm">
+                <div className="p-6 grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
                     <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
                     <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
                     <div className="flex items-center gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
