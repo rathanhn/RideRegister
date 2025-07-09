@@ -348,7 +348,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   return (
     <div className="space-y-4">
       {ticketContainer}
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 max-w-md mx-auto">
         <div className="flex gap-4">
             <Button onClick={handleDownload} disabled={isDownloading}>
                 {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -359,7 +359,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                 Share Ticket
             </Button>
         </div>
-        <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg max-w-md w-full">
+        <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg w-full">
             <div className="flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-primary" />
                 <p>
