@@ -36,11 +36,11 @@ export function CountdownTimer({ targetDate }: { targetDate: Date }) {
 
     const timerComponents = Object.entries(timeLeft).map(([interval, value]) => {
         return (
-            <div key={interval} className="flex flex-col items-center bg-card/80 p-2 rounded-lg min-w-[60px] md:min-w-[80px] shadow-inner">
-                <span className="text-2xl md:text-4xl font-bold text-primary tabular-nums">
+            <div key={interval} className="flex flex-col items-center bg-card/80 p-3 rounded-lg min-w-[70px] md:min-w-[90px] shadow-lg border border-primary/20">
+                <span className="text-3xl md:text-5xl font-bold text-primary tabular-nums">
                   {String(value).padStart(2, '0')}
                 </span>
-                <span className="text-xs uppercase text-muted-foreground tracking-wider">{interval}</span>
+                <span className="text-xs uppercase text-muted-foreground tracking-wider mt-1">{interval}</span>
             </div>
         );
     });
@@ -50,7 +50,7 @@ export function CountdownTimer({ targetDate }: { targetDate: Date }) {
     return (
         <div className="bg-muted/50 border-b">
             <div className="container mx-auto py-4">
-                <div className="flex justify-center items-center gap-2 md:gap-4">
+                <div className="flex justify-center items-center gap-3 md:gap-6">
                     {hasTimeLeft ? timerComponents : <div className="text-xl font-bold text-primary p-4">The Ride has begun!</div>}
                 </div>
             </div>
