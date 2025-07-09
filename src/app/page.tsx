@@ -8,6 +8,7 @@ import { MapPin } from "lucide-react";
 import { Organizers } from "@/components/organizers";
 import { EventSchedule } from "@/components/event-schedule";
 import { Hero } from "@/components/hero";
+import { Faq } from "@/components/faq";
 
 export default function Home() {
   const rideDate = new Date("2025-08-15T06:00:00");
@@ -30,6 +31,7 @@ export default function Home() {
           <div className="lg:col-span-2 space-y-8">
              <EventSchedule />
              <RouteMap />
+             <Faq />
           </div>
           <div className="flex flex-col gap-8">
             <Announcements />

@@ -12,7 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
-import { Bike, Calendar, Clock, MapPin, Ticket as TicketIcon, Users, Download } from 'lucide-react';
+import { Bike, Calendar, Clock, MapPin, Ticket as TicketIcon, Users, Download, Phone, User as UserIcon } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 
@@ -53,17 +53,19 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
             <div className="md:col-span-2 space-y-4">
-                <div>
-                    <h4 className="font-semibold text-muted-foreground text-sm">Rider Name</h4>
-                    <p className="font-bold text-lg">{registration.fullName}</p>
+                <div className="space-y-2">
+                    <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-1"><UserIcon className="h-4 w-4" /> Rider 1 Details</h4>
+                    <p className="font-bold text-lg">{registration.fullName}, {registration.age} years</p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> {registration.phoneNumber}</p>
                 </div>
                 {registration.registrationType === 'duo' && registration.fullName2 && (
-                    <div>
-                        <h4 className="font-semibold text-muted-foreground text-sm">Rider 2 Name</h4>
-                        <p className="font-bold text-lg">{registration.fullName2}</p>
+                    <div className="space-y-2">
+                        <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-1"><UserIcon className="h-4 w-4" /> Rider 2 Details</h4>
+                        <p className="font-bold text-lg">{registration.fullName2}, {registration.age2} years</p>
+                         <p className="text-sm text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> {registration.phoneNumber2}</p>
                     </div>
                 )}
-                <div className="flex gap-8">
+                <div className="flex gap-8 pt-2">
                     <div>
                         <h4 className="font-semibold text-muted-foreground text-sm">Registration Type</h4>
                         <p className="font-bold text-lg flex items-center gap-2">
