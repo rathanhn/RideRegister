@@ -11,10 +11,12 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, FileText, Loader2 } from 'lucide-react';
+import { ScanLine, Users, FileText, Loader2, List, FileCheck } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RidersListTable } from '@/components/admin/riders-list-table';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -64,11 +66,22 @@ export default function AdminPage() {
             <CardHeader>
             <CardTitle>Event Registrations</CardTitle>
             <CardDescription>
-                Approve, reject, and manage all event registrations.
+                View registered riders or manage new registration approvals.
             </CardDescription>
             </CardHeader>
             <CardContent>
-            <RegistrationsTable />
+                <Tabs defaultValue="riders-list">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="riders-list"><List className="mr-2 h-4 w-4"/>Registered Riders</TabsTrigger>
+                        <TabsTrigger value="manage-approvals"><FileCheck className="mr-2 h-4 w-4"/>Manage Approvals</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="riders-list" className="mt-4">
+                        <RidersListTable />
+                    </TabsContent>
+                    <TabsContent value="manage-approvals" className="mt-4">
+                        <RegistrationsTable />
+                    </TabsContent>
+                </Tabs>
             </CardContent>
         </Card>
 
