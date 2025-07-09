@@ -8,13 +8,13 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { DigitalTicket } from '@/components/digital-ticket';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Clock, Ban, User, Shield } from 'lucide-react';
+import { Loader2, AlertTriangle, Clock, Ban, User, Shield, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Registration, AppUser } from '@/lib/types';
 import { RegistrationForm } from '@/components/registration-form';
 import { OrganizerAgreementForm } from '@/components/organizer-agreement-form';
-import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 
 type ViewState = 'rider' | 'organizer' | null;
@@ -150,9 +150,17 @@ export default function DashboardPage() {
                             <Shield className="text-primary"/> Organizer Account
                         </CardTitle>
                         <CardDescription>
-                            Your account has <span className='font-bold'>{userData.role}</span> permissions. You can access the admin panel via the header menu.
+                            Your account has <span className='font-bold'>{userData.role}</span> permissions.
                         </CardDescription>
                     </CardHeader>
+                    <CardContent>
+                        <Button asChild>
+                            <Link href="/admin">
+                                Go to Admin Dashboard
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </CardContent>
                 </Card>
             )
         }
@@ -175,21 +183,25 @@ export default function DashboardPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group">
-                        <User className="h-8 w-8 text-primary mb-4" />
-                        <h3 className="font-semibold">Register as a Rider</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Join the ride, get your digital ticket, and be part of the cycling community.
-                        </p>
+                     <div className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group">
                         <button onClick={() => setView('rider')} className="absolute inset-0 z-10" aria-label="Register as a Rider"></button>
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                             <User className="h-8 w-8 text-primary mb-4" />
+                            <h3 className="font-semibold">Register as a Rider</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Join the ride, get your digital ticket, and be part of the cycling community.
+                            </p>
+                        </div>
                     </div>
                      <div className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group">
-                        <Shield className="h-8 w-8 text-primary mb-4" />
-                        <h3 className="font-semibold">Request Organizer Access</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Join the event staff as a volunteer or organizer to help manage the event.
-                        </p>
                         <button onClick={() => setView('organizer')} className="absolute inset-0 z-10" aria-label="Request Organizer Access"></button>
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                            <Shield className="h-8 w-8 text-primary mb-4" />
+                            <h3 className="font-semibold">Request Organizer Access</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Join the event staff as a volunteer or organizer to help manage the event.
+                            </p>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
