@@ -45,7 +45,6 @@ export interface Registration {
     status: 'pending' | 'approved' | 'rejected';
     rider1CheckedIn?: boolean;
     rider2CheckedIn?: boolean;
-    accountType: 'rider' | 'organization';
 }
 
 export interface QnaQuestion {

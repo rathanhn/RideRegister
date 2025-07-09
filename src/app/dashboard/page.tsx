@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -9,9 +10,8 @@ import { DigitalTicket } from '@/components/digital-ticket';
 import { Header } from '@/components/header';
 import { Loader2, AlertTriangle, Clock, Ban } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import type { Registration } from '@/lib/types';
+import { RegistrationForm } from '@/components/registration-form';
 
 
 export default function DashboardPage() {
@@ -29,6 +29,7 @@ export default function DashboardPage() {
         }
 
         const fetchRegistrationData = async () => {
+            if (!user) return;
             try {
                 const docRef = doc(db, 'registrations', user.uid);
                 const docSnap = await getDoc(docRef);
@@ -50,6 +51,10 @@ export default function DashboardPage() {
 
     }, [user, loading, router]);
 
+
+    const handleRegistrationSuccess = (newData: Registration) => {
+        setRegistrationData(newData);
+    }
 
     if (loading || isLoadingData) {
         return (
@@ -78,23 +83,11 @@ export default function DashboardPage() {
 
     const renderContent = () => {
         if (!registrationData) {
-            return (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Registration Not Found</CardTitle>
-                        <CardDescription>
-                            It looks like you haven't registered for the ride yet.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button asChild>
-                            <Link href="/register">Register for the Ride</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            );
+            // If there's no registration, show the form
+            return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
         }
 
+        // Otherwise, show status or ticket
         switch (registrationData.status) {
             case 'approved':
                 return <DigitalTicket registration={registrationData} user={user!} />;
@@ -125,21 +118,7 @@ export default function DashboardPage() {
                     </Card>
                 );
             default:
-                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Registration Not Found</CardTitle>
-                            <CardDescription>
-                                It looks like you haven't registered for the ride yet.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button asChild>
-                                <Link href="/register">Register for the Ride</Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                 )
+                 return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
         }
     }
 
@@ -148,8 +127,10 @@ export default function DashboardPage() {
         <div className="flex flex-col min-h-screen bg-secondary/50">
             <Header />
             <main className="flex-grow container mx-auto p-4 md:p-8">
-                <div className="space-y-4">
-                    <h1 className="text-3xl font-bold font-headline">Your Dashboard</h1>
+                <div className="w-full max-w-2xl mx-auto space-y-4">
+                    <h1 className="text-3xl font-bold font-headline">
+                      {registrationData ? "Your Dashboard" : "Register for the Ride"}
+                    </h1>
                     {renderContent()}
                 </div>
             </main>

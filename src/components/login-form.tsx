@@ -16,8 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { Loader2, Phone } from "lucide-react";
 import { auth } from '@/lib/firebase';
 import { useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { useRouter } from "next/navigation";
@@ -67,6 +67,13 @@ export function LoginForm() {
     await signInWithGoogle();
   }
 
+  const onPhoneSignIn = () => {
+    toast({
+        title: "Coming Soon!",
+        description: "Phone sign-in functionality is not yet implemented."
+    });
+  }
+
   useEffect(() => {
     if (user || googleUser) {
       router.push('/dashboard');
@@ -79,7 +86,7 @@ export function LoginForm() {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: authError.message,
+        description: authError.message.replace('Firebase: ', ''),
       });
     }
   }, [authError, toast]);
@@ -92,6 +99,28 @@ export function LoginForm() {
         <CardDescription>Sign in to access your dashboard and ticket.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="grid grid-cols-1 gap-2">
+            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={onGoogleSignIn}>
+                {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                Sign in with Google
+            </Button>
+            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={onPhoneSignIn}>
+                <Phone className="mr-2 h-4 w-4" />
+                Sign in with Phone
+            </Button>
+        </div>
+        
+        <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                Or continue with email
+                </span>
+            </div>
+        </div>
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -122,15 +151,10 @@ export function LoginForm() {
             />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
+              Sign In with Email
             </Button>
           </form>
         </Form>
-        <Separator className="my-6" />
-        <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={onGoogleSignIn}>
-            {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
-            Sign in with Google
-        </Button>
       </CardContent>
     </Card>
   );

@@ -19,15 +19,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { BikeIcon, Building, Loader2, PartyPopper, User, Users } from "lucide-react";
+import { BikeIcon, Loader2, PartyPopper, User, Users } from "lucide-react";
 import { registerRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
 import { auth } from "@/lib/firebase";
-import { useCreateUserWithEmailAndPassword, useUpdateProfile } from "react-firebase-hooks/auth";
-import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-
+import { useAuthState } from "react-firebase-hooks/auth";
+import type { Registration } from "@/lib/types";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -35,15 +33,6 @@ const phoneRegex = new RegExp(
 
 const formSchema = z
   .object({
-    // Account creation fields
-    email: z.string().email("Invalid email address."),
-    password: z.string().min(6, "Password must be at least 6 characters."),
-
-    accountType: z.enum(['rider', 'organization'], {
-      required_error: "Please select an account type."
-    }),
-
-    // Registration fields
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
     }),
@@ -84,37 +73,30 @@ const rideRules = [
     "Ensure your bicycle is in good working condition."
 ];
 
-export function RegistrationForm() {
-  const { toast } = useToast();
-  const router = useRouter();
-  const [
-    createUserWithEmailAndPassword,
-    user,
-    loading,
-    error,
-  ] = useCreateUserWithEmailAndPassword(auth);
-  const [updateProfile, updating] = useUpdateProfile(auth);
-  const [sameAsPhone, setSameAsPhone] = useState(false);
+interface RegistrationFormProps {
+    onSuccess: (registrationData: Registration) => void;
+}
 
+export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
+  const { toast } = useToast();
+  const [user, loading] = useAuthState(auth);
+  const [sameAsPhone, setSameAsPhone] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: "onChange",
     defaultValues: {
-      accountType: "rider",
       registrationType: "solo",
-      fullName: "",
+      fullName: user?.displayName ?? "",
       age: 18,
       phoneNumber: "",
       whatsappNumber: "",
-      email: "",
-      password: "",
       consent: false,
     },
   });
 
+  const { isSubmitting } = form.formState;
   const registrationType = form.watch("registrationType");
-  const accountType = form.watch("accountType");
   const phoneNumber = form.watch("phoneNumber");
 
   useEffect(() => {
@@ -123,37 +105,42 @@ export function RegistrationForm() {
     }
   }, [sameAsPhone, phoneNumber, form]);
 
+  useEffect(() => {
+    if (user?.displayName) {
+        form.setValue("fullName", user.displayName);
+    }
+  }, [user, form]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+        toast({ variant: "destructive", title: "Error", description: "You must be logged in to register."});
+        return;
+    }
+
     try {
-      // 1. Create the user account
-      const newUser = await createUserWithEmailAndPassword(values.email, values.password);
-      if (!newUser) {
-        if (error) {
-            throw new Error(error.message.replace("Firebase: ", ""));
-        }
-        throw new Error("Could not create user account.");
-      }
-
-      // Update the new user's profile with their name
-      await updateProfile({ displayName: values.fullName });
-
-      // 2. Submit the registration details with the new user's ID
-      const { password, ...registrationData } = values;
       const result = await registerRider({
-          ...registrationData,
-          uid: newUser.user.uid,
-          email: newUser.user.email ?? undefined,
+          ...values,
+          uid: user.uid,
+          email: user.email!,
       });
 
       if (result.success) {
         toast({
-          title: "Registration Successful!",
-          description: "We're excited to have you join the ride. Redirecting you to your dashboard...",
+          title: "Registration Submitted!",
+          description: "We're excited to have you join the ride. Your registration is now pending review.",
           action: <PartyPopper className="text-primary" />,
         });
-        form.reset();
-        router.push('/dashboard'); // Redirect to dashboard
+        // Call the parent component's success handler to update the dashboard UI
+        const newRegistrationData: Registration = {
+            id: user.uid,
+            ...values,
+            status: 'pending',
+            createdAt: new Date(), // This is an approximation, Firestore will have the real one
+            rider1CheckedIn: false,
+            rider2CheckedIn: false,
+        }
+        onSuccess(newRegistrationData);
       } else {
         throw new Error(result.message || "An unknown error occurred while saving your registration.");
       }
@@ -166,88 +153,23 @@ export function RegistrationForm() {
     }
   }
 
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="font-headline text-3xl">Create Your Account &amp; Register</CardTitle>
-        <CardDescription>Event Date: 15th August at TeleFun Mobile Store</CardDescription>
+        <CardTitle className="font-headline text-3xl">Ride Application Form</CardTitle>
+        <CardDescription>Fill in your details below to join the ride. Event Date: 15th August.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            
-            <h3 className="text-lg font-medium text-primary">Step 1: Account Details</h3>
-            <FormField
-              control={form.control}
-              name="accountType"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Are you registering as a rider or an organization member?</FormLabel>
-                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormItem>
-                        <FormControl>
-                            <RadioGroupItem value="rider" id="rider" className="peer sr-only" />
-                        </FormControl>
-                        <FormLabel htmlFor="rider" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
-                            <BikeIcon className="mb-3 h-6 w-6" /> Normal Rider
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem>
-                         <FormControl>
-                            <RadioGroupItem value="organization" id="organization" className="peer sr-only" />
-                        </FormControl>
-                         <FormLabel htmlFor="organization" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
-                            <Building className="mb-3 h-6 w-6" /> Organization Member
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {accountType === 'organization' && (
-              <Alert>
-                <AlertTitle>Organization Access</AlertTitle>
-                <AlertDescription>
-                  Your account will be created with a standard 'User' role. Please contact a superadmin to have your role upgraded for event management access.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                        <Input placeholder="you@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                        <Input type="password" placeholder="Min. 6 characters" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-            </div>
-
-            <Separator />
-            <h3 className="text-lg font-medium text-primary">Step 2: Ride Registration</h3>
             <FormField
               control={form.control}
               name="registrationType"
@@ -345,9 +267,9 @@ export function RegistrationForm() {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={loading || updating || !form.formState.isValid}>
-              {(loading || updating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading || updating ? "Creating Account..." : "Create Account &amp; Register"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
         </Form>

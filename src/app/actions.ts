@@ -5,6 +5,8 @@ import { z } from "zod";
 import { db } from "@/lib/firebase";
 import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc, writeBatch } from "firebase/firestore";
 import type { UserRole } from "./lib/types";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 // Helper to get a user's role
 async function getUserRole(uid: string): Promise<UserRole> {
@@ -18,11 +20,56 @@ const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
 );
 
-// The main schema for the rider registration, now including a UID
+// Schema for the account creation
+const createAccountSchema = z.object({
+  email: z.string().email("Invalid email address."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"]
+});
+
+// Server action to create a user. This will be called from the new CreateAccountForm
+export async function createUser(values: z.infer<typeof createAccountSchema>) {
+    const parsed = createAccountSchema.safeParse(values);
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided." };
+    }
+    
+    try {
+        // This is a temporary auth instance on the server.
+        // The user will be created but not signed in on the server.
+        // The client will handle the sign-in state.
+        const userCredential = await createUserWithEmailAndPassword(auth, parsed.data.email, parsed.data.password);
+        const user = userCredential.user;
+
+        // Create user document in Firestore
+        const userRef = doc(db, "users", user.uid);
+        await setDoc(userRef, {
+            email: user.email,
+            displayName: user.email, // Use email as initial display name
+            role: 'user', // All new users get 'user' role by default
+            createdAt: serverTimestamp(),
+        });
+
+        return { success: true, message: "Account created successfully!", uid: user.uid };
+    } catch (error: any) {
+        console.error("Error creating user:", error);
+        // Provide a more user-friendly error message
+        if (error.code === 'auth/email-already-in-use') {
+            return { success: false, message: "This email address is already in use." };
+        }
+        return { success: false, message: "Could not create account. Please try again." };
+    }
+}
+
+
+// The schema for the ride registration form
 const registrationFormSchema = z
   .object({
     uid: z.string().min(1, "User ID is required."), // User ID from Firebase Auth
-    accountType: z.enum(['rider', 'organization']),
+    email: z.string().email(),
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
     }),
@@ -70,7 +117,7 @@ const registrationFormSchema = z
 
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
-export async function registerRider(values: RegistrationInput & {email?: string;}) {
+export async function registerRider(values: RegistrationInput) {
   const parsed = registrationFormSchema.safeParse(values);
 
   if (!parsed.success) {
@@ -79,23 +126,16 @@ export async function registerRider(values: RegistrationInput & {email?: string;
   }
 
   try {
-    const { uid, ...registrationData } = parsed.data;
+    const { uid, email, ...registrationData } = parsed.data;
 
-    // All new users, regardless of accountType, get 'user' role by default.
-    // A superadmin must manually promote them.
-    const role: UserRole = 'user';
-
-    // Use a transaction to ensure both documents are created successfully
+    // Use a transaction to ensure both documents are created/updated successfully
     await runTransaction(db, async (transaction) => {
       const userRef = doc(db, "users", uid);
       const registrationRef = doc(db, "registrations", uid);
 
-      // 1. Create the user document
-      transaction.set(userRef, {
-        email: values.email,
+      // 1. Update the user document with the full name
+      transaction.update(userRef, {
         displayName: registrationData.fullName,
-        role: role,
-        createdAt: serverTimestamp(),
       });
 
       // 2. Create the registration document
@@ -103,11 +143,12 @@ export async function registerRider(values: RegistrationInput & {email?: string;
         ...registrationData,
         status: "pending" as const,
         createdAt: serverTimestamp(),
+        // We no longer need accountType here as it's part of the user role
       };
       transaction.set(registrationRef, dataToSave);
     });
 
-    console.log(`Document written for user ID: ${uid} with role: ${role}`);
+    console.log(`Registration document written for user ID: ${uid}`);
     return { success: true, message: "Registration successful!" };
   } catch (error) {
     console.error("Error adding document: ", error);
