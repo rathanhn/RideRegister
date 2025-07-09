@@ -14,7 +14,7 @@ export interface Offer {
 }
 
 export interface Organizer {
-  id: number;
+  id:number;
   name: string;
   role: string;
   imageUrl: string;
@@ -27,4 +27,17 @@ export interface ScheduleEvent {
     title: string;
     description: string;
     icon: React.ElementType;
+}
+
+export interface Registration {
+    id: string;
+    registrationType: 'solo' | 'duo';
+    fullName: string;
+    age: number;
+    phoneNumber: string;
+    whatsappNumber?: string;
+    fullName2?: string;
+    age2?: number;
+    phoneNumber2?: string;
+    createdAt: any; // Firestore timestamp
 }

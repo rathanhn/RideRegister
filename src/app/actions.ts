@@ -2,29 +2,31 @@
 
 import { z } from "zod";
 import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, doc, setDoc } from "firebase/firestore";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
 );
 
-const formSchema = z
+// The main schema for the rider registration, now including a UID
+const registrationFormSchema = z
   .object({
+    uid: z.string().min(1, "User ID is required."), // User ID from Firebase Auth
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
     }),
+    
     // Rider 1
     fullName: z.string().min(2, "Full name must be at least 2 characters."),
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
     phoneNumber: z.string().regex(phoneRegex, "Invalid phone number."),
     whatsappNumber: z.string().optional(),
-    email: z.string().email("Invalid email address.").optional(),
-
-    // Rider 2
+    
+    // Rider 2 (for duo)
     fullName2: z.string().optional(),
     age2: z.coerce.number().optional(),
     phoneNumber2: z.string().optional(),
-
+    
     consent: z.boolean().refine((val) => val === true, {
       message: "You must agree to the rules.",
     }),
@@ -55,10 +57,10 @@ const formSchema = z
     }
   });
 
-type RegistrationInput = z.infer<typeof formSchema>;
+type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
 export async function registerRider(values: RegistrationInput) {
-  const parsed = formSchema.safeParse(values);
+  const parsed = registrationFormSchema.safeParse(values);
 
   if (!parsed.success) {
     console.error("Validation Errors:", parsed.error.flatten());
@@ -66,12 +68,14 @@ export async function registerRider(values: RegistrationInput) {
   }
 
   try {
+    const { uid, ...registrationData } = parsed.data;
     const dataToSave = {
-        ...parsed.data,
-        createdAt: new Date(),
+      ...registrationData,
+      createdAt: new Date(),
     };
-    const docRef = await addDoc(collection(db, "registrations"), dataToSave);
-    console.log("Document written with ID: ", docRef.id);
+    // Use the user's UID as the document ID for easy lookup
+    await setDoc(doc(db, "registrations", uid), dataToSave);
+    console.log("Document written for user ID: ", uid);
     return { success: true, message: "Registration successful!" };
   } catch (error) {
     console.error("Error adding document: ", error);

@@ -1,0 +1,40 @@
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import Image from "next/image";
+
+export function Hero() {
+    return (
+        <div className="relative overflow-hidden rounded-lg bg-card shadow-lg">
+            <div className="relative grid md:grid-cols-2">
+                <div className="p-8 md:p-12 flex flex-col justify-center text-center md:text-left">
+                    <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary tracking-tight">
+                        Independence Day <br />
+                        Freedom Ride 2025
+                    </h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Join TeleFun Mobile for an exhilarating bike ride to celebrate the spirit of freedom. Register now and be part of the excitement!
+                    </p>
+                    <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                        <Button asChild size="lg">
+                            <Link href="/register">Register Now</Link>
+                        </Button>
+                         <Button asChild variant="outline" size="lg">
+                            <Link href="/login">Check Status / Login</Link>
+                        </Button>
+                    </div>
+                </div>
+                 <div className="hidden md:block">
+                    <Image
+                        src="https://placehold.co/600x400.png"
+                        alt="Group of cyclists"
+                        width={600}
+                        height={400}
+                        className="h-full w-full object-cover"
+                        data-ai-hint="cyclists riding"
+                        priority
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
