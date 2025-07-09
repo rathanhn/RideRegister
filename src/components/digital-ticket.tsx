@@ -56,7 +56,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
         <Card className="max-w-2xl mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
             <div className="bg-primary/10 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full" />
+                    <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full border border-primary/20" />
                     <div>
                         <h3 className="font-bold text-primary">TeleFun Mobile</h3>
                         <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
@@ -84,9 +84,9 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
                     <div className="md:col-span-2 space-y-4">
                         <div className="space-y-2">
-                            <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-1"><UserIcon className="h-4 w-4" /> Rider Details</h4>
+                            <h4 className="font-semibold text-muted-foreground text-sm flex items-center gap-2"><UserIcon className="h-4 w-4" /> Rider Details</h4>
                             <p className="font-bold text-lg">{riderName}, {riderAge} years</p>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> {riderPhone}</p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</p>
                         </div>
 
                         <div className="flex gap-8 pt-2">
@@ -94,12 +94,12 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                                 <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
                                 <p className="font-bold text-lg flex items-center gap-2">
                                     {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                    {registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}
+                                    <span className="mt-1">{registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1)}</span>
                                 </p>
                             </div>
                             <div>
                                 <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
-                                <p className="font-mono text-sm">{registration.id.substring(0, 10).toUpperCase()}</p>
+                                <p className="font-mono text-sm mt-1.5">{registration.id.substring(0, 10).toUpperCase()}</p>
                             </div>
                         </div>
                     </div>
