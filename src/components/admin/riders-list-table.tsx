@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
   Table,
@@ -140,12 +140,12 @@ export function RidersListTable() {
                     </Badge>
                     </TableCell>
                     <TableCell>
-                        <div className="flex flex-col gap-1">
-                            <Badge variant="outline" className={`justify-center ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>
+                        <div className="flex flex-col gap-2">
+                            <Badge variant="outline" className={`justify-center ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : ''}`}>
                                 P1: {reg.rider1CheckedIn ? 'Checked-in' : 'Pending'}
                             </Badge>
                            {reg.registrationType === 'duo' && (
-                             <Badge variant="outline" className={`justify-center ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>
+                             <Badge variant="outline" className={`justify-center ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : ''}`}>
                                 P2: {reg.rider2CheckedIn ? 'Checked-in' : 'Pending'}
                             </Badge>
                            )}
@@ -153,14 +153,14 @@ export function RidersListTable() {
                     </TableCell>
                     <TableCell className="text-right">
                         <div className="flex flex-col items-end gap-2">
-                             <Button asChild variant="outline" size="sm" className="bg-green-50 hover:bg-green-100 text-green-700">
+                             <Button asChild variant="outline" size="sm" className="text-green-700 border-green-200 bg-green-50 hover:bg-green-100 dark:text-green-200 dark:border-green-800 dark:bg-green-900 dark:hover:bg-green-800">
                                 <Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank">
                                     <MessageCircle className="mr-2 h-4 w-4" />
                                     P1
                                 </Link>
                              </Button>
                             {reg.registrationType === 'duo' && reg.phoneNumber2 && (
-                                <Button asChild variant="outline" size="sm" className="bg-green-50 hover:bg-green-100 text-green-700">
+                                <Button asChild variant="outline" size="sm" className="text-green-700 border-green-200 bg-green-50 hover:bg-green-100 dark:text-green-200 dark:border-green-800 dark:bg-green-900 dark:hover:bg-green-800">
                                     <Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank">
                                         <MessageCircle className="mr-2 h-4 w-4" />
                                         P2
