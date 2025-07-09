@@ -13,7 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, Download, Phone, User as UserIcon, Loader2, Calendar, Clock, MapPin } from 'lucide-react';
+import { Bike, CheckCircle, Users, Download, Phone, User as UserIcon, Loader2, Calendar, Clock, MapPin, Share2, AlertTriangle } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -68,7 +68,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
         <CardHeader className="p-4 bg-primary/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center bg-white p-1">
+               <div className="relative h-12 w-12 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center bg-white p-1 overflow-hidden">
                 <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="object-contain" />
               </div>
               <div>
@@ -165,7 +165,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         });
 
         // Pre-fetch images
-        const logoDataUrl = Logo.src; // Directly use the imported static image source
+        const logoDataUrl = Logo.src; 
         const qrCodeDataUrl = await toDataURL(generateQrCodeUrl(qrData));
 
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [350, 500] });
@@ -181,13 +181,13 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         
         // Header Background
         doc.setFillColor(255, 247, 237); // primary/10
-        doc.rect(6, 6, 338, 55, 'F');
+        doc.roundedRect(6, 6, 338, 55, 8, 8, 'F');
         
         // This is a trick: Draw a white rectangle just below the header
         // to cover the bottom part of the header rect, creating a "cut-off"
         // that makes the main rounded rectangle's border appear correctly.
         doc.setFillColor(255, 255, 255);
-        doc.rect(6, 61, 338, 10, 'F');
+        doc.rect(6, 50, 338, 20, 'F');
         
         // Main Card Rounded Border (drawn over everything to get the outline)
         doc.roundedRect(5, 5, 340, 490, 8, 8, 'S');
@@ -299,9 +299,35 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     }
   };
 
-  if (registration.registrationType === 'duo') {
-    return (
-      <div className="space-y-4">
+  const handleShare = async () => {
+    const shareUrl = window.location.href; // URL to the dashboard
+    const shareText = "Check out my ride ticket for the Independence Day Freedom Ride! You can register here: https://rideregister.web.app";
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'RideRegister Ticket',
+          text: shareText,
+          url: shareUrl,
+        });
+        toast({ title: 'Shared successfully!' });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({ variant: 'destructive', title: 'Could not share', description: 'There was an error trying to share your ticket.' });
+      }
+    } else {
+      // Fallback for browsers that do not support the Web Share API
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({ title: 'Link Copied!', description: 'The link to your dashboard has been copied to your clipboard.' });
+      } catch (error) {
+         toast({ variant: 'destructive', title: 'Copy Failed', description: 'Could not copy the link to your clipboard.' });
+      }
+    }
+  };
+
+  const ticketContainer = (
+    registration.registrationType === 'duo' ? (
         <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
           <CarouselContent>
             <CarouselItem>
@@ -314,24 +340,33 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
           <CarouselPrevious className="left-[-10px] sm:left-[-50px]" />
           <CarouselNext className="right-[-10px] sm:right-[-50px]" />
         </Carousel>
-        <div className="flex justify-center">
-          <Button onClick={handleDownload} disabled={isDownloading}>
-            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            Download Current Ticket
-          </Button>
-        </div>
-      </div>
-    );
-  }
+    ) : (
+      <SingleTicket registration={registration} riderNumber={1} user={user} />
+    )
+  );
 
   return (
     <div className="space-y-4">
-      <SingleTicket registration={registration} riderNumber={1} user={user} />
-      <div className="flex justify-center">
-        <Button onClick={handleDownload} disabled={isDownloading}>
-          {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-          Download Ticket
-        </Button>
+      {ticketContainer}
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex gap-4">
+            <Button onClick={handleDownload} disabled={isDownloading}>
+                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Download Ticket
+            </Button>
+            <Button onClick={handleShare} variant="outline">
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Ticket
+            </Button>
+        </div>
+        <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg max-w-md w-full">
+            <div className="flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 mr-2 text-primary" />
+                <p>
+                    <strong>Important:</strong> Please download your ticket. A digital or printed copy is required for check-in.
+                </p>
+            </div>
+        </div>
       </div>
     </div>
   );
