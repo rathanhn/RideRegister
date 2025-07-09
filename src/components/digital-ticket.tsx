@@ -50,7 +50,6 @@ const toDataURL = async (url: string) => {
     });
 };
 
-
 const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber, user }, ref) => {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
@@ -166,7 +165,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         });
 
         // Pre-fetch images
-        const logoDataUrl = await toDataURL(Logo.src);
+        const logoDataUrl = Logo.src; // Directly use the imported static image source
         const qrCodeDataUrl = await toDataURL(generateQrCodeUrl(qrData));
 
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [350, 500] });
