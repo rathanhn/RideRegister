@@ -1,9 +1,5 @@
 
-import { config } from 'dotenv';
 import type {NextConfig} from 'next';
-
-// Load environment variables from .env.local
-config({ path: '.env.local' });
 
 const nextConfig: NextConfig = {
   /* config options here */
