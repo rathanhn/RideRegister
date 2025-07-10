@@ -4,6 +4,9 @@ export interface Announcement {
   id: string; // Document ID from Firestore
   message: string;
   createdAt: any; // Firestore timestamp
+  adminId: string;
+  adminName: string;
+  adminRole: UserRole;
 }
 
 export interface Offer {

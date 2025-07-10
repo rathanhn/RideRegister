@@ -2,10 +2,10 @@
 "use client";
 
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { Loader2, Trash2, AlertTriangle, Send } from 'lucide-react';
-import type { Announcement } from '@/lib/types';
+import { Loader2, Trash2, AlertTriangle, Send, User } from 'lucide-react';
+import type { Announcement, UserRole } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
@@ -18,6 +18,8 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useEffect, useState } from 'react';
+import { Badge } from '../ui/badge';
 
 const announcementSchema = z.object({
   message: z.string().min(5, "Min 5 characters.").max(280, "Max 280 characters."),
@@ -25,6 +27,7 @@ const announcementSchema = z.object({
 
 export function AnnouncementManager() {
   const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const { toast } = useToast();
   
   const form = useForm<z.infer<typeof announcementSchema>>({
@@ -33,12 +36,26 @@ export function AnnouncementManager() {
   });
   const { isSubmitting } = form.formState;
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role as UserRole);
+        }
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
   const [announcements, announcementsLoading, error] = useCollection(
     query(collection(db, 'announcements'), orderBy('createdAt', 'desc'))
   );
 
+  const canPost = userRole === 'admin' || userRole === 'superadmin';
+
   const handleDelete = async (id: string) => {
-    if (!user) return;
+    if (!user || !canPost) return;
     const result = await deleteAnnouncement({ adminId: user.uid, announcementId: id });
     if (!result.success) {
       toast({ variant: 'destructive', title: 'Error', description: result.message });
@@ -46,8 +63,16 @@ export function AnnouncementManager() {
   };
 
   async function onSubmit(values: z.infer<typeof announcementSchema>) {
-    if (!user) return;
-    const result = await addAnnouncement({ adminId: user.uid, message: values.message });
+    if (!user || !userRole || !canPost) {
+        toast({ variant: 'destructive', title: 'Error', description: "You don't have permission to post." });
+        return;
+    };
+    const result = await addAnnouncement({ 
+        adminId: user.uid,
+        adminName: user.displayName || 'Admin',
+        adminRole: userRole,
+        message: values.message 
+    });
     if (result.success) {
       toast({ title: 'Success', description: 'Announcement posted.' });
       form.reset();
@@ -60,26 +85,28 @@ export function AnnouncementManager() {
 
   return (
     <div className="space-y-4">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-          <FormField
-            control={form.control}
-            name="message"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Textarea placeholder="Type your announcement here..." {...field} rows={3} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={isSubmitting || isLoading}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            Post Announcement
-          </Button>
-        </form>
-      </Form>
+      {canPost && (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+            <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                <FormItem>
+                    <FormControl>
+                    <Textarea placeholder="Type your announcement here..." {...field} rows={3} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <Button type="submit" disabled={isSubmitting || isLoading}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                Post Announcement
+            </Button>
+            </form>
+        </Form>
+      )}
       
       <Separator />
 
@@ -98,14 +125,20 @@ export function AnnouncementManager() {
               <div key={announcement.id} className="flex items-start justify-between gap-4 p-3 border rounded-lg bg-background">
                 <div className="flex-grow">
                     <p className="text-sm">{announcement.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        {announcement.createdAt ? formatDistanceToNow(announcement.createdAt.toDate(), { addSuffix: true }) : 'just now'}
-                    </p>
+                    <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                        <div className="flex items-center gap-2">
+                           <User className="h-3 w-3" />
+                           <span>Posted by: {announcement.adminName} <Badge variant="secondary" className="capitalize">{announcement.adminRole}</Badge></span>
+                        </div>
+                        <p>{announcement.createdAt ? formatDistanceToNow(announcement.createdAt.toDate(), { addSuffix: true }) : 'just now'}</p>
+                    </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleDelete(announcement.id)} disabled={!user}>
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
-                </Button>
+                {canPost && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleDelete(announcement.id)} disabled={!user}>
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                    </Button>
+                )}
               </div>
             );
           })}

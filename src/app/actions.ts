@@ -398,11 +398,12 @@ export async function requestOrganizerAccess(values: z.infer<typeof requestOrgan
 const addAnnouncementSchema = z.object({
   message: z.string().min(5, "Announcement must be at least 5 characters.").max(280, "Announcement cannot be longer than 280 characters."),
   adminId: z.string().min(1, "Admin ID is required."),
+  adminName: z.string().min(1, "Admin name is required."),
+  adminRole: z.enum(['superadmin', 'admin', 'viewer', 'user']),
 });
 
 export async function addAnnouncement(values: z.infer<typeof addAnnouncementSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    if (values.adminRole !== 'admin' && values.adminRole !== 'superadmin') {
       return { success: false, message: "Permission denied." };
     }
     const parsed = addAnnouncementSchema.safeParse(values);
@@ -411,7 +412,7 @@ export async function addAnnouncement(values: z.infer<typeof addAnnouncementSche
     }
     try {
         await addDoc(collection(db, "announcements"), {
-            message: parsed.data.message,
+            ...parsed.data,
             createdAt: serverTimestamp(),
         });
         return { success: true, message: "Announcement posted successfully!" };
