@@ -1,15 +1,16 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration read from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyBFSTym4i--Cb1S7CtbZumYR7MVf78coAc",
-  authDomain: "rideregister.firebaseapp.com",
-  projectId: "rideregister",
-  storageBucket: "rideregister.appspot.com",
-  messagingSenderId: "922153227281",
-  appId: "1:922153227281:web:9faca0ed2bc37025750db0"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 // Initialize Firebase
