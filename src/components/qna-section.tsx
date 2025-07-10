@@ -82,7 +82,9 @@ export function QnaSection() {
       <CardContent className="space-y-6">
         <Card className="bg-secondary/50 p-4">
           {authLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <div className="flex justify-center items-center h-24">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
           ) : user ? (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -105,8 +107,11 @@ export function QnaSection() {
               </form>
             </Form>
           ) : (
-            <div className="text-center text-sm text-muted-foreground">
-              <Link href="/login" className="text-primary font-semibold hover:underline">Log in</Link> to ask a question.
+            <div className="text-center text-sm text-muted-foreground flex flex-col items-center justify-center h-24">
+              <p>Have a question? Join the conversation!</p>
+              <Button asChild variant="link" className="px-1">
+                <Link href="/login">Log in to ask a question.</Link>
+              </Button>
             </div>
           )}
         </Card>
