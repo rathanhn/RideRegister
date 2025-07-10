@@ -1,9 +1,9 @@
 
 
 export interface Announcement {
-  id: number;
+  id: string; // Document ID from Firestore
   message: string;
-  timestamp: string;
+  createdAt: any; // Firestore timestamp
 }
 
 export interface Offer {

@@ -1,4 +1,7 @@
-import { Megaphone, CalendarClock } from "lucide-react";
+
+"use client";
+
+import { Megaphone, CalendarClock, Loader2, AlertTriangle } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,31 +11,18 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { Announcement } from "@/lib/types";
-
-const announcements: Announcement[] = [
-  {
-    id: 1,
-    message: "Helmets are mandatory for all riders. No exceptions!",
-    timestamp: "2 hours ago",
-  },
-  {
-    id: 2,
-    message: "Please assemble at the TeleFun Mobile Store by 6:00 AM sharp.",
-    timestamp: "1 day ago",
-  },
-  {
-    id: 3,
-    message: "Carry a water bottle to stay hydrated during the ride.",
-    timestamp: "2 days ago",
-  },
-  {
-    id: 4,
-    message: "The ride route map will be shared on the morning of the event.",
-    timestamp: "3 days ago",
-  },
-];
+import { useCollection } from "react-firebase-hooks/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { formatDistanceToNow } from "date-fns";
 
 export function Announcements() {
+  const [announcements, loading, error] = useCollection(
+    query(collection(db, 'announcements'), orderBy('createdAt', 'desc'))
+  );
+
+  const announcementDocs = announcements?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement)) || [];
+
   return (
     <Card>
       <CardHeader>
@@ -44,16 +34,23 @@ export function Announcements() {
       <CardContent>
         <ScrollArea className="h-48 w-full">
           <div className="space-y-4">
-            {announcements.map((announcement, index) => (
+            {loading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
+            {error && <p className="text-sm text-destructive flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Error loading.</p>}
+            {!loading && announcementDocs.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No announcements yet. Check back soon!</p>
+            )}
+            {announcementDocs.map((announcement, index) => (
               <div key={announcement.id}>
                 <div className="flex flex-col gap-2 p-1">
                   <p className="text-sm">{announcement.message}</p>
                   <div className="flex items-center text-xs text-muted-foreground gap-1">
                     <CalendarClock className="h-3 w-3" />
-                    <span>{announcement.timestamp}</span>
+                    <span>
+                      {announcement.createdAt ? formatDistanceToNow(announcement.createdAt.toDate(), { addSuffix: true }) : 'just now'}
+                    </span>
                   </div>
                 </div>
-                {index < announcements.length - 1 && <Separator className="mt-4" />}
+                {index < announcementDocs.length - 1 && <Separator className="mt-4" />}
               </div>
             ))}
           </div>

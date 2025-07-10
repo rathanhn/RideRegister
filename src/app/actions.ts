@@ -390,3 +390,53 @@ export async function requestOrganizerAccess(values: z.infer<typeof requestOrgan
     return { success: false, message: "Failed to submit your request." };
   }
 }
+
+
+// === ANNOUNCEMENT ACTIONS ===
+
+// Schema for adding an announcement
+const addAnnouncementSchema = z.object({
+  message: z.string().min(5, "Announcement must be at least 5 characters.").max(280, "Announcement cannot be longer than 280 characters."),
+  adminId: z.string().min(1, "Admin ID is required."),
+});
+
+export async function addAnnouncement(values: z.infer<typeof addAnnouncementSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+    const parsed = addAnnouncementSchema.safeParse(values);
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided." };
+    }
+    try {
+        await addDoc(collection(db, "announcements"), {
+            message: parsed.data.message,
+            createdAt: serverTimestamp(),
+        });
+        return { success: true, message: "Announcement posted successfully!" };
+    } catch (error) {
+        console.error("Error adding announcement: ", error);
+        return { success: false, message: "Could not post announcement." };
+    }
+}
+
+// Schema for deleting an announcement
+const deleteAnnouncementSchema = z.object({
+  announcementId: z.string().min(1, "Announcement ID is required."),
+  adminId: z.string().min(1, "Admin ID is required."),
+});
+
+export async function deleteAnnouncement(values: z.infer<typeof deleteAnnouncementSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+    try {
+        await deleteDoc(doc(db, "announcements", values.announcementId));
+        return { success: true, message: "Announcement deleted." };
+    } catch (error) {
+        console.error("Error deleting announcement:", error);
+        return { success: false, message: "Failed to delete announcement." };
+    }
+}
