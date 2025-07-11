@@ -2,7 +2,7 @@
 "use client";
 
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Registration } from '@/lib/types';
 import {
@@ -18,15 +18,19 @@ import { Loader2, User } from 'lucide-react';
 import { useMemo } from 'react';
 
 export function RegisteredRiders() {
-  const approvedRidersQuery = useMemo(() => 
-    query(
-      collection(db, 'registrations'), 
-      where('status', '==', 'approved'),
-      orderBy('createdAt', 'desc')
-    ), 
-  []);
+  // Fetch all registrations and order them
+  const [registrations, loading, error] = useCollection(
+    query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
+  );
 
-  const [registrations, loading, error] = useCollection(approvedRidersQuery);
+  // Filter for approved riders on the client side
+  const approvedRiders = useMemo(() => {
+    if (!registrations) return [];
+    return registrations.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as Registration))
+      .filter(rider => rider.status === 'approved');
+  }, [registrations]);
+
 
   if (loading) {
     return (
@@ -37,12 +41,10 @@ export function RegisteredRiders() {
     );
   }
 
-  if (error || !registrations || registrations.docs.length === 0) {
-    // Don't show anything if there's an error or no riders
+  // If there's an error or no approved riders, render nothing.
+  if (error || approvedRiders.length === 0) {
     return null;
   }
-
-  const riders = registrations.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registration));
 
   return (
     <div className="w-full">
@@ -50,12 +52,12 @@ export function RegisteredRiders() {
       <Carousel
         opts={{
           align: "start",
-          loop: true,
+          loop: approvedRiders.length > 5, // Only loop if there are enough riders to scroll
         }}
         className="w-full"
       >
         <CarouselContent>
-          {riders.map((rider) => (
+          {approvedRiders.map((rider) => (
             <CarouselItem key={rider.id} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/6">
               <div className="p-1">
                 <Card>
@@ -66,7 +68,7 @@ export function RegisteredRiders() {
                         <User className="w-8 h-8" />
                       </AvatarFallback>
                     </Avatar>
-                    <p className="text-sm font-semibold text-center truncate w-full">{rider.fullName}</p>
+                    <p className="text-sm font-semibold text-center truncate w-full px-1">{rider.fullName}</p>
                   </CardContent>
                 </Card>
               </div>
