@@ -283,6 +283,39 @@ export async function checkInRider(values: z.infer<typeof checkInSchema>) {
     }
 }
 
+// Schema for marking a rider as finished
+const finishRiderSchema = z.object({
+  registrationId: z.string().min(1, "Registration ID is required."),
+  riderNumber: z.coerce.number().min(1).max(2),
+  adminId: z.string().min(1, "Admin ID is required."),
+});
+
+export async function finishRider(values: z.infer<typeof finishRiderSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+
+    const parsed = finishRiderSchema.safeParse(values);
+
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided for finishing." };
+    }
+
+    try {
+        const { registrationId, riderNumber } = parsed.data;
+        const registrationRef = doc(db, "registrations", registrationId);
+        
+        const fieldToUpdate = riderNumber === 1 ? 'rider1Finished' : 'rider2Finished';
+
+        await updateDoc(registrationRef, { [fieldToUpdate]: true });
+        return { success: true, message: `Rider ${riderNumber} marked as finished!` };
+    } catch (error) {
+        console.error("Error marking rider as finished: ", error);
+        return { success: false, message: "Could not process finish." };
+    }
+}
+
 
 // Schema for adding a question
 const addQuestionSchema = z.object({

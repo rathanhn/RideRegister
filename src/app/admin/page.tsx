@@ -11,7 +11,7 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck } from 'lucide-react';
+import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck, Flag } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import { RidersListTable } from '@/components/admin/riders-list-table';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
 import { CheckedInListTable } from '@/components/admin/checked-in-list-table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { FinishersListTable } from '@/components/admin/finishers-list-table';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -43,7 +44,6 @@ export default function AdminPage() {
       <main className="flex-grow container mx-auto p-4 md:p-8 space-y-8">
         <div className="space-y-2">
             <h1 className="text-2xl md:text-3xl font-bold font-headline">Admin Management</h1>
-            <p className="text-muted-foreground">Manage event registrations, Q&A, and view statistics.</p>
             {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
             ) : userRole ? (
@@ -98,6 +98,21 @@ export default function AdminPage() {
                     </AccordionContent>
                 </Card>
             </AccordionItem>
+
+            <AccordionItem value="item-finishers">
+                 <Card>
+                    <AccordionTrigger className="w-full p-6">
+                        <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className='flex items-center gap-2'><Flag className="h-6 w-6 text-primary"/>Finishers List</CardTitle>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <FinishersListTable />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
             
             <AccordionItem value="item-4">
                 <Card>
@@ -136,7 +151,7 @@ export default function AdminPage() {
                 <Card>
                     <AccordionTrigger className="w-full p-6">
                         <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&A</CardTitle>
+                            <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&amp;A</CardTitle>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>

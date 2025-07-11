@@ -50,6 +50,8 @@ export interface Registration {
     status: 'pending' | 'approved' | 'rejected' | 'cancellation_requested' | 'cancelled';
     rider1CheckedIn?: boolean;
     rider2CheckedIn?: boolean;
+    rider1Finished?: boolean;
+    rider2Finished?: boolean;
     cancellationReason?: string;
     statusLastUpdatedAt?: any; // Firestore timestamp
     statusLastUpdatedBy?: string; // Admin User ID

@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import jsQR from 'jsqr';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck, ShieldAlert, CheckCircle } from 'lucide-react';
+import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck, ShieldAlert, CheckCircle, Flag } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -13,16 +13,15 @@ import type { Registration, UserRole } from '@/lib/types';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { checkInRider } from '@/app/actions';
+import { checkInRider, finishRider } from '@/app/actions';
 import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
 
 
 type ScannedQrData = {
@@ -38,7 +37,7 @@ export function QrScanner() {
   const [scannedData, setScannedData] = useState<ScannedQrData | null>(null);
   const [scannedRegistration, setScannedRegistration] = useState<Registration | null>(null);
   const [isFetching, setIsFetching] = useState(false);
-  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -171,7 +170,7 @@ export function QrScanner() {
   
   const handleCheckIn = async () => {
     if (!scannedData || !scannedRegistration || !user) return;
-    setIsCheckingIn(true);
+    setIsProcessing(true);
     const result = await checkInRider({
         registrationId: scannedData.registrationId,
         riderNumber: scannedData.rider,
@@ -187,12 +186,38 @@ export function QrScanner() {
     } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message });
     }
-    setIsCheckingIn(false);
+    setIsProcessing(false);
+  }
+
+  const handleFinish = async () => {
+    if (!scannedData || !scannedRegistration || !user) return;
+    setIsProcessing(true);
+    const result = await finishRider({
+        registrationId: scannedData.registrationId,
+        riderNumber: scannedData.rider,
+        adminId: user.uid,
+    });
+    if (result.success) {
+        toast({
+            title: "Success!",
+            description: result.message,
+            action: <Flag className="text-primary" />,
+        });
+        setScannedRegistration(null); // Close dialog
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsProcessing(false);
   }
 
   const riderIsCheckedIn = scannedRegistration && scannedData ? 
     (scannedData.rider === 1 ? scannedRegistration.rider1CheckedIn : scannedRegistration.rider2CheckedIn)
     : false;
+
+  const riderIsFinished = scannedRegistration && scannedData ? 
+    (scannedData.rider === 1 ? scannedRegistration.rider1Finished : scannedRegistration.rider2Finished)
+    : false;
+
 
   if (authLoading) {
     return <Loader2 className="h-6 w-6 animate-spin mx-auto" />
@@ -202,7 +227,7 @@ export function QrScanner() {
      return (
       <div className="text-muted-foreground flex items-center justify-center gap-2 p-4 bg-secondary rounded-md h-full">
         <ShieldAlert className="h-5 w-5" />
-        <p>You do not have permission to check-in riders.</p>
+        <p>You do not have permission to use the scanner.</p>
       </div>
     );
   }
@@ -235,34 +260,48 @@ export function QrScanner() {
         
         {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Scan Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
-        <AlertDialog open={!!scannedRegistration && !isFetching} onOpenChange={() => setScannedRegistration(null)}>
+        <AlertDialog open={!!scannedRegistration && !isFetching} onOpenChange={() => { setScannedRegistration(null); setScannedData(null); }}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Rider Details</AlertDialogTitle>
+                    <AlertDialogTitle>Rider Details & Actions</AlertDialogTitle>
                     <AlertDialogDescription>
                         {scannedRegistration?.status !== 'approved' && <Badge variant="destructive" className="mb-2">Registration Not Approved!</Badge>}
-                        Verify rider information before check-in.
+                        Verify rider information and perform an action.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 {isFetching ? (
                     <Loader2 className="h-8 w-8 animate-spin mx-auto" />
                 ) : scannedRegistration && (
-                    <div className="space-y-2 text-sm">
-                        <p><strong>Name:</strong> {scannedData?.rider === 1 ? scannedRegistration.fullName : scannedRegistration.fullName2}</p>
-                        <p><strong>Age:</strong> {scannedData?.rider === 1 ? scannedRegistration.age : scannedRegistration.age2}</p>
-                        <p><strong>Phone:</strong> {scannedData?.rider === 1 ? scannedRegistration.phoneNumber : scannedRegistration.phoneNumber2}</p>
-                        <p><strong>Status:</strong> {riderIsCheckedIn ? <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="mr-1 h-3 w-3" />Already Checked-in</Badge> : <Badge variant="secondary">Not Checked-in</Badge>}</p>
+                    <div className="space-y-4 text-sm">
+                        <div>
+                            <p><strong>Name:</strong> {scannedData?.rider === 1 ? scannedRegistration.fullName : scannedRegistration.fullName2}</p>
+                            <p><strong>Age:</strong> {scannedData?.rider === 1 ? scannedRegistration.age : scannedRegistration.age2}</p>
+                            <p><strong>Phone:</strong> {scannedData?.rider === 1 ? scannedRegistration.phoneNumber : scannedRegistration.phoneNumber2}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                             <p><strong>Checked-in:</strong> {riderIsCheckedIn ? <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="mr-1 h-3 w-3" />Yes</Badge> : <Badge variant="secondary">No</Badge>}</p>
+                             <p><strong>Finished:</strong> {riderIsFinished ? <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="mr-1 h-3 w-3" />Yes</Badge> : <Badge variant="secondary">No</Badge>}</p>
+                        </div>
                     </div>
                 )}
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Close</AlertDialogCancel>
-                    <AlertDialogAction 
+                <Separator />
+                <AlertDialogFooter className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                     <Button variant="outline" onClick={() => setScannedRegistration(null)}>Cancel</Button>
+                     <Button 
                         onClick={handleCheckIn} 
-                        disabled={isCheckingIn || riderIsCheckedIn || scannedRegistration?.status !== 'approved' || !canEdit}
+                        disabled={isProcessing || riderIsCheckedIn || scannedRegistration?.status !== 'approved' || !canEdit}
+                        className="bg-green-600 hover:bg-green-700"
                     >
-                        {isCheckingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {riderIsCheckedIn ? 'Checked In' : 'Mark as Checked-in'}
-                    </AlertDialogAction>
+                        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {riderIsCheckedIn ? 'Already Checked-In' : 'Check-In'}
+                    </Button>
+                    <Button 
+                        onClick={handleFinish} 
+                        disabled={isProcessing || riderIsFinished || scannedRegistration?.status !== 'approved' || !canEdit || !riderIsCheckedIn}
+                    >
+                        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {riderIsFinished ? 'Already Finished' : 'Mark as Finished'}
+                    </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
