@@ -25,7 +25,7 @@ const RiderSkeleton = () => (
     <div className="p-1">
         <Card>
             <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
-                <Skeleton className="w-32 h-32 rounded-full" />
+                <Skeleton className="w-24 h-24 sm:w-32 sm:h-32 rounded-full" />
                 <Skeleton className="h-6 w-3/4" />
             </CardContent>
         </Card>
@@ -33,7 +33,6 @@ const RiderSkeleton = () => (
 );
 
 export function RegisteredRiders() {
-  // Simpler query without ordering to avoid needing a composite index
   const [registrations, loading, error] = useCollection(
     query(collection(db, 'registrations'), where('status', '==', 'approved'))
   );
@@ -74,11 +73,7 @@ export function RegisteredRiders() {
            </CardHeader>
            <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  <RiderSkeleton />
-                  <RiderSkeleton />
-                  <RiderSkeleton />
-                  <RiderSkeleton />
-                  <RiderSkeleton />
+                  {[...Array(5)].map((_, i) => <RiderSkeleton key={i} />)}
               </div>
            </CardContent>
        </Card>
@@ -111,30 +106,28 @@ export function RegisteredRiders() {
             }}
             className="w-full"
           >
-            <CarouselContent>
+            <CarouselContent className="-ml-2 sm:-ml-4">
               {allParticipants.map((rider) => (
-                <CarouselItem key={rider.id} className="basis-1/2 md:basis-1/3 lg:basis-1/5">
-                  <div className="p-1">
+                <CarouselItem key={rider.id} className="basis-1/2 md:basis-1/3 lg:basis-1/5 pl-2 sm:pl-4">
                     <Card>
-                      <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
-                        <Avatar className="w-24 h-24 border-4 border-primary/50">
+                      <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 gap-2 aspect-square">
+                        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-primary/50">
                           <AvatarImage src={rider.photo} alt={rider.name} />
                           <AvatarFallback>
-                            <User className="w-12 h-12" />
+                            <User className="w-10 h-10 sm:w-12 sm:h-12" />
                           </AvatarFallback>
                         </Avatar>
-                        <p className="text-base font-semibold text-center truncate w-full px-1">{rider.name}</p>
+                        <p className="text-sm sm:text-base font-semibold text-center truncate w-full px-1">{rider.name}</p>
                       </CardContent>
                     </Card>
-                  </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
+            <CarouselPrevious className="hidden sm:flex" />
+            <CarouselNext className="hidden sm:flex" />
           </Carousel>
 
-          <p className="text-xs text-muted-foreground text-center mt-4 flex items-center justify-center gap-1 md:hidden">
+          <p className="text-xs text-muted-foreground text-center mt-4 flex items-center justify-center gap-1 sm:hidden">
               Scroll to see more <MoveRight className="h-3 w-3" />
           </p>
 
@@ -173,4 +166,3 @@ export function RegisteredRiders() {
     </Card>
   );
 }
-

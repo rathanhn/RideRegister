@@ -35,8 +35,8 @@ const TableSkeleton = () => (
     [...Array(5)].map((_, i) => (
         <TableRow key={i}>
             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-            <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+            <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
             <TableCell>
                 <div className="flex flex-col gap-2">
                     <Skeleton className="h-5 w-20" />
@@ -118,14 +118,14 @@ export function RidersListTable() {
 
   return (
     <div>
-        <div className="flex justify-between items-center mb-4 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
             <Input 
                 placeholder="Search by name or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
+                className="w-full sm:max-w-sm"
             />
-            <Button onClick={handleExport} disabled={filteredRegistrations.length === 0}>
+            <Button onClick={handleExport} disabled={filteredRegistrations.length === 0} className="w-full sm:w-auto">
                 <Download className="mr-2 h-4 w-4" />
                 Export to CSV
             </Button>
@@ -135,9 +135,9 @@ export function RidersListTable() {
             <TableHeader>
             <TableRow>
                 <TableHead>Rider(s)</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Check-in Status</TableHead>
+                <TableHead className="hidden md:table-cell">Phone</TableHead>
+                <TableHead className="hidden lg:table-cell">Type</TableHead>
+                <TableHead>Check-in</TableHead>
                 <TableHead className="text-right">Contact</TableHead>
             </TableRow>
             </TableHeader>
@@ -151,11 +151,11 @@ export function RidersListTable() {
                         <div>{reg.fullName}</div>
                         {reg.registrationType === 'duo' && reg.fullName2 && <div className="text-xs text-muted-foreground">{reg.fullName2}</div>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                          <div>{reg.phoneNumber}</div>
                         {reg.registrationType === 'duo' && reg.phoneNumber2 && <div className="text-xs text-muted-foreground">{reg.phoneNumber2}</div>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                     <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'}>
                         {reg.registrationType}
                     </Badge>

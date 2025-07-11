@@ -90,7 +90,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
         </CardHeader>
         <CardContent className="p-4">
           <div className="mb-4">
-            <CardTitle className="text-2xl font-headline">
+            <CardTitle className="text-xl md:text-2xl font-headline">
               Your Ride Ticket {isDuo ? `(Rider ${riderNumber} of 2)` : ''}
             </CardTitle>
             <CardDescription>Present this ticket at the check-in counter.</CardDescription>
@@ -103,7 +103,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                   <UserIcon className="h-4 w-4 text-muted-foreground" />
                   <h4 className="font-semibold text-muted-foreground text-sm">Rider Details</h4>
                 </div>
-                <p className="font-bold text-lg">{riderName}, {riderAge} years</p>
+                <p className="font-bold text-base md:text-lg">{riderName}, {riderAge} years</p>
                 <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
               </div>
 
@@ -112,14 +112,14 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                   <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
                   <div className="mt-1 flex items-center gap-2">
                     {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                    <p className="font-bold text-lg capitalize">
+                    <p className="font-bold text-base md:text-lg capitalize">
                       {registration.registrationType}
                     </p>
                   </div>
                 </div>
                 <div>
                   <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
-                  <p className="font-mono text-base pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
+                  <p className="font-mono text-xs md:text-base pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
                 </div>
               </div>
             </div>
@@ -337,8 +337,8 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
               <SingleTicket registration={registration} riderNumber={2} user={user} />
             </CarouselItem>
           </CarouselContent>
-          <CarouselPrevious className="left-[-10px] sm:left-[-50px]" />
-          <CarouselNext className="right-[-10px] sm:right-[-50px]" />
+          <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
+          <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
         </Carousel>
     ) : (
       <SingleTicket registration={registration} riderNumber={1} user={user} />
@@ -349,21 +349,21 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     <div className="space-y-4">
       {ticketContainer}
       <div className="flex flex-col items-center gap-4 max-w-md mx-auto">
-        <div className="flex gap-4">
-            <Button onClick={handleDownload} disabled={isDownloading}>
+        <div className="flex flex-col sm:flex-row w-full gap-4">
+            <Button onClick={handleDownload} disabled={isDownloading} className="w-full">
                 {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 Download Ticket
             </Button>
-            <Button onClick={handleShare} variant="outline">
+            <Button onClick={handleShare} variant="outline" className="w-full">
                 <Share2 className="mr-2 h-4 w-4" />
                 Share Ticket
             </Button>
         </div>
         <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg w-full">
             <div className="flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 mr-2 text-primary" />
+                <AlertTriangle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 <p>
-                    <strong>Important:</strong> Please download your ticket. A digital or printed copy is required for check-in.
+                    <strong>Important:</strong> A digital or printed copy of your ticket is required for check-in.
                 </p>
             </div>
         </div>

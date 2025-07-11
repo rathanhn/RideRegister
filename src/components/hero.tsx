@@ -7,16 +7,16 @@ import HeroImage from "@/hero.png";
 export function Hero() {
     return (
         <div className="rounded-lg bg-card shadow-lg overflow-hidden">
-            <div className="p-8 md:p-12 text-center">
-                 <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary tracking-tight">
+            <div className="p-6 sm:p-8 md:p-12 text-center">
+                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-headline text-primary tracking-tight">
                     Independence Day <br />
                     Freedom Ride 2025
                 </h2>
-                <p className="mt-4 text-lg text-foreground/80 max-w-2xl mx-auto">
+                <p className="mt-4 text-base sm:text-lg text-foreground/80 max-w-2xl mx-auto">
                     Join TeleFun Mobile for an exhilarating bike ride to celebrate the spirit of freedom. Register now and be part of the excitement!
                 </p>
 
-                <div className="my-8 flex justify-center">
+                <div className="my-6 md:my-8 flex justify-center">
                     <Image
                         src={HeroImage}
                         alt="Motorcyclists on a freedom ride with Indian and event flags"

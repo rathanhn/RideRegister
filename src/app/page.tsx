@@ -19,9 +19,9 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
        <div className="bg-secondary text-secondary-foreground py-2 border-b">
-        <div className="container mx-auto flex justify-center items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          <p className="text-sm font-medium">
+        <div className="container mx-auto flex justify-center items-center gap-2 text-center px-4">
+          <MapPin className="h-4 w-4 flex-shrink-0" />
+          <p className="text-xs sm:text-sm font-medium">
             Telefun Mobiles: Mahadevpet, Madikeri
           </p>
         </div>
