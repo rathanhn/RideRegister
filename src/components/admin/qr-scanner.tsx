@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import jsQR from 'jsqr';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck, ShieldAlert, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -52,7 +52,7 @@ export function QrScanner() {
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          setUserRole(userDoc.data().role);
+          setUserRole(userDoc.data().role as UserRole);
         }
       }
     };
@@ -251,7 +251,7 @@ export function QrScanner() {
                         <p><strong>Name:</strong> {scannedData?.rider === 1 ? scannedRegistration.fullName : scannedRegistration.fullName2}</p>
                         <p><strong>Age:</strong> {scannedData?.rider === 1 ? scannedRegistration.age : scannedRegistration.age2}</p>
                         <p><strong>Phone:</strong> {scannedData?.rider === 1 ? scannedRegistration.phoneNumber : scannedRegistration.phoneNumber2}</p>
-                        <p><strong>Status:</strong> {riderIsCheckedIn ? <Badge className="bg-green-100 text-green-800">Already Checked-in</Badge> : <Badge variant="secondary">Not Checked-in</Badge>}</p>
+                        <p><strong>Status:</strong> {riderIsCheckedIn ? <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="mr-1 h-3 w-3" />Already Checked-in</Badge> : <Badge variant="secondary">Not Checked-in</Badge>}</p>
                     </div>
                 )}
                 <AlertDialogFooter>

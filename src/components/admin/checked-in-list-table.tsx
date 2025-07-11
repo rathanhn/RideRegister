@@ -165,10 +165,10 @@ export function CheckedInListTable() {
                                 <p className="text-sm text-muted-foreground">{p.phone}</p>
                                 <Badge variant="secondary" className="mt-1">{p.type}</Badge>
                             </div>
-                            <div className='flex items-center gap-2 text-sm text-green-600 font-medium'>
-                                <CheckCircle className="h-4 w-4" />
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                <CheckCircle className="mr-2 h-4 w-4" />
                                 Checked-In
-                            </div>
+                            </Badge>
                         </CardContent>
                     </Card>
                 ))
@@ -200,10 +200,10 @@ export function CheckedInListTable() {
                         <TableCell>{p.phone}</TableCell>
                         <TableCell><Badge variant="outline">{p.type}</Badge></TableCell>
                         <TableCell className="text-right">
-                             <div className='flex justify-end items-center gap-2 text-sm text-green-600 font-medium'>
-                                <CheckCircle className="h-4 w-4" />
+                             <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                <CheckCircle className="mr-2 h-4 w-4" />
                                 Checked-In
-                            </div>
+                            </Badge>
                         </TableCell>
                     </TableRow>
                     ))

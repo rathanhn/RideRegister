@@ -13,7 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, Download, Phone, User as UserIcon, Loader2, Calendar, Clock, MapPin, Share2, AlertTriangle } from 'lucide-react';
+import { Bike, CheckCircle, Users, Download, Phone, User as UserIcon, Loader2, Calendar, Clock, MapPin, Share2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -77,13 +77,13 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
               </div>
             </div>
             <div className="flex flex-col items-end gap-1.5">
-              <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize">{registration.status}</Badge>
+              <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize"><ShieldCheck className="mr-1 h-3 w-3"/>{registration.status}</Badge>
               {isCheckedIn ? (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 flex items-center gap-1 py-1">
-                  <CheckCircle className="h-3 w-3" /> Checked-in
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <CheckCircle className="mr-1 h-3 w-3" /> Checked-in
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="flex items-center py-1">Not Checked-in</Badge>
+                <Badge variant="secondary">Not Checked-in</Badge>
               )}
             </div>
           </div>
