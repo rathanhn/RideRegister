@@ -10,12 +10,6 @@ import { headers } from "next/headers";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { v2 as cloudinary } from 'cloudinary';
 
-cloudinary.config({
-  cloud_name: 'dfk9licqv',
-  api_key: '547273686289121',
-  api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
-});
-
 // Helper to get a user's role
 async function getUserRole(uid: string): Promise<UserRole> {
     if (!uid) return 'user';
@@ -130,6 +124,13 @@ const registrationFormSchema = z
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
 export async function registerRider(values: RegistrationInput, photo1DataUri?: string, photo2DataUri?: string) {
+    // Moved Cloudinary config inside the function
+    cloudinary.config({
+        cloud_name: 'dfk9licqv',
+        api_key: '547273686289121',
+        api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
+    });
+    
     console.log("[Server] registerRider action invoked.");
 
     const parsed = registrationFormSchema.safeParse(values);
@@ -175,13 +176,10 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
         await setDoc(registrationRef, dataToSave);
         console.log(`[Server] Registration document created for UID: ${uid}`);
 
-        // This update is separate and less critical than the registration itself.
-        // It's not in a transaction to avoid race conditions with new user creation.
         await updateDoc(userRef, { 
             displayName: registrationData.fullName,
             photoURL: photoURL1
         }).catch(err => {
-            // Log the error but don't fail the whole registration if this part fails
             console.error(`[Server] Non-critical error updating user profile for UID ${uid}:`, err);
         });
         console.log(`[Server] User display name and photo updated for UID: ${uid}`);
@@ -208,6 +206,13 @@ export async function uploadPhoto(formData: FormData) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
+    
+    // Moved Cloudinary config inside the function
+    cloudinary.config({
+        cloud_name: 'dfk9licqv',
+        api_key: '547273686289121',
+        api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
+    });
 
     const result = await cloudinary.uploader.upload(dataUri, {
       folder: 'rideregister',
