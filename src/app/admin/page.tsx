@@ -11,7 +11,7 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, FileText, Loader2, List, FileCheck, MessageSquare, Megaphone } from 'lucide-react';
+import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -48,45 +48,45 @@ export default function AdminPage() {
             ) : null}
         </div>
         
-        <StatsOverview />
+        <div className="grid grid-cols-1 gap-8">
+            <StatsOverview />
 
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-1">
-          <Card>
-              <CardHeader>
-                  <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
-                  <CardDescription>
-                      Review pending applications and manage cancellation requests.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <RegistrationsTable />
-              </CardContent>
-          </Card>
-          <Card>
-              <CardHeader>
-                  <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Registered Riders</CardTitle>
-                  <CardDescription>
-                      View, contact, or remove all approved riders for the event.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <RidersListTable />
-              </CardContent>
-          </Card>
-          <Card>
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                      <ScanLine className="h-6 w-6 text-primary" />
-                      Ticket Scanner
-                  </CardTitle>
-                  <CardDescription>
-                  Scan rider tickets for real-time check-in.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <QrScanner />
-              </CardContent>
-          </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
+                    <CardDescription>
+                        Review pending applications and manage cancellation requests.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <RegistrationsTable />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Registered Riders</CardTitle>
+                    <CardDescription>
+                        View, contact, or remove all approved riders for the event.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <RidersListTable />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ScanLine className="h-6 w-6 text-primary" />
+                        Ticket Scanner
+                    </CardTitle>
+                    <CardDescription>
+                    Scan rider tickets for real-time check-in.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <QrScanner />
+                </CardContent>
+            </Card>
             <Card>
               <CardHeader>
               <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
@@ -109,20 +109,18 @@ export default function AdminPage() {
               <AdminQna />
               </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+                <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
+                <CardDescription>
+                Assign roles to users. This section is only visible to Super Admins.
+                </CardDescription>
+            </Header>
+            <CardContent>
+                <UserRolesManager />
+            </CardContent>
+            </Card>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
-            <CardDescription>
-              Assign roles to users. This section is only visible to Super Admins.
-            </CardDescription>
-          </Header>
-          <CardContent>
-            <UserRolesManager />
-          </CardContent>
-        </Card>
-        
       </main>
     </div>
   );
