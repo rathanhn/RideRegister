@@ -127,7 +127,6 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
     console.log("[Server] registerRider action invoked.");
     
     try {
-        // Moved Cloudinary config inside the function
         cloudinary.config({
             cloud_name: 'dfk9licqv',
             api_key: '547273686289121',
