@@ -6,7 +6,7 @@ import Logo from "@/Logo.png";
 
 export function Hero() {
     return (
-        <div className="relative overflow-hidden rounded-lg bg-card shadow-lg">
+        <div className="relative overflow-hidden rounded-lg bg-card shadow-lg min-h-[400px] md:min-h-[350px]">
             <div className="absolute inset-0 z-0">
                  <Image
                     src="/Hero.png"
@@ -20,7 +20,7 @@ export function Hero() {
                 />
                  <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent"></div>
             </div>
-            <div className="relative z-10 p-8 md:p-12 lg:p-16">
+            <div className="relative z-10 flex items-center h-full p-8 md:p-12 lg:p-16">
                 <div className="max-w-xl text-center md:text-left">
                     <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary tracking-tight">
                         Independence Day <br />
