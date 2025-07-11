@@ -24,11 +24,11 @@ export function Hero() {
             </div>
             <div className="hidden md:block relative h-full min-h-[300px] md:min-h-full">
                 <Image
-                    src="https://placehold.co/600x400.png"
-                    alt="Group of cyclists"
+                    src="https://storage.googleapis.com/project-os-prod/images/64319851-93e8-46c5-a0cb-1e4348a735c0.png"
+                    alt="Motorcyclists on a freedom ride with Indian and event flags"
                     fill
                     className="object-cover"
-                    data-ai-hint="cyclists riding"
+                    data-ai-hint="motorcycle ride"
                     priority
                 />
             </div>
