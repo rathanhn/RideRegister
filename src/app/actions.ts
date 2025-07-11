@@ -76,7 +76,7 @@ export async function createUser(values: z.infer<typeof createAccountSchema>) {
 
 
 // The schema for the ride registration form
-// No longer needs UID or email, as we get that from the server session
+// It now includes uid and email which are passed from the client
 const registrationFormSchema = z
   .object({
     uid: z.string().min(1, "User ID is required."),
@@ -176,9 +176,13 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
         console.log(`[Server] Registration document created for UID: ${uid}`);
 
         // This update is separate and less critical than the registration itself.
+        // It's not in a transaction to avoid race conditions with new user creation.
         await updateDoc(userRef, { 
             displayName: registrationData.fullName,
             photoURL: photoURL1
+        }).catch(err => {
+            // Log the error but don't fail the whole registration if this part fails
+            console.error(`[Server] Non-critical error updating user profile for UID ${uid}:`, err);
         });
         console.log(`[Server] User display name and photo updated for UID: ${uid}`);
 
@@ -190,6 +194,7 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
         return { success: false, message: "Could not save your registration. Please try again." };
     }
 }
+
 
 // This action is now only used for one-off photo uploads if needed elsewhere,
 // but not directly in the main registration flow.
@@ -590,3 +595,5 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
         return { success: false, message: "Could not submit your request. Please try again." };
     }
 }
+
+    
