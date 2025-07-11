@@ -145,10 +145,10 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
       const userRef = doc(db, "users", uid);
       const registrationRef = doc(db, "registrations", uid);
 
-      // Update user's main profile
-      transaction.update(userRef, {
+      // Update user's main profile using set with merge to avoid errors on new users
+      transaction.set(userRef, {
         displayName: registrationData.fullName,
-      });
+      }, { merge: true });
 
       // Save initial registration data
       const dataToSave = {
