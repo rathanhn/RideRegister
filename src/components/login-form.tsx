@@ -18,10 +18,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { useRouter } from "next/navigation";
-import Link from 'next/link';
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -68,10 +68,33 @@ export function LoginForm() {
   }
 
   useEffect(() => {
-    if (user || googleUser) {
+    if (user) {
       router.push('/dashboard');
     }
-  }, [user, googleUser, router]);
+  }, [user, router]);
+  
+  // Effect to handle user creation in Firestore after Google Sign-in
+  useEffect(() => {
+    const setupGoogleUser = async () => {
+        if (googleUser) {
+            const user = googleUser.user;
+            const userRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userRef);
+
+            if (!userDoc.exists()) {
+                await setDoc(userRef, {
+                    email: user.email,
+                    displayName: user.displayName || user.email?.split('@')[0],
+                    role: 'user',
+                    photoURL: user.photoURL,
+                    createdAt: serverTimestamp(),
+                });
+            }
+            router.push('/dashboard');
+        }
+    };
+    setupGoogleUser();
+  }, [googleUser, router]);
   
   const authError = error || googleError;
   useEffect(() => {
