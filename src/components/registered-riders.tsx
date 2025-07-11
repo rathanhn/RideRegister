@@ -38,16 +38,11 @@ export function RegisteredRiders() {
     query(collection(db, 'registrations'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'))
   );
 
-  const approvedRiders = useMemo(() => {
-    if (!registrations) return [];
-    return registrations.docs
-      .map(doc => ({ id: doc.id, ...doc.data() } as Registration));
-  }, [registrations]);
-
   const allParticipants = useMemo(() => {
-    if (!approvedRiders) return [];
+    if (!registrations) return [];
     const participants: { id: string; name: string; photo?: string; type: string }[] = [];
-    approvedRiders.forEach(rider => {
+    registrations.docs.forEach(doc => {
+      const rider = { id: doc.id, ...doc.data() } as Registration;
       participants.push({
         id: `${rider.id}-1`,
         name: rider.fullName,
@@ -64,7 +59,7 @@ export function RegisteredRiders() {
       }
     });
     return participants;
-  }, [approvedRiders]);
+  }, [registrations]);
 
   if (loading) {
     return (
@@ -83,6 +78,7 @@ export function RegisteredRiders() {
 
   if (error) {
     // Silently fail to avoid breaking the page for a non-critical component.
+    console.error("Error loading registered riders:", error);
     return null;
   }
   
@@ -174,4 +170,3 @@ export function RegisteredRiders() {
     </Card>
   );
 }
-
