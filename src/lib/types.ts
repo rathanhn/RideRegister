@@ -41,6 +41,7 @@ export interface Registration {
     age: number;
     phoneNumber: string;
     whatsappNumber?: string;
+    photoURL?: string;
     fullName2?: string;
     age2?: number;
     phoneNumber2?: string;

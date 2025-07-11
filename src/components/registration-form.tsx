@@ -18,14 +18,15 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
-import { Loader2, PartyPopper, User, Users } from "lucide-react";
-import { registerRider } from "@/app/actions";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, PartyPopper, User, Users, Upload, X } from "lucide-react";
+import { registerRider, uploadPhoto } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
 import { auth } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import type { Registration } from "@/lib/types";
+import Image from "next/image";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -40,6 +41,7 @@ const formSchema = z
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
     phoneNumber: z.string().regex(phoneRegex, "Invalid phone number."),
     whatsappNumber: z.string().optional(),
+    photoURL: z.string().optional(),
 
     // Rider 2
     fullName2: z.string().optional(),
@@ -81,6 +83,10 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const { toast } = useToast();
   const [user, loading] = useAuthState(auth);
   const [sameAsPhone, setSameAsPhone] = useState(false);
+  
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -91,6 +97,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       age: 18,
       phoneNumber: "",
       whatsappNumber: "",
+      photoURL: user?.photoURL ?? "",
       consent: false,
     },
   });
@@ -98,6 +105,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const { isSubmitting } = form.formState;
   const registrationType = form.watch("registrationType");
   const phoneNumber = form.watch("phoneNumber");
+  const photoURL = form.watch("photoURL");
 
   useEffect(() => {
     if (sameAsPhone) {
@@ -109,8 +117,30 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     if (user?.displayName) {
         form.setValue("fullName", user.displayName);
     }
+    if (user?.photoURL) {
+        form.setValue("photoURL", user.photoURL);
+        setPhotoPreview(user.photoURL);
+    }
   }, [user, form]);
-
+  
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setPhotoPreview(URL.createObjectURL(file));
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+      const result = await uploadPhoto(formData);
+      if (result.success && result.url) {
+        form.setValue('photoURL', result.url, { shouldValidate: true });
+        setPhotoPreview(result.url); // Show cloudinary image
+      } else {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: result.message });
+        setPhotoPreview(user?.photoURL ?? null); // Revert on failure
+      }
+      setIsUploading(false);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
@@ -123,6 +153,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           ...values,
           uid: user.uid,
           email: user.email!,
+          photoURL: values.photoURL || user.photoURL || undefined,
       });
 
       if (result.success) {
@@ -135,6 +166,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         const newRegistrationData: Registration = {
             id: user.uid,
             ...values,
+            photoURL: values.photoURL || user.photoURL || undefined,
             status: 'pending',
             createdAt: new Date(), 
             rider1CheckedIn: false,
@@ -199,6 +231,39 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             
             <Separator />
             <h3 className="text-lg font-medium text-primary">Rider 1 Information</h3>
+            
+            <FormItem>
+              <FormLabel>Profile Photo</FormLabel>
+              <FormControl>
+                  <div className="flex items-center gap-4">
+                      <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
+                        {photoPreview ? (
+                            <Image src={photoPreview} alt="Profile preview" layout="fill" className="rounded-full object-cover" />
+                        ) : (
+                            <User className="w-10 h-10 text-muted-foreground" />
+                        )}
+                         {isUploading && (
+                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            </div>
+                         )}
+                      </div>
+                      <Button type="button" variant="outline" onClick={() => photoInputRef.current?.click()} disabled={isUploading}>
+                         <Upload className="mr-2 h-4 w-4" /> Change Photo
+                      </Button>
+                      <Input
+                        type="file"
+                        className="hidden"
+                        ref={photoInputRef}
+                        onChange={handlePhotoChange}
+                        accept="image/png, image/jpeg"
+                      />
+                  </div>
+              </FormControl>
+              <FormDescription>Upload a clear photo of yourself. This will be shown on the riders list.</FormDescription>
+              <FormMessage />
+            </FormItem>
+
             <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormDescription>This will be your account display name.</FormDescription><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField control={form.control} name="age" render={({ field }) => (<FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="18" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -268,9 +333,9 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Submitting..." : "Submit Application"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isUploading}>
+              {(isSubmitting || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isUploading ? "Uploading Photo..." : isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
         </Form>

@@ -10,6 +10,7 @@ import { EventSchedule } from "@/components/event-schedule";
 import { Hero } from "@/components/hero";
 import { Faq } from "@/components/faq";
 import { QnaSection } from "@/components/qna-section";
+import { RegisteredRiders } from "@/components/registered-riders";
 
 export default function Home() {
   const rideDate = new Date("2025-08-15T06:00:00");
@@ -28,6 +29,7 @@ export default function Home() {
       <CountdownTimer targetDate={rideDate} />
       <main className="flex-grow container mx-auto p-4 md:p-8 space-y-8">
         <Hero />
+        <RegisteredRiders />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
              <EventSchedule />

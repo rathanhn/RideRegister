@@ -7,6 +7,13 @@ import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, ru
 import type { UserRole } from "./lib/types";
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: 'dfk9licqv',
+  api_key: '547273686289121',
+  api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
+});
 
 // Helper to get a user's role
 async function getUserRole(uid: string): Promise<UserRole> {
@@ -77,6 +84,7 @@ const registrationFormSchema = z
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
     phoneNumber: z.string().regex(phoneRegex, "Invalid phone number."),
     whatsappNumber: z.string().optional(),
+    photoURL: z.string().optional(),
     
     // Rider 2 (for duo)
     fullName2: z.string().optional(),
@@ -135,6 +143,7 @@ export async function registerRider(values: RegistrationInput) {
 
       transaction.update(userRef, {
         displayName: registrationData.fullName,
+        photoURL: registrationData.photoURL // Also update user profile
       });
 
        const dataToSave = {
@@ -154,6 +163,29 @@ export async function registerRider(values: RegistrationInput) {
     return { success: false, message: "Could not save your registration. Please try again." };
   }
 }
+
+export async function uploadPhoto(formData: FormData) {
+  const file = formData.get('photo') as File;
+  if (!file) {
+    return { success: false, message: 'No file provided.' };
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
+
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: 'rideregister',
+    });
+
+    return { success: true, url: result.secure_url };
+  } catch (error) {
+    console.error('Error uploading to Cloudinary:', error);
+    return { success: false, message: 'Could not upload photo.' };
+  }
+}
+
 
 // Schema for updating a registration status
 const updateStatusSchema = z.object({
