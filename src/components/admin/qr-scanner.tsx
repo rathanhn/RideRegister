@@ -219,7 +219,7 @@ export function QrScanner() {
             </Button>
         )}
 
-        <div className="relative w-full aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center">
+        <div className="relative w-full max-w-sm mx-auto aspect-square bg-muted rounded-md overflow-hidden flex items-center justify-center">
             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
             <canvas ref={canvasRef} className="hidden" />
             {isScanning && (

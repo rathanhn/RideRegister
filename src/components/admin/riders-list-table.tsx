@@ -24,7 +24,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { deleteRegistration } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Separator } from '../ui/separator';
 
 // Helper function to format WhatsApp links
@@ -173,7 +173,7 @@ export function RidersListTable() {
             />
             <Button onClick={handleExport} disabled={filteredRegistrations.length === 0} className="w-full sm:w-auto">
                 <Download className="mr-2 h-4 w-4" />
-                Export to CSV
+                Export as CSV
             </Button>
         </div>
         

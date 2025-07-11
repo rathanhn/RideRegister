@@ -11,12 +11,13 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone } from 'lucide-react';
+import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { RidersListTable } from '@/components/admin/riders-list-table';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
+import { CheckedInListTable } from '@/components/admin/checked-in-list-table';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -65,13 +66,24 @@ export default function AdminPage() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Registered Riders</CardTitle>
+                    <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
                     <CardDescription>
                         View, contact, or remove all approved riders for the event.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <RidersListTable />
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
+                    <CardDescription>
+                       View all riders who have been successfully checked in.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <CheckedInListTable />
                 </CardContent>
             </Card>
             <Card>
