@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc, query, orderBy, getDocs } from "firebase/firestore";
 import type { UserRole } from "./lib/types";
 import { auth } from "@/lib/firebase";
+import { headers } from "next/headers";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -75,11 +76,11 @@ export async function createUser(values: z.infer<typeof createAccountSchema>) {
 
 
 // The schema for the ride registration form
+// No longer needs UID or email, as we get that from the server session
 const registrationFormSchema = z
   .object({
-    uid: z.string().min(1, "User ID is required."), // User ID from Firebase Auth
-    email: z.string().email(),
-    
+    uid: z.string().min(1, "User ID is required."),
+    email: z.string().email("A valid email is required."),
     // Rider 1
     fullName: z.string().min(2, "Full name must be at least 2 characters."),
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
@@ -129,66 +130,65 @@ const registrationFormSchema = z
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
 export async function registerRider(values: RegistrationInput, photo1DataUri?: string, photo2DataUri?: string) {
-  console.log("[Server] registerRider action started.");
+    console.log("[Server] registerRider action invoked.");
 
-  const parsed = registrationFormSchema.safeParse(values);
-  if (!parsed.success) {
-    console.error("[Server] Validation Errors:", parsed.error.flatten());
-    return { success: false, message: "Invalid data provided." };
-  }
+    const parsed = registrationFormSchema.safeParse(values);
+    
+    if (!parsed.success) {
+        console.error("[Server] Validation Errors:", parsed.error.flatten());
+        return { success: false, message: "Invalid data provided." };
+    }
   
-  const { uid, email, ...registrationData } = parsed.data;
-  console.log(`[Server] Registering for UID: ${uid}`);
+    const { uid, email, ...registrationData } = parsed.data;
+    console.log(`[Server] Registering for UID: ${uid}`);
 
-  try {
-    let photoURL1 = registrationData.photoURL;
-    let photoURL2 = registrationData.photoURL2;
+    try {
+        let photoURL1 = registrationData.photoURL;
+        let photoURL2 = registrationData.photoURL2;
 
-    // Step 1: Upload photos to Cloudinary and get URLs
-    if (photo1DataUri) {
-        console.log("[Server] Uploading photo 1 to Cloudinary...");
-        const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
-        photoURL1 = result.secure_url;
-        console.log("[Server] Photo 1 uploaded:", photoURL1);
+        if (photo1DataUri) {
+            console.log("[Server] Uploading photo 1 to Cloudinary...");
+            const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
+            photoURL1 = result.secure_url;
+            console.log("[Server] Photo 1 uploaded:", photoURL1);
+        }
+        if (photo2DataUri) {
+            console.log("[Server] Uploading photo 2 to Cloudinary...");
+            const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
+            photoURL2 = result.secure_url;
+            console.log("[Server] Photo 2 uploaded:", photoURL2);
+        }
+        
+        const registrationRef = doc(db, "registrations", uid);
+        const userRef = doc(db, "users", uid);
+
+        const dataToSave = {
+          ...registrationData,
+          email: email,
+          uid: uid,
+          status: "pending" as const,
+          createdAt: serverTimestamp(),
+          photoURL: photoURL1,
+          photoURL2: photoURL2,
+        };
+        
+        await setDoc(registrationRef, dataToSave);
+        console.log(`[Server] Registration document created for UID: ${uid}`);
+
+        // This update is separate and less critical than the registration itself.
+        await updateDoc(userRef, { 
+            displayName: registrationData.fullName,
+            photoURL: photoURL1
+        });
+        console.log(`[Server] User display name and photo updated for UID: ${uid}`);
+
+        console.log("[Server] Successfully completed registration process.");
+        return { success: true, message: "Registration successful! Your application is pending review." };
+
+    } catch (error) {
+        console.error("[Server] CRITICAL ERROR in registration process: ", error);
+        return { success: false, message: "Could not save your registration. Please try again." };
     }
-    if (photo2DataUri) {
-        console.log("[Server] Uploading photo 2 to Cloudinary...");
-        const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
-        photoURL2 = result.secure_url;
-        console.log("[Server] Photo 2 uploaded:", photoURL2);
-    }
-    
-    // Step 2: Prepare the final data object
-    const registrationRef = doc(db, "registrations", uid);
-    const userRef = doc(db, "users", uid);
-
-    const dataToSave = {
-      ...registrationData,
-      email: email,
-      uid: uid,
-      status: "pending" as const,
-      createdAt: serverTimestamp(),
-      photoURL: photoURL1,
-      photoURL2: photoURL2,
-    };
-    
-    // Step 3: Save data to Firestore
-    await setDoc(registrationRef, dataToSave);
-    console.log(`[Server] Registration document created for UID: ${uid}`);
-
-    await updateDoc(userRef, { 
-        displayName: registrationData.fullName,
-        photoURL: photoURL1 // Update main user profile with rider 1's photo
-    });
-    console.log(`[Server] User display name and photo updated for UID: ${uid}`);
-
-    console.log("[Server] Successfully completed registration process.");
-    return { success: true, message: "Registration successful! Your application is pending review." };
-
-  } catch (error) {
-    console.error("[Server] CRITICAL ERROR in registration process: ", error);
-    return { success: false, message: "Could not save your registration. Please try again." };
-  }
 }
 
 // This action is now only used for one-off photo uploads if needed elsewhere,

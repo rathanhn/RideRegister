@@ -170,18 +170,14 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     setIsProcessing(true);
 
     try {
-      // Convert photos to data URIs if they exist
       const photo1DataUri = photoFile1 ? await fileToDataUri(photoFile1) : undefined;
-      console.log("[Client] Photo Data URI 1 prepared:", !!photo1DataUri);
+      console.log(`[Client] Photo Data URI 1 prepared: ${!!photo1DataUri}`);
       
       const photo2DataUri = photoFile2 ? await fileToDataUri(photoFile2) : undefined;
-      console.log("[Client] Photo Data URI 2 prepared:", !!photo2DataUri);
+      console.log(`[Client] Photo Data URI 2 prepared: ${!!photo2DataUri}`);
       
-
       const submissionData = {
           ...values,
-          uid: user.uid,
-          email: user.email!,
           // Use existing photoURL if no new photo is selected
           photoURL: photoFile1 ? undefined : values.photoURL || user.photoURL || undefined,
           photoURL2: photoFile2 ? undefined : values.photoURL2,
@@ -201,7 +197,6 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         const newRegistrationData: Registration = {
             id: user.uid,
             ...values,
-            // We show the local preview while the real URL gets updated in the background
             photoURL: photoPreview1 || user.photoURL,
             photoURL2: photoPreview2,
             status: 'pending',
