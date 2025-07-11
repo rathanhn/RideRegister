@@ -124,26 +124,27 @@ const registrationFormSchema = z
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
 export async function registerRider(values: RegistrationInput, photo1DataUri?: string, photo2DataUri?: string) {
-    // Moved Cloudinary config inside the function
-    cloudinary.config({
-        cloud_name: 'dfk9licqv',
-        api_key: '547273686289121',
-        api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
-    });
-    
     console.log("[Server] registerRider action invoked.");
-
-    const parsed = registrationFormSchema.safeParse(values);
     
-    if (!parsed.success) {
-        console.error("[Server] Validation Errors:", parsed.error.flatten());
-        return { success: false, message: "Invalid data provided." };
-    }
-  
-    const { uid, email, ...registrationData } = parsed.data;
-    console.log(`[Server] Registering for UID: ${uid}`);
-
     try {
+        // Moved Cloudinary config inside the function
+        cloudinary.config({
+            cloud_name: 'dfk9licqv',
+            api_key: '547273686289121',
+            api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
+        });
+        
+        console.log("[Server] Validating data...");
+        const parsed = registrationFormSchema.safeParse(values);
+        
+        if (!parsed.success) {
+            console.error("[Server] Validation Errors:", parsed.error.flatten());
+            return { success: false, message: "Invalid data provided." };
+        }
+      
+        const { uid, email, ...registrationData } = parsed.data;
+        console.log(`[Server] Registering for UID: ${uid}`);
+
         let photoURL1 = registrationData.photoURL;
         let photoURL2 = registrationData.photoURL2;
 
@@ -173,9 +174,11 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
           photoURL2: photoURL2,
         };
         
+        console.log("[Server] Saving registration document to Firestore...");
         await setDoc(registrationRef, dataToSave);
         console.log(`[Server] Registration document created for UID: ${uid}`);
 
+        // This is a non-critical update. If it fails, the registration is still saved.
         await updateDoc(userRef, { 
             displayName: registrationData.fullName,
             photoURL: photoURL1
