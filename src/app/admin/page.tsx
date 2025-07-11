@@ -32,7 +32,7 @@ export default function AdminPage() {
       }
     };
     if (user) {
-        fetchUserRole();
+      fetchUserRole();
     }
   }, [user]);
 
