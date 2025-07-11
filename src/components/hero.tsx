@@ -18,15 +18,15 @@ export function Hero() {
                     placeholder="blur"
                     blurDataURL={Logo.blurDataURL}
                 />
-                 <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/20 to-transparent md:from-background/60 md:via-background/10"></div>
+                 <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent"></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2">
-                <div className="p-8 md:p-12 flex flex-col justify-center text-center md:text-left z-10">
+            <div className="relative z-10 p-8 md:p-12 lg:p-16">
+                <div className="max-w-xl text-center md:text-left">
                     <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary tracking-tight">
                         Independence Day <br />
                         Freedom Ride 2025
                     </h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
+                    <p className="mt-4 text-lg text-foreground/80">
                         Join TeleFun Mobile for an exhilarating bike ride to celebrate the spirit of freedom. Register now and be part of the excitement!
                     </p>
                     <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
@@ -37,9 +37,6 @@ export function Hero() {
                             <Link href="/login">Check Status / Login</Link>
                         </Button>
                     </div>
-                </div>
-                <div className="hidden md:block relative">
-                    {/* This column is intentionally empty to allow the background image to show through on larger screens */}
                 </div>
             </div>
         </div>
