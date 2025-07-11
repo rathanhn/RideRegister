@@ -41,13 +41,13 @@ const formSchema = z
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
     phoneNumber: z.string().regex(phoneRegex, "Invalid phone number."),
     whatsappNumber: z.string().optional(),
-    photoURL: z.string().optional(),
+    photoURL: z.string().url().optional(),
 
     // Rider 2
     fullName2: z.string().optional(),
     age2: z.coerce.number().optional(),
     phoneNumber2: z.string().optional(),
-    photoURL2: z.string().optional(),
+    photoURL2: z.string().url().optional(),
 
     consent: z.boolean().refine((val) => val === true, {
       message: "You must agree to the rules.",
@@ -115,7 +115,6 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       age: 18,
       phoneNumber: "",
       whatsappNumber: "",
-      photoURL: "",
       consent: false,
     },
   });
@@ -140,21 +139,16 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     }
   }, [user, form]);
   
-  const handlePhotoChange1 = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
     const file = event.target.files?.[0];
     if (file) {
-      setPhotoFile1(file);
-      setPhotoPreview1(URL.createObjectURL(file));
-      form.setValue('photoURL', 'placeholder'); // To satisfy validation
-    }
-  };
-
-  const handlePhotoChange2 = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setPhotoFile2(file);
-      setPhotoPreview2(URL.createObjectURL(file));
-      form.setValue('photoURL2', 'placeholder');
+      if (rider === 1) {
+        setPhotoFile1(file);
+        setPhotoPreview1(URL.createObjectURL(file));
+      } else {
+        setPhotoFile2(file);
+        setPhotoPreview2(URL.createObjectURL(file));
+      }
     }
   };
 
@@ -170,23 +164,51 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     setIsProcessing(true);
 
     try {
-      const photo1DataUri = photoFile1 ? await fileToDataUri(photoFile1) : undefined;
-      console.log(`[Client] Photo Data URI 1 prepared: ${!!photo1DataUri}`);
-      
-      const photo2DataUri = photoFile2 ? await fileToDataUri(photoFile2) : undefined;
-      console.log(`[Client] Photo Data URI 2 prepared: ${!!photo2DataUri}`);
+        let finalPhotoUrl1 = user.photoURL;
+        let finalPhotoUrl2 = undefined;
+
+        if (photoFile1) {
+            console.log("[Client] Uploading photo 1...");
+            const dataUri = await fileToDataUri(photoFile1);
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST',
+                body: JSON.stringify({ file: dataUri }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const { url, error } = await uploadResponse.json();
+            if (error || !url) {
+                throw new Error(error || 'Failed to upload photo 1.');
+            }
+            finalPhotoUrl1 = url;
+            console.log("[Client] Photo 1 uploaded:", finalPhotoUrl1);
+        }
+
+        if (photoFile2) {
+             console.log("[Client] Uploading photo 2...");
+            const dataUri = await fileToDataUri(photoFile2);
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST',
+                body: JSON.stringify({ file: dataUri }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const { url, error } = await uploadResponse.json();
+            if (error || !url) {
+                throw new Error(error || 'Failed to upload photo 2.');
+            }
+            finalPhotoUrl2 = url;
+            console.log("[Client] Photo 2 uploaded:", finalPhotoUrl2);
+        }
       
       const submissionData = {
           ...values,
           uid: user.uid,
           email: user.email || 'no-email@provided.com',
-          // Use existing photoURL if no new photo is selected
-          photoURL: photoFile1 ? undefined : values.photoURL || user.photoURL || undefined,
-          photoURL2: photoFile2 ? undefined : values.photoURL2,
+          photoURL: finalPhotoUrl1,
+          photoURL2: finalPhotoUrl2,
       };
 
       console.log("[Client] Calling registerRider with data:", submissionData);
-      const result = await registerRider(submissionData, photo1DataUri, photo2DataUri);
+      const result = await registerRider(submissionData);
       console.log("[Client] Got result from server action:", result);
 
       if (result.success) {
@@ -199,8 +221,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         const newRegistrationData: Registration = {
             id: user.uid,
             ...values,
-            photoURL: photoPreview1 || user.photoURL,
-            photoURL2: photoPreview2,
+            photoURL: finalPhotoUrl1,
+            photoURL2: finalPhotoUrl2,
             status: 'pending',
             createdAt: new Date(), 
             rider1CheckedIn: false,
@@ -289,7 +311,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                         type="file"
                         className="hidden"
                         ref={photoInputRef1}
-                        onChange={handlePhotoChange1}
+                        onChange={(e) => handlePhotoChange(e, 1)}
                         accept="image/png, image/jpeg"
                       />
                   </div>
@@ -356,7 +378,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                                     type="file"
                                     className="hidden"
                                     ref={photoInputRef2}
-                                    onChange={handlePhotoChange2}
+                                    onChange={(e) => handlePhotoChange(e, 2)}
                                     accept="image/png, image/jpeg"
                                 />
                             </div>

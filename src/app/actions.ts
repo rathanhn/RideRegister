@@ -8,7 +8,6 @@ import type { UserRole } from "./lib/types";
 import { auth } from "@/lib/firebase";
 import { headers } from "next/headers";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { v2 as cloudinary } from 'cloudinary';
 
 // Helper to get a user's role
 async function getUserRole(uid: string): Promise<UserRole> {
@@ -80,13 +79,13 @@ const registrationFormSchema = z
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
     phoneNumber: z.string().regex(phoneRegex, "Invalid phone number."),
     whatsappNumber: z.string().optional(),
-    photoURL: z.string().optional(),
+    photoURL: z.string().url().optional(),
     
     // Rider 2 (for duo)
     fullName2: z.string().optional(),
     age2: z.coerce.number().optional(),
     phoneNumber2: z.string().optional(),
-    photoURL2: z.string().optional(),
+    photoURL2: z.string().url().optional(),
     
     consent: z.boolean().refine((val) => val === true, {
       message: "You must agree to the rules.",
@@ -123,42 +122,20 @@ const registrationFormSchema = z
 
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
-export async function registerRider(values: RegistrationInput, photo1DataUri?: string, photo2DataUri?: string) {
-    console.log("[Server] registerRider action invoked.");
+export async function registerRider(values: RegistrationInput) {
+    console.log("[Server Action] registerRider invoked.");
     
     try {
-        cloudinary.config({
-            cloud_name: 'dfk9licqv',
-            api_key: '547273686289121',
-            api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
-        });
-        
-        console.log("[Server] Validating data...");
+        console.log("[Server Action] Validating data...");
         const parsed = registrationFormSchema.safeParse(values);
         
         if (!parsed.success) {
-            console.error("[Server] Validation Errors:", parsed.error.flatten());
+            console.error("[Server Action] Validation Errors:", parsed.error.flatten());
             return { success: false, message: "Invalid data provided." };
         }
       
         const { uid, email, ...registrationData } = parsed.data;
-        console.log(`[Server] Registering for UID: ${uid}`);
-
-        let photoURL1 = registrationData.photoURL;
-        let photoURL2 = registrationData.photoURL2;
-
-        if (photo1DataUri) {
-            console.log("[Server] Uploading photo 1 to Cloudinary...");
-            const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
-            photoURL1 = result.secure_url;
-            console.log("[Server] Photo 1 uploaded:", photoURL1);
-        }
-        if (photo2DataUri) {
-            console.log("[Server] Uploading photo 2 to Cloudinary...");
-            const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
-            photoURL2 = result.secure_url;
-            console.log("[Server] Photo 2 uploaded:", photoURL2);
-        }
+        console.log(`[Server Action] Registering for UID: ${uid}`);
         
         const registrationRef = doc(db, "registrations", uid);
         const userRef = doc(db, "users", uid);
@@ -169,28 +146,26 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
           uid: uid,
           status: "pending" as const,
           createdAt: serverTimestamp(),
-          photoURL: photoURL1,
-          photoURL2: photoURL2,
         };
         
-        console.log("[Server] Saving registration document to Firestore...");
+        console.log("[Server Action] Saving registration document to Firestore...");
         await setDoc(registrationRef, dataToSave);
-        console.log(`[Server] Registration document created for UID: ${uid}`);
+        console.log(`[Server Action] Registration document created for UID: ${uid}`);
 
         // This is a non-critical update. If it fails, the registration is still saved.
         await updateDoc(userRef, { 
             displayName: registrationData.fullName,
-            photoURL: photoURL1
+            photoURL: registrationData.photoURL
         }).catch(err => {
-            console.error(`[Server] Non-critical error updating user profile for UID ${uid}:`, err);
+            console.error(`[Server Action] Non-critical error updating user profile for UID ${uid}:`, err);
         });
-        console.log(`[Server] User display name and photo updated for UID: ${uid}`);
+        console.log(`[Server Action] User display name and photo updated for UID: ${uid}`);
 
-        console.log("[Server] Successfully completed registration process.");
+        console.log("[Server Action] Successfully completed registration process.");
         return { success: true, message: "Registration successful! Your application is pending review." };
 
     } catch (error) {
-        console.error("[Server] CRITICAL ERROR in registration process: ", error);
+        console.error("[Server Action] CRITICAL ERROR in registration process: ", error);
         return { success: false, message: "Could not save your registration. Please try again." };
     }
 }
@@ -199,32 +174,9 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
 // This action is now only used for one-off photo uploads if needed elsewhere,
 // but not directly in the main registration flow.
 export async function uploadPhoto(formData: FormData) {
-  const file = formData.get('photo') as File;
-  if (!file) {
-    return { success: false, message: 'No file provided.' };
-  }
-
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
-    
-    // Moved Cloudinary config inside the function
-    cloudinary.config({
-        cloud_name: 'dfk9licqv',
-        api_key: '547273686289121',
-        api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0'
-    });
-
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder: 'rideregister',
-    });
-
-    return { success: true, url: result.secure_url };
-  } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
-    return { success: false, message: 'Could not upload photo.' };
-  }
+  // This function is no longer the primary path for registration uploads.
+  // It can be kept for other potential uses or removed if not needed.
+  return { success: false, message: 'This upload method is deprecated.' };
 }
 
 
@@ -602,5 +554,3 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
         return { success: false, message: "Could not submit your request. Please try again." };
     }
 }
-
-    
