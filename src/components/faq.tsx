@@ -1,9 +1,3 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HelpCircle } from "lucide-react"
 
@@ -40,14 +34,14 @@ export function Faq() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Accordion type="single" collapsible className="w-full">
+        <div className="space-y-6">
           {faqs.map((faq, index) => (
-            <AccordionItem value={`item-${index}`} key={index}>
-              <AccordionTrigger>{faq.question}</AccordionTrigger>
-              <AccordionContent>{faq.answer}</AccordionContent>
-            </AccordionItem>
+            <div key={index}>
+              <h4 className="font-semibold">{faq.question}</h4>
+              <p className="text-muted-foreground mt-1">{faq.answer}</p>
+            </div>
           ))}
-        </Accordion>
+        </div>
       </CardContent>
     </Card>
   )
