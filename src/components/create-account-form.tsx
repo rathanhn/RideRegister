@@ -20,7 +20,7 @@ import { useState, useEffect } from "react";
 import { Loader2, PartyPopper } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createUser } from "@/app/actions";
-import { useSignInWithEmailAndPassword, useSignInWithGoogle } from "react-firebase-hooks/auth";
+import { useSignInWithEmailAndPassword, useSignInWithRedirect, useGetRedirectResult } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
@@ -48,7 +48,8 @@ export function CreateAccountForm() {
   const router = useRouter();
   
   const [signInWithEmailAndPassword, , loadingSignIn] = useSignInWithEmailAndPassword(auth);
-  const [signInWithGoogle, googleUser, googleLoading, googleError] = useSignInWithGoogle(auth);
+  const [signInWithRedirect, , googleLoading, googleError] = useSignInWithRedirect(auth);
+  const { data: redirectResult } = useGetRedirectResult(auth);
   
   const [isCreating, setIsCreating] = useState(false);
 
@@ -67,8 +68,8 @@ export function CreateAccountForm() {
   // Effect to handle user creation in Firestore after Google Sign-in
   useEffect(() => {
     const setupGoogleUser = async () => {
-        if (googleUser) {
-            const user = googleUser.user;
+        if (redirectResult?.user) {
+            const user = redirectResult.user;
             const userRef = doc(db, "users", user.uid);
             const userDoc = await getDoc(userRef);
 
@@ -85,7 +86,7 @@ export function CreateAccountForm() {
         }
     };
     setupGoogleUser();
-  }, [googleUser, router]);
+  }, [redirectResult, router]);
 
   // Effect to handle Google sign-in errors
    useEffect(() => {
@@ -136,7 +137,7 @@ export function CreateAccountForm() {
       </CardHeader>
       <CardContent>
          <div className="grid grid-cols-1 gap-2">
-            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={() => signInWithGoogle()}>
+            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={() => signInWithRedirect()}>
                 {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                 Sign up with Google
             </Button>

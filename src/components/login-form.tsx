@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { auth, db } from '@/lib/firebase';
-import { useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
+import { useSignInWithEmailAndPassword, useSignInWithRedirect, useGetRedirectResult } from 'react-firebase-hooks/auth';
 import { useRouter } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
@@ -46,7 +46,8 @@ export function LoginForm() {
     loading,
     error,
   ] = useSignInWithEmailAndPassword(auth);
-  const [signInWithGoogle, googleUser, googleLoading, googleError] = useSignInWithGoogle(auth);
+  const [signInWithRedirect, , googleLoading, googleError] = useSignInWithRedirect(auth);
+  const { data: redirectResult } = useGetRedirectResult(auth);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -63,10 +64,6 @@ export function LoginForm() {
     await signInWithEmailAndPassword(values.email, values.password);
   }
 
-  async function onGoogleSignIn() {
-    await signInWithGoogle();
-  }
-
   useEffect(() => {
     if (user) {
       router.push('/dashboard');
@@ -76,8 +73,8 @@ export function LoginForm() {
   // Effect to handle user creation in Firestore after Google Sign-in
   useEffect(() => {
     const setupGoogleUser = async () => {
-        if (googleUser) {
-            const user = googleUser.user;
+        if (redirectResult?.user) {
+            const user = redirectResult.user;
             const userRef = doc(db, "users", user.uid);
             const userDoc = await getDoc(userRef);
 
@@ -94,7 +91,7 @@ export function LoginForm() {
         }
     };
     setupGoogleUser();
-  }, [googleUser, router]);
+  }, [redirectResult, router]);
   
   const authError = error || googleError;
   useEffect(() => {
@@ -116,7 +113,7 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-2">
-            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={onGoogleSignIn}>
+            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={() => signInWithRedirect()}>
                 {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                 Sign in with Google
             </Button>
