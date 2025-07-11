@@ -137,18 +137,14 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
     return { success: false, message: "Invalid data provided." };
   }
   
-  if (!parsed.data) {
-    console.error("[Server] Parsed data is missing after validation.");
-    return { success: false, message: "Server validation failed: data object is missing." };
-  }
+  const { uid, email, ...registrationData } = parsed.data;
+  console.log(`[Server] Registering for UID: ${uid}`);
 
   try {
-    const { uid, email, ...registrationData } = parsed.data;
-    console.log(`[Server] Starting registration for UID: ${uid}`);
-
     let photoURL1 = registrationData.photoURL;
     let photoURL2 = registrationData.photoURL2;
 
+    // Step 1: Upload photos to Cloudinary and get URLs
     if (photo1DataUri) {
         console.log("[Server] Uploading photo 1 to Cloudinary...");
         const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
@@ -161,7 +157,8 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
         photoURL2 = result.secure_url;
         console.log("[Server] Photo 2 uploaded:", photoURL2);
     }
-
+    
+    // Step 2: Prepare the final data object
     const registrationRef = doc(db, "registrations", uid);
     const userRef = doc(db, "users", uid);
 
@@ -175,11 +172,10 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
       photoURL2: photoURL2,
     };
     
-    // Save registration data
+    // Step 3: Save data to Firestore
     await setDoc(registrationRef, dataToSave);
     console.log(`[Server] Registration document created for UID: ${uid}`);
 
-    // Update user's display name and photoURL
     await updateDoc(userRef, { 
         displayName: registrationData.fullName,
         photoURL: photoURL1 // Update main user profile with rider 1's photo
@@ -594,5 +590,3 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
         return { success: false, message: "Could not submit your request. Please try again." };
     }
 }
-
-    
