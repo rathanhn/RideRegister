@@ -90,6 +90,7 @@ const registrationFormSchema = z
     fullName2: z.string().optional(),
     age2: z.coerce.number().optional(),
     phoneNumber2: z.string().optional(),
+    photoURL2: z.string().optional(),
     
     consent: z.boolean().refine((val) => val === true, {
       message: "You must agree to the rules.",

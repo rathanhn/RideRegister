@@ -43,11 +43,15 @@ export function DashboardProfileCard({ user, registration }: DashboardProfileCar
                         <span className="capitalize">{registration.registrationType} Registration</span>
                     </div>
                     {registration.registrationType === 'duo' && (
-                        <div className="flex items-center gap-2 col-span-2 p-3 bg-secondary rounded-md">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <div>
+                        <div className="col-span-2 p-3 bg-secondary rounded-md flex items-start gap-4">
+                             <Avatar className="h-12 w-12 border">
+                                <AvatarImage src={registration.photoURL2 ?? undefined} alt={registration.fullName2} />
+                                <AvatarFallback><User /></AvatarFallback>
+                            </Avatar>
+                            <div className="flex-grow">
                                 <p className="font-semibold">{registration.fullName2}</p>
-                                <p className="text-muted-foreground">{registration.phoneNumber2}</p>
+                                <p className="text-xs text-muted-foreground">{registration.phoneNumber2}</p>
+                                <p className="text-xs text-muted-foreground">{registration.age2} years old</p>
                             </div>
                         </div>
                     )}

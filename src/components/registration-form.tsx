@@ -47,6 +47,7 @@ const formSchema = z
     fullName2: z.string().optional(),
     age2: z.coerce.number().optional(),
     phoneNumber2: z.string().optional(),
+    photoURL2: z.string().optional(),
 
     consent: z.boolean().refine((val) => val === true, {
       message: "You must agree to the rules.",
@@ -87,6 +88,10 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  
+  const [photoPreview2, setPhotoPreview2] = useState<string | null>(null);
+  const [isUploading2, setIsUploading2] = useState(false);
+  const photoInputRef2 = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -105,7 +110,6 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const { isSubmitting } = form.formState;
   const registrationType = form.watch("registrationType");
   const phoneNumber = form.watch("phoneNumber");
-  const photoURL = form.watch("photoURL");
 
   useEffect(() => {
     if (sameAsPhone) {
@@ -133,14 +137,34 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       const result = await uploadPhoto(formData);
       if (result.success && result.url) {
         form.setValue('photoURL', result.url, { shouldValidate: true });
-        setPhotoPreview(result.url); // Show cloudinary image
+        setPhotoPreview(result.url);
       } else {
         toast({ variant: 'destructive', title: 'Upload Failed', description: result.message });
-        setPhotoPreview(user?.photoURL ?? null); // Revert on failure
+        setPhotoPreview(user?.photoURL ?? null);
       }
       setIsUploading(false);
     }
   };
+
+  const handlePhotoChange2 = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setPhotoPreview2(URL.createObjectURL(file));
+      setIsUploading2(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+      const result = await uploadPhoto(formData);
+      if (result.success && result.url) {
+        form.setValue('photoURL2', result.url, { shouldValidate: true });
+        setPhotoPreview2(result.url);
+      } else {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: result.message });
+        setPhotoPreview2(null);
+      }
+      setIsUploading2(false);
+    }
+  };
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
@@ -233,7 +257,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             <h3 className="text-lg font-medium text-primary">Rider 1 Information</h3>
             
             <FormItem>
-              <FormLabel>Profile Photo</FormLabel>
+              <FormLabel>Profile Photo (Rider 1)</FormLabel>
               <FormControl>
                   <div className="flex items-center gap-4">
                       <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
@@ -304,6 +328,37 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 <>
                     <Separator />
                     <h3 className="text-lg font-medium text-primary">Rider 2 Information</h3>
+                     <FormItem>
+                        <FormLabel>Profile Photo (Rider 2)</FormLabel>
+                        <FormControl>
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
+                                    {photoPreview2 ? (
+                                        <Image src={photoPreview2} alt="Rider 2 preview" layout="fill" className="rounded-full object-cover" />
+                                    ) : (
+                                        <User className="w-10 h-10 text-muted-foreground" />
+                                    )}
+                                    {isUploading2 && (
+                                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                        </div>
+                                    )}
+                                </div>
+                                <Button type="button" variant="outline" onClick={() => photoInputRef2.current?.click()} disabled={isUploading2}>
+                                    <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                                </Button>
+                                <Input
+                                    type="file"
+                                    className="hidden"
+                                    ref={photoInputRef2}
+                                    onChange={handlePhotoChange2}
+                                    accept="image/png, image/jpeg"
+                                />
+                            </div>
+                        </FormControl>
+                        <FormDescription>Upload a clear photo of the second rider.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
                     <FormField control={form.control} name="fullName2" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Jane Smith" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField control={form.control} name="age2" render={({ field }) => (<FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="18" onChange={e => field.onChange(e.target.value === '' ? undefined : +e.target.value)} /></FormControl><FormMessage /></FormItem>)} />
@@ -333,9 +388,9 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isUploading}>
-              {(isSubmitting || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploading ? "Uploading Photo..." : isSubmitting ? "Submitting..." : "Submit Application"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isUploading || isUploading2}>
+              {(isSubmitting || isUploading || isUploading2) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isUploading ? "Uploading Photo 1..." : isUploading2 ? "Uploading Photo 2..." : isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
         </Form>
