@@ -32,7 +32,6 @@ const RiderSkeleton = () => (
     </div>
 );
 
-
 export function RegisteredRiders() {
   const [registrations, loading, error] = useCollection(
     query(collection(db, 'registrations'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'))
@@ -61,6 +60,12 @@ export function RegisteredRiders() {
     return participants;
   }, [registrations]);
 
+  if (error) {
+    // Silently fail to avoid breaking the page for a non-critical component.
+    console.error("Error loading registered riders:", error);
+    return null;
+  }
+
   if (loading) {
     return (
        <Card>
@@ -76,12 +81,6 @@ export function RegisteredRiders() {
     );
   }
 
-  if (error) {
-    // Silently fail to avoid breaking the page for a non-critical component.
-    console.error("Error loading registered riders:", error);
-    return null;
-  }
-  
   if (allParticipants.length === 0) {
     return (
         <Card>
