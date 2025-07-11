@@ -19,10 +19,24 @@ import { Loader2, MessageSquare } from 'lucide-react';
 import type { QnaQuestion } from '@/lib/types';
 import { QnaItem } from './qna-item';
 import Link from 'next/link';
+import { Skeleton } from './ui/skeleton';
 
 const questionFormSchema = z.object({
   text: z.string().min(10, "Question must be at least 10 characters.").max(500, "Question cannot be longer than 500 characters."),
 });
+
+const QnaItemSkeleton = () => (
+    <div className="p-4 border rounded-lg space-y-4">
+        <div className="flex gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="w-full space-y-2">
+                 <Skeleton className="h-4 w-1/4" />
+                 <Skeleton className="h-4 w-3/4" />
+            </div>
+        </div>
+    </div>
+);
+
 
 export function QnaSection() {
   const [user, authLoading] = useAuthState(auth);
@@ -117,7 +131,12 @@ export function QnaSection() {
         </Card>
 
         <div className="space-y-4">
-          {questionsLoading && <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>}
+          {questionsLoading && (
+            <div className="space-y-4">
+                <QnaItemSkeleton />
+                <QnaItemSkeleton />
+            </div>
+          )}
           {questionsError && <p className="text-destructive">Error loading questions.</p>}
           {questions && questions.docs.length === 0 && (
              <p className="text-muted-foreground text-center py-4">No questions yet. Be the first to ask!</p>

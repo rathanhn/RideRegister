@@ -16,6 +16,20 @@ import { collection, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "./ui/badge";
+import { Skeleton } from "./ui/skeleton";
+
+const AnnouncementSkeleton = () => (
+    <div className="space-y-4">
+        {[...Array(2)].map((_, i) => (
+            <div key={i} className="p-1 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                {i === 0 && <Separator className="mt-4" />}
+            </div>
+        ))}
+    </div>
+);
 
 export function Announcements() {
   const [announcements, loading, error] = useCollection(
@@ -35,7 +49,7 @@ export function Announcements() {
       <CardContent>
         <ScrollArea className="h-48 w-full">
           <div className="space-y-4">
-            {loading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
+            {loading && <AnnouncementSkeleton />}
             {error && <p className="text-sm text-destructive flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Error loading.</p>}
             {!loading && announcementDocs.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">No announcements yet. Check back soon!</p>

@@ -15,9 +15,22 @@ import { RegistrationForm } from '@/components/registration-form';
 import { OrganizerAgreementForm } from '@/components/organizer-agreement-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 type ViewState = 'rider' | 'organizer' | null;
+
+const DashboardSkeleton = () => (
+    <Card>
+        <CardHeader>
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent>
+            <Skeleton className="h-40 w-full" />
+        </CardContent>
+    </Card>
+);
 
 export default function DashboardPage() {
     const [user, loading, error] = useAuthState(auth);
@@ -82,8 +95,14 @@ export default function DashboardPage() {
 
     if (loading || isLoadingData) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-secondary/50">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <div className="flex flex-col min-h-screen bg-secondary/50">
+                <Header />
+                 <main className="flex-grow container mx-auto p-4 md:p-8">
+                    <div className="w-full max-w-2xl mx-auto space-y-4">
+                        <Skeleton className="h-9 w-1/2" />
+                        <DashboardSkeleton />
+                    </div>
+                </main>
             </div>
         );
     }

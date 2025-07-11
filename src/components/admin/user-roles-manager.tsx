@@ -27,6 +27,18 @@ import type { AppUser, UserRole } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserRole } from '@/app/actions';
 import { useEffect } from 'react';
+import { Skeleton } from '../ui/skeleton';
+
+const TableSkeleton = () => (
+    [...Array(3)].map((_, i) => (
+        <TableRow key={i}>
+            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+            <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+            <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+            <TableCell className="text-right"><Skeleton className="h-9 w-32 ml-auto" /></TableCell>
+        </TableRow>
+    ))
+);
 
 export function UserRolesManager() {
   const [loggedInUser, authLoading] = useAuthState(auth);
@@ -81,22 +93,16 @@ export function UserRolesManager() {
     setIsUpdating(null);
   };
 
-  if (authLoading || isRoleLoading) {
-    return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
+  const isLoading = authLoading || isRoleLoading || usersLoading;
 
   // Only superadmins and admins can view this component
-  if (currentUserRole !== 'superadmin') {
+  if (!isLoading && currentUserRole !== 'superadmin') {
     return (
       <div className="text-muted-foreground flex items-center justify-center gap-2 p-4 bg-secondary rounded-md">
         <ShieldAlert className="h-5 w-5" />
         <p>You do not have permission to manage user roles. Only Super Admins can.</p>
       </div>
     );
-  }
-
-  if (usersLoading) {
-    return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   if (usersError) {
@@ -120,7 +126,9 @@ export function UserRolesManager() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {allUsers.length > 0 ? (
+          {isLoading ? (
+            <TableSkeleton />
+          ) : allUsers.length > 0 ? (
             allUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.displayName || 'N/A'}</TableCell>

@@ -19,6 +19,7 @@ import type { Registration } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import Link from 'next/link';
+import { Skeleton } from '../ui/skeleton';
 
 // Helper function to format WhatsApp links
 const formatWhatsAppLink = (phone: string) => {
@@ -29,6 +30,23 @@ const formatWhatsAppLink = (phone: string) => {
     }
     return `https://wa.me/${cleanedPhone}`;
 };
+
+const TableSkeleton = () => (
+    [...Array(5)].map((_, i) => (
+        <TableRow key={i}>
+            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+            <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+            <TableCell>
+                <div className="flex flex-col gap-2">
+                    <Skeleton className="h-5 w-20" />
+                </div>
+            </TableCell>
+            <TableCell className="text-right"><Skeleton className="h-8 w-12 ml-auto" /></TableCell>
+        </TableRow>
+    ))
+);
+
 
 export function RidersListTable() {
   // Query for all registrations, we will filter locally
@@ -89,10 +107,6 @@ export function RidersListTable() {
   };
 
 
-  if (loading) {
-    return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
   if (error) {
     return (
       <div className="text-destructive flex items-center gap-2 p-4">
@@ -128,7 +142,9 @@ export function RidersListTable() {
             </TableRow>
             </TableHeader>
             <TableBody>
-            {filteredRegistrations.length > 0 ? (
+            {loading ? (
+                <TableSkeleton />
+            ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => (
                 <TableRow key={reg.id}>
                     <TableCell className="font-medium">

@@ -20,10 +20,22 @@ import { formatDistanceToNow } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEffect, useState } from 'react';
 import { Badge } from '../ui/badge';
+import { Skeleton } from '../ui/skeleton';
 
 const announcementSchema = z.object({
   message: z.string().min(5, "Min 5 characters.").max(280, "Max 280 characters."),
 });
+
+const AnnouncementSkeleton = () => (
+    <div className="flex items-start justify-between gap-4 p-3 border rounded-lg bg-background">
+        <div className="flex-grow space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+        </div>
+        <Skeleton className="h-8 w-8" />
+    </div>
+)
 
 export function AnnouncementManager() {
   const [user, authLoading] = useAuthState(auth);
@@ -114,7 +126,12 @@ export function AnnouncementManager() {
       
       <ScrollArea className="h-64 pr-4">
         <div className="space-y-3">
-          {isLoading && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
+          {isLoading && (
+            <div className="space-y-3">
+                <AnnouncementSkeleton />
+                <AnnouncementSkeleton />
+            </div>
+          )}
           {error && <p className="text-sm text-destructive flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Error loading.</p>}
           {!isLoading && announcements?.docs.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">No announcements have been posted yet.</p>

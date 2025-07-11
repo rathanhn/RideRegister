@@ -20,6 +20,23 @@ import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { updateRegistrationStatus } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '../ui/skeleton';
+
+const TableSkeleton = () => (
+    [...Array(3)].map((_, i) => (
+        <TableRow key={i}>
+            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+            <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+            <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                </div>
+            </TableCell>
+        </TableRow>
+    ))
+);
 
 export function RegistrationsTable() {
   // Query for all registrations, we will filter locally.
@@ -68,10 +85,6 @@ export function RegistrationsTable() {
     setIsUpdating(null);
   }
 
-  if (loading || authLoading) {
-    return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
   if (error) {
     return (
       <div className="text-destructive flex items-center gap-2 p-4">
@@ -94,7 +107,9 @@ export function RegistrationsTable() {
             </TableRow>
             </TableHeader>
             <TableBody>
-            {pendingRegistrations.length > 0 ? (
+            {(loading || authLoading) ? (
+                <TableSkeleton />
+            ) : pendingRegistrations.length > 0 ? (
                 pendingRegistrations.map((reg) => (
                 <TableRow key={reg.id}>
                     <TableCell className="font-medium">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</TableCell>
