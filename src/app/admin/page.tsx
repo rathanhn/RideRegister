@@ -6,7 +6,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Header } from '@/components/header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
@@ -59,9 +59,6 @@ export default function AdminPage() {
                     <AccordionTrigger className="w-full p-6">
                         <CardHeader className="p-0 text-left w-full">
                             <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
-                            <CardDescription>
-                                Review pending applications and manage cancellation requests.
-                            </CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -77,9 +74,6 @@ export default function AdminPage() {
                     <AccordionTrigger className="w-full p-6">
                          <CardHeader className="p-0 text-left w-full">
                             <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
-                            <CardDescription>
-                                View, contact, or remove all approved riders for the event.
-                            </CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -95,9 +89,6 @@ export default function AdminPage() {
                     <AccordionTrigger className="w-full p-6">
                         <CardHeader className="p-0 text-left w-full">
                             <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
-                            <CardDescription>
-                               View all riders who have been successfully checked in.
-                            </CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -116,9 +107,6 @@ export default function AdminPage() {
                                 <ScanLine className="h-6 w-6 text-primary" />
                                 Ticket Scanner
                             </CardTitle>
-                            <CardDescription>
-                            Scan rider tickets for real-time check-in.
-                            </CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -134,9 +122,6 @@ export default function AdminPage() {
                     <AccordionTrigger className="w-full p-6">
                         <CardHeader className="p-0 text-left w-full">
                             <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
-                            <CardDescription>
-                                Create and delete event announcements.
-                            </CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -152,9 +137,6 @@ export default function AdminPage() {
                     <AccordionTrigger className="w-full p-6">
                         <CardHeader className="p-0 text-left w-full">
                             <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&A</CardTitle>
-                            <CardDescription>
-                                Respond to user questions and manage conversations.
-                            </CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -170,9 +152,6 @@ export default function AdminPage() {
                     <AccordionTrigger className="w-full p-6">
                         <CardHeader className="p-0 text-left w-full">
                             <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
-                            <CardDescription>
-                            Assign roles to users. This section is only visible to Super Admins.
-                            </CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent>

@@ -65,7 +65,7 @@ export function QnaItem({ question }: QnaItemProps) {
   return (
     <div className="p-4 border rounded-lg space-y-4">
         {/* Question */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
             <Avatar>
                 <AvatarImage src={question.userPhotoURL ?? undefined} alt={question.userName} />
                 <AvatarFallback><User /></AvatarFallback>
@@ -76,7 +76,7 @@ export function QnaItem({ question }: QnaItemProps) {
                         <p className="font-semibold">{question.userName}</p>
                         {question.isPinned && <Badge variant="secondary" className="bg-primary/10 text-primary"><Pin className="h-3 w-3 mr-1"/> Pinned</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground flex-shrink-0">
                         {question.createdAt ? formatDistanceToNow(question.createdAt.toDate(), { addSuffix: true }) : 'just now'}
                     </p>
                 </div>
@@ -92,7 +92,7 @@ export function QnaItem({ question }: QnaItemProps) {
 
         {/* Reply Form */}
         {isReplying && (
-             <div className="pl-16">
+             <div className="pl-0 sm:pl-14">
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onReplySubmit)} className="space-y-2">
                         <FormField
@@ -123,7 +123,7 @@ export function QnaItem({ question }: QnaItemProps) {
 
         {/* Replies */}
         {replies && replies.docs.length > 0 && (
-            <div className="pl-8 space-y-4">
+            <div className="pl-0 sm:pl-14 space-y-4">
                 <Separator />
                 {replies.docs.map(doc => {
                     const reply = { id: doc.id, ...doc.data() } as QnaReply;
