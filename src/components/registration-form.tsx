@@ -85,13 +85,16 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [user, loading] = useAuthState(auth);
   const [sameAsPhone, setSameAsPhone] = useState(false);
   
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  
+  const [photoFile1, setPhotoFile1] = useState<File | null>(null);
+  const [photoPreview1, setPhotoPreview1] = useState<string | null>(null);
+  const photoInputRef1 = useRef<HTMLInputElement>(null);
+
+  const [photoFile2, setPhotoFile2] = useState<File | null>(null);
   const [photoPreview2, setPhotoPreview2] = useState<string | null>(null);
-  const [isUploading2, setIsUploading2] = useState(false);
   const photoInputRef2 = useRef<HTMLInputElement>(null);
+  
+  const [isUploading, setIsUploading] = useState(false);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -122,46 +125,26 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         form.setValue("fullName", user.displayName || "");
         if (user.photoURL) {
             form.setValue("photoURL", user.photoURL);
-            setPhotoPreview(user.photoURL);
+            setPhotoPreview1(user.photoURL);
         }
     }
   }, [user, form]);
   
-  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange1 = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setPhotoPreview(URL.createObjectURL(file));
-      setIsUploading(true);
-      const formData = new FormData();
-      formData.append('photo', file);
-      const result = await uploadPhoto(formData);
-      if (result.success && result.url) {
-        form.setValue('photoURL', result.url, { shouldValidate: true });
-        setPhotoPreview(result.url);
-      } else {
-        toast({ variant: 'destructive', title: 'Upload Failed', description: result.message });
-        setPhotoPreview(user?.photoURL ?? null);
-      }
-      setIsUploading(false);
+      setPhotoFile1(file);
+      setPhotoPreview1(URL.createObjectURL(file));
+      form.setValue('photoURL', 'placeholder'); // To satisfy validation
     }
   };
 
-  const handlePhotoChange2 = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange2 = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setPhotoFile2(file);
       setPhotoPreview2(URL.createObjectURL(file));
-      setIsUploading2(true);
-      const formData = new FormData();
-      formData.append('photo', file);
-      const result = await uploadPhoto(formData);
-      if (result.success && result.url) {
-        form.setValue('photoURL2', result.url, { shouldValidate: true });
-        setPhotoPreview2(result.url);
-      } else {
-        toast({ variant: 'destructive', title: 'Upload Failed', description: result.message });
-        setPhotoPreview2(null);
-      }
-      setIsUploading2(false);
+      form.setValue('photoURL2', 'placeholder');
     }
   };
 
@@ -171,14 +154,43 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         toast({ variant: "destructive", title: "Error", description: "You must be logged in to register."});
         return;
     }
+    
+    setIsUploading(true);
 
     try {
-      const result = await registerRider({
+      let photoURL1 = values.photoURL || user.photoURL || undefined;
+      if (photoFile1) {
+        const formData1 = new FormData();
+        formData1.append('photo', photoFile1);
+        const result = await uploadPhoto(formData1);
+        if (result.success && result.url) {
+          photoURL1 = result.url;
+        } else {
+          throw new Error('Failed to upload primary photo.');
+        }
+      }
+
+      let photoURL2 = values.photoURL2;
+      if (photoFile2) {
+         const formData2 = new FormData();
+        formData2.append('photo', photoFile2);
+        const result = await uploadPhoto(formData2);
+        if (result.success && result.url) {
+          photoURL2 = result.url;
+        } else {
+          throw new Error('Failed to upload secondary photo.');
+        }
+      }
+
+      const submissionData = {
           ...values,
           uid: user.uid,
           email: user.email!,
-          photoURL: values.photoURL || user.photoURL || undefined,
-      });
+          photoURL: photoURL1,
+          photoURL2: photoURL2,
+      };
+
+      const result = await registerRider(submissionData);
 
       if (result.success) {
         toast({
@@ -190,7 +202,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         const newRegistrationData: Registration = {
             id: user.uid,
             ...values,
-            photoURL: values.photoURL || user.photoURL || undefined,
+            photoURL: submissionData.photoURL,
+            photoURL2: submissionData.photoURL2,
             status: 'pending',
             createdAt: new Date(), 
             rider1CheckedIn: false,
@@ -206,6 +219,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         title: "Uh oh! Something went wrong.",
         description: (e as Error).message || "There was a problem with your registration.",
       });
+    } finally {
+      setIsUploading(false);
     }
   }
 
@@ -261,25 +276,20 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               <FormControl>
                   <div className="flex items-center gap-4">
                       <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
-                        {photoPreview ? (
-                            <Image src={photoPreview} alt="Profile preview" layout="fill" className="rounded-full object-cover" />
+                        {photoPreview1 ? (
+                            <Image src={photoPreview1} alt="Profile preview" layout="fill" className="rounded-full object-cover" />
                         ) : (
                             <User className="w-10 h-10 text-muted-foreground" />
                         )}
-                         {isUploading && (
-                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                                <Loader2 className="w-6 h-6 text-white animate-spin" />
-                            </div>
-                         )}
                       </div>
-                      <Button type="button" variant="outline" onClick={() => photoInputRef.current?.click()} disabled={isUploading}>
+                      <Button type="button" variant="outline" onClick={() => photoInputRef1.current?.click()} disabled={isSubmitting}>
                          <Upload className="mr-2 h-4 w-4" /> Change Photo
                       </Button>
                       <Input
                         type="file"
                         className="hidden"
-                        ref={photoInputRef}
-                        onChange={handlePhotoChange}
+                        ref={photoInputRef1}
+                        onChange={handlePhotoChange1}
                         accept="image/png, image/jpeg"
                       />
                   </div>
@@ -338,13 +348,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                                     ) : (
                                         <User className="w-10 h-10 text-muted-foreground" />
                                     )}
-                                    {isUploading2 && (
-                                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                                            <Loader2 className="w-6 h-6 text-white animate-spin" />
-                                        </div>
-                                    )}
                                 </div>
-                                <Button type="button" variant="outline" onClick={() => photoInputRef2.current?.click()} disabled={isUploading2}>
+                                <Button type="button" variant="outline" onClick={() => photoInputRef2.current?.click()} disabled={isSubmitting}>
                                     <Upload className="mr-2 h-4 w-4" /> Upload Photo
                                 </Button>
                                 <Input
@@ -388,9 +393,9 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isUploading || isUploading2}>
-              {(isSubmitting || isUploading || isUploading2) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploading ? "Uploading Photo 1..." : isUploading2 ? "Uploading Photo 2..." : isSubmitting ? "Submitting..." : "Submit Application"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isUploading}>
+              {(isSubmitting || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isUploading ? "Uploading photos..." : isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
         </Form>
