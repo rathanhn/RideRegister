@@ -191,7 +191,7 @@ export async function uploadPhoto(formData: FormData) {
 // Schema for updating a registration status
 const updateStatusSchema = z.object({
   registrationId: z.string().min(1, "Registration ID is required."),
-  status: z.enum(["approved", "rejected", "pending", "cancellation_requested"]),
+  status: z.enum(["approved", "rejected", "pending", "cancellation_requested", "cancelled"]),
   adminId: z.string().min(1, "Admin ID is required."),
 });
 
@@ -217,6 +217,33 @@ export async function updateRegistrationStatus(values: z.infer<typeof updateStat
         return { success: false, message: "Could not update registration status." };
     }
 }
+
+// Schema for deleting a registration
+const deleteRegistrationSchema = z.object({
+  registrationId: z.string().min(1, "Registration ID is required."),
+  adminId: z.string().min(1, "Admin ID is required."),
+});
+
+export async function deleteRegistration(values: z.infer<typeof deleteRegistrationSchema>) {
+    const adminRole = await getUserRole(values.adminId);
+    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+      return { success: false, message: "Permission denied." };
+    }
+
+    const parsed = deleteRegistrationSchema.safeParse(values);
+    if (!parsed.success) {
+      return { success: false, message: "Invalid data provided." };
+    }
+
+    try {
+      await deleteDoc(doc(db, "registrations", values.registrationId));
+      return { success: true, message: "Registration has been deleted." };
+    } catch (error) {
+      console.error("Error deleting registration:", error);
+      return { success: false, message: "Failed to delete registration." };
+    }
+}
+
 
 // Schema for checking in a rider
 const checkInSchema = z.object({
@@ -498,5 +525,3 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
         return { success: false, message: "Could not submit your request. Please try again." };
     }
 }
-
-    

@@ -50,69 +50,65 @@ export default function AdminPage() {
         
         <StatsOverview />
 
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-5">
-           <div className="lg:col-span-3 space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Approvals</CardTitle>
-                        <CardDescription>
-                            Review and approve or reject new registration applications.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <RegistrationsTable />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Registered Riders</CardTitle>
-                        <CardDescription>
-                            View and contact all approved riders for the event.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <RidersListTable />
-                    </CardContent>
-                </Card>
-           </div>
-           <div className="lg:col-span-2 space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ScanLine className="h-6 w-6 text-primary" />
-                            Ticket Scanner
-                        </CardTitle>
-                        <CardDescription>
-                        Scan rider tickets for real-time check-in.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <QrScanner />
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
-                    <CardDescription>
-                        Create and delete event announcements.
-                    </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <AnnouncementManager />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&A</CardTitle>
-                    <CardDescription>
-                        Respond to user questions and manage conversations.
-                    </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                    <AdminQna />
-                    </CardContent>
-                </Card>
-           </div>
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-1">
+          <Card>
+              <CardHeader>
+                  <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
+                  <CardDescription>
+                      Review pending applications and manage cancellation requests.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <RegistrationsTable />
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader>
+                  <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Registered Riders</CardTitle>
+                  <CardDescription>
+                      View, contact, or remove all approved riders for the event.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <RidersListTable />
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                      <ScanLine className="h-6 w-6 text-primary" />
+                      Ticket Scanner
+                  </CardTitle>
+                  <CardDescription>
+                  Scan rider tickets for real-time check-in.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <QrScanner />
+              </CardContent>
+          </Card>
+            <Card>
+              <CardHeader>
+              <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
+              <CardDescription>
+                  Create and delete event announcements.
+              </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <AnnouncementManager />
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader>
+              <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&A</CardTitle>
+              <CardDescription>
+                  Respond to user questions and manage conversations.
+              </CardDescription>
+              </CardHeader>
+              <CardContent>
+              <AdminQna />
+              </CardContent>
+          </Card>
         </div>
 
         <Card>
@@ -121,7 +117,7 @@ export default function AdminPage() {
             <CardDescription>
               Assign roles to users. This section is only visible to Super Admins.
             </CardDescription>
-          </CardHeader>
+          </Header>
           <CardContent>
             <UserRolesManager />
           </CardContent>

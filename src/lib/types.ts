@@ -47,7 +47,7 @@ export interface Registration {
     phoneNumber2?: string;
     photoURL2?: string;
     createdAt: any; // Firestore timestamp
-    status: 'pending' | 'approved' | 'rejected' | 'cancellation_requested';
+    status: 'pending' | 'approved' | 'rejected' | 'cancellation_requested' | 'cancelled';
     rider1CheckedIn?: boolean;
     rider2CheckedIn?: boolean;
     cancellationReason?: string;
