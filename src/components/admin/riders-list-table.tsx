@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, User, Phone } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -24,6 +24,8 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { deleteRegistration } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Separator } from '../ui/separator';
 
 // Helper function to format WhatsApp links
 const formatWhatsAppLink = (phone: string, message?: string) => {
@@ -174,12 +176,108 @@ export function RidersListTable() {
                 Export to CSV
             </Button>
         </div>
-        <div className="border rounded-lg">
+        
+        {/* Mobile View - Cards */}
+        <div className="md:hidden space-y-4">
+           {(loading || authLoading) ? (
+                [...Array(3)].map((_, i) => (
+                    <Card key={i}>
+                        <CardContent className="p-4 space-y-4">
+                             <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                    <Skeleton className="h-5 w-32" />
+                                    <Skeleton className="h-4 w-24" />
+                                </div>
+                                <Skeleton className="h-6 w-20" />
+                            </div>
+                            <Skeleton className="h-8 w-full" />
+                        </CardContent>
+                    </Card>
+                ))
+            ) : filteredRegistrations.length > 0 ? (
+                filteredRegistrations.map((reg) => (
+                    <Card key={reg.id}>
+                        <CardContent className="p-4 space-y-3">
+                            <div>
+                                <p className="font-semibold">{reg.fullName}</p>
+                                <p className="text-sm text-muted-foreground">{reg.phoneNumber}</p>
+                                <Badge variant="outline" className={`mt-1 ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>
+                                    {reg.rider1CheckedIn ? 'Checked-in' : 'Pending Check-in'}
+                                </Badge>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button asChild size="sm" className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">
+                                    <Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName))} target="_blank"><Send /> Send Ticket</Link>
+                                </Button>
+                                 <Button asChild size="sm" className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200">
+                                    <Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Message</Link>
+                                </Button>
+                            </div>
+
+                            {reg.registrationType === 'duo' && reg.fullName2 && (
+                                <>
+                                <Separator />
+                                <div>
+                                    <p className="font-semibold">{reg.fullName2}</p>
+                                    <p className="text-sm text-muted-foreground">{reg.phoneNumber2}</p>
+                                    <Badge variant="outline" className={`mt-1 ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>
+                                        {reg.rider2CheckedIn ? 'Checked-in' : 'Pending Check-in'}
+                                    </Badge>
+                                </div>
+                                 <div className="flex gap-2">
+                                    <Button asChild size="sm" className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">
+                                        <Link href={formatWhatsAppLink(reg.phoneNumber2 || '', getTicketMessage(reg.fullName2))} target="_blank"><Send /> Send Ticket</Link>
+                                    </Button>
+                                     <Button asChild size="sm" className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200">
+                                        <Link href={formatWhatsAppLink(reg.phoneNumber2 || '')} target="_blank"><MessageCircle /> Message</Link>
+                                    </Button>
+                                </div>
+                                </>
+                            )}
+                            {canEdit && (
+                                <>
+                                <Separator />
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="sm" className="w-full" disabled={isDeleting === reg.id}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete Registration
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">
+                                            Yes, delete
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+                ))
+            ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                   {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
+                </div>
+            )}
+        </div>
+
+        {/* Desktop View - Table */}
+        <div className="hidden md:block border rounded-lg">
         <Table>
             <TableHeader>
             <TableRow>
                 <TableHead>Rider(s)</TableHead>
-                <TableHead className="hidden md:table-cell">Phone</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead className="hidden lg:table-cell">Check-in</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -194,7 +292,7 @@ export function RidersListTable() {
                         <div>{reg.fullName}</div>
                         {reg.registrationType === 'duo' && reg.fullName2 && <div className="text-xs text-muted-foreground">{reg.fullName2}</div>}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell>
                          <div>{reg.phoneNumber}</div>
                         {reg.registrationType === 'duo' && reg.phoneNumber2 && <div className="text-xs text-muted-foreground">{reg.phoneNumber2}</div>}
                     </TableCell>
@@ -247,9 +345,9 @@ export function RidersListTable() {
                             {canEdit && (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" size="sm" className="w-full sm:w-auto" disabled={isDeleting === reg.id}>
+                                        <Button variant="destructive" size="sm" className="w-full mt-2" disabled={isDeleting === reg.id}>
                                             <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete Reg
+                                            Delete
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
@@ -285,4 +383,3 @@ export function RidersListTable() {
     </div>
   );
 }
-
