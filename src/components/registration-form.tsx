@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { Loader2, PartyPopper, User, Users, Upload, X } from "lucide-react";
-import { registerRider, uploadPhoto } from "@/app/actions";
+import { registerRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
 import { auth } from "@/lib/firebase";
@@ -80,6 +80,16 @@ interface RegistrationFormProps {
     onSuccess: (registrationData: Registration) => void;
 }
 
+// Helper to convert file to Base64 Data URI
+const fileToDataUri = (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
 export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const { toast } = useToast();
   const [user, loading] = useAuthState(auth);
@@ -93,7 +103,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [photoPreview2, setPhotoPreview2] = useState<string | null>(null);
   const photoInputRef2 = useRef<HTMLInputElement>(null);
   
-  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -155,42 +165,23 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         return;
     }
     
-    setIsUploading(true);
+    setIsProcessing(true);
 
     try {
-      let photoURL1 = values.photoURL || user.photoURL || undefined;
-      if (photoFile1) {
-        const formData1 = new FormData();
-        formData1.append('photo', photoFile1);
-        const result = await uploadPhoto(formData1);
-        if (result.success && result.url) {
-          photoURL1 = result.url;
-        } else {
-          throw new Error('Failed to upload primary photo.');
-        }
-      }
-
-      let photoURL2 = values.photoURL2;
-      if (photoFile2) {
-         const formData2 = new FormData();
-        formData2.append('photo', photoFile2);
-        const result = await uploadPhoto(formData2);
-        if (result.success && result.url) {
-          photoURL2 = result.url;
-        } else {
-          throw new Error('Failed to upload secondary photo.');
-        }
-      }
+      // Convert photos to data URIs if they exist
+      const photo1DataUri = photoFile1 ? await fileToDataUri(photoFile1) : undefined;
+      const photo2DataUri = photoFile2 ? await fileToDataUri(photoFile2) : undefined;
 
       const submissionData = {
           ...values,
           uid: user.uid,
           email: user.email!,
-          photoURL: photoURL1,
-          photoURL2: photoURL2,
+          // Use existing photoURL if no new photo is selected
+          photoURL: photoFile1 ? undefined : values.photoURL || user.photoURL || undefined,
+          photoURL2: photoFile2 ? undefined : values.photoURL2,
       };
 
-      const result = await registerRider(submissionData);
+      const result = await registerRider(submissionData, photo1DataUri, photo2DataUri);
 
       if (result.success) {
         toast({
@@ -202,8 +193,9 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         const newRegistrationData: Registration = {
             id: user.uid,
             ...values,
-            photoURL: submissionData.photoURL,
-            photoURL2: submissionData.photoURL2,
+            // We show the local preview while the real URL gets updated in the background
+            photoURL: photoPreview1 || user.photoURL,
+            photoURL2: photoPreview2,
             status: 'pending',
             createdAt: new Date(), 
             rider1CheckedIn: false,
@@ -222,7 +214,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         description: (e as Error).message || "There was a problem with your registration.",
       });
     } finally {
-      setIsUploading(false);
+      setIsProcessing(false);
     }
   }
 
@@ -284,7 +276,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                             <User className="w-10 h-10 text-muted-foreground" />
                         )}
                       </div>
-                      <Button type="button" variant="outline" onClick={() => photoInputRef1.current?.click()} disabled={isSubmitting}>
+                      <Button type="button" variant="outline" onClick={() => photoInputRef1.current?.click()} disabled={isSubmitting || isProcessing}>
                          <Upload className="mr-2 h-4 w-4" /> Change Photo
                       </Button>
                       <Input
@@ -351,7 +343,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                                         <User className="w-10 h-10 text-muted-foreground" />
                                     )}
                                 </div>
-                                <Button type="button" variant="outline" onClick={() => photoInputRef2.current?.click()} disabled={isSubmitting}>
+                                <Button type="button" variant="outline" onClick={() => photoInputRef2.current?.click()} disabled={isSubmitting || isProcessing}>
                                     <Upload className="mr-2 h-4 w-4" /> Upload Photo
                                 </Button>
                                 <Input
@@ -395,9 +387,9 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   )}
                 />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isUploading}>
-              {(isSubmitting || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploading ? "Uploading photos..." : isSubmitting ? "Submitting..." : "Submit Application"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isProcessing}>
+              {(isSubmitting || isProcessing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isProcessing ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
         </Form>

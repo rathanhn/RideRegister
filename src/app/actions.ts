@@ -128,7 +128,7 @@ const registrationFormSchema = z
 
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
-export async function registerRider(values: RegistrationInput) {
+export async function registerRider(values: RegistrationInput, photo1DataUri?: string, photo2DataUri?: string) {
   const parsed = registrationFormSchema.safeParse(values);
 
   if (!parsed.success) {
@@ -139,33 +139,84 @@ export async function registerRider(values: RegistrationInput) {
   try {
     const { uid, email, ...registrationData } = parsed.data;
 
+    // Step 1: Create the initial registration document in a transaction.
+    // This makes the primary registration fast and avoids timeouts.
     await runTransaction(db, async (transaction) => {
       const userRef = doc(db, "users", uid);
       const registrationRef = doc(db, "registrations", uid);
 
+      // Update user's main profile
       transaction.update(userRef, {
         displayName: registrationData.fullName,
-        photoURL: registrationData.photoURL // Also update user profile
       });
 
-       const dataToSave = {
+      // Save initial registration data
+      const dataToSave = {
         ...registrationData,
-        email: email, // ensure email is saved
-        uid: uid, // ensure uid is saved
+        email: email,
+        uid: uid,
         status: "pending" as const,
         createdAt: serverTimestamp(),
+        photoURL: registrationData.photoURL, // Save initial photo URL (e.g., from Google)
+        photoURL2: registrationData.photoURL2,
       };
       transaction.set(registrationRef, dataToSave);
     });
 
-    console.log(`Registration document written for user ID: ${uid}`);
-    return { success: true, message: "Registration successful!" };
+    console.log(`Initial registration document written for user ID: ${uid}`);
+
+    // Step 2: Asynchronously upload photos and update the document.
+    // This happens after the initial response, preventing timeouts.
+    const uploadAndUpdatePhotos = async () => {
+        try {
+            let photoURL1 = registrationData.photoURL;
+            let photoURL2 = registrationData.photoURL2;
+            let hasNewPhotos = false;
+
+            if (photo1DataUri) {
+                const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
+                photoURL1 = result.secure_url;
+                hasNewPhotos = true;
+            }
+            if (photo2DataUri) {
+                const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
+                photoURL2 = result.secure_url;
+                hasNewPhotos = true;
+            }
+
+            if (hasNewPhotos) {
+                const registrationRef = doc(db, "registrations", uid);
+                await updateDoc(registrationRef, {
+                    photoURL: photoURL1,
+                    photoURL2: photoURL2,
+                });
+
+                // Also update the user's main profile photo if a new one was uploaded for rider 1
+                if (photo1DataUri) {
+                   const userRef = doc(db, "users", uid);
+                   await updateDoc(userRef, { photoURL: photoURL1 });
+                }
+                console.log(`Photo URLs updated for user ID: ${uid}`);
+            }
+        } catch (uploadError) {
+            console.error("Error during photo upload and update:", uploadError);
+            // The registration still exists, but photos failed.
+            // Could add more robust error handling here, e.g., flag for admin.
+        }
+    };
+
+    // Don't await this, let it run in the background.
+    uploadAndUpdatePhotos();
+
+    return { success: true, message: "Registration successful! Your photos are being processed." };
   } catch (error) {
     console.error("Error adding document: ", error);
     return { success: false, message: "Could not save your registration. Please try again." };
   }
 }
 
+// This action is now only used for one-off photo uploads if needed elsewhere,
+// but not directly in the main registration flow.
 export async function uploadPhoto(formData: FormData) {
   const file = formData.get('photo') as File;
   if (!file) {
