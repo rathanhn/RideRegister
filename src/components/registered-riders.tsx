@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, User, MoveRight } from 'lucide-react';
+import { User, MoveRight } from 'lucide-react';
 import { useMemo } from 'react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
@@ -34,12 +34,10 @@ const RiderSkeleton = () => (
 
 
 export function RegisteredRiders() {
-  // Fetch all registrations and order them
   const [registrations, loading, error] = useCollection(
     query(collection(db, 'registrations'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'))
   );
 
-  // Filter for approved riders on the client side
   const approvedRiders = useMemo(() => {
     if (!registrations) return [];
     return registrations.docs
@@ -83,8 +81,8 @@ export function RegisteredRiders() {
     );
   }
 
-  // If there's an error, render nothing to avoid breaking the page.
   if (error) {
+    // Silently fail to avoid breaking the page for a non-critical component.
     return null;
   }
   
@@ -176,3 +174,4 @@ export function RegisteredRiders() {
     </Card>
   );
 }
+
