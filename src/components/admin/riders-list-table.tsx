@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, MessageCircle, Trash2 } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -26,13 +26,17 @@ import { deleteRegistration } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 // Helper function to format WhatsApp links
-const formatWhatsAppLink = (phone: string) => {
+const formatWhatsAppLink = (phone: string, message?: string) => {
     // Remove non-digit characters and add country code if missing
     let cleanedPhone = phone.replace(/\D/g, '');
     if (cleanedPhone.length === 10) {
         cleanedPhone = `91${cleanedPhone}`;
     }
-    return `https://wa.me/${cleanedPhone}`;
+    const url = `https://wa.me/${cleanedPhone}`;
+    if (message) {
+        return `${url}?text=${encodeURIComponent(message)}`;
+    }
+    return url;
 };
 
 const TableSkeleton = () => (
@@ -154,6 +158,8 @@ export function RidersListTable() {
     );
   }
 
+  const getTicketMessage = (name: string) => `Hi ${name}, your registration for the TeleFun Mobiles Independence Day Ride is confirmed! You can view and download your digital ticket from your dashboard: https://rideregister.web.app/dashboard`;
+
   return (
     <div>
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
@@ -205,19 +211,45 @@ export function RidersListTable() {
                         </div>
                     </TableCell>
                     <TableCell className="text-right">
-                        <div className="flex flex-col sm:flex-row items-end justify-end gap-2">
-                             <Button asChild variant="outline" size="sm" className="w-full sm:w-auto text-green-700 border-green-200 bg-green-50 hover:bg-green-100 dark:text-green-200 dark:border-green-800 dark:bg-green-900 dark:hover:bg-green-800">
-                                <Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank">
-                                    <MessageCircle className="mr-2 h-4 w-4" />
-                                    Contact
-                                </Link>
-                             </Button>
+                        <div className="flex flex-col items-end gap-2">
+                            {/* Rider 1 Actions */}
+                             <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground hidden xl:inline">Rider 1:</span>
+                                <Button asChild variant="outline" size="icon" className="h-8 w-8 text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100">
+                                    <Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName))} target="_blank">
+                                        <Send className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+                                <Button asChild variant="outline" size="icon" className="h-8 w-8 text-green-700 border-green-200 bg-green-50 hover:bg-green-100">
+                                    <Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank">
+                                        <MessageCircle className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </div>
+                             {/* Rider 2 Actions */}
+                            {reg.registrationType === 'duo' && reg.phoneNumber2 && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground hidden xl:inline">Rider 2:</span>
+                                     <Button asChild variant="outline" size="icon" className="h-8 w-8 text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100">
+                                        <Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider'))} target="_blank">
+                                            <Send className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                     <Button asChild variant="outline" size="icon" className="h-8 w-8 text-green-700 border-green-200 bg-green-50 hover:bg-green-100">
+                                        <Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank">
+                                            <MessageCircle className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* General Actions */}
                             {canEdit && (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="destructive" size="sm" className="w-full sm:w-auto" disabled={isDeleting === reg.id}>
-                                            {isDeleting === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                            Delete
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete Reg
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
@@ -253,3 +285,4 @@ export function RidersListTable() {
     </div>
   );
 }
+
