@@ -136,6 +136,12 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
     console.error("[Server] Validation Errors:", parsed.error.flatten());
     return { success: false, message: "Invalid data provided." };
   }
+  
+  // FIX: Add a null check to ensure parsed.data exists before destructuring
+  if (!parsed.data) {
+    console.error("[Server] Parsed data is missing after validation.");
+    return { success: false, message: "Server validation failed: data object is missing." };
+  }
 
   try {
     const { uid, email, ...registrationData } = parsed.data;
