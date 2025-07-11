@@ -116,7 +116,7 @@ export default function AdminPage() {
                 <CardDescription>
                 Assign roles to users. This section is only visible to Super Admins.
                 </CardDescription>
-            </Header>
+            </CardHeader>
             <CardContent>
                 <UserRolesManager />
             </CardContent>
