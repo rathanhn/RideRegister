@@ -58,14 +58,14 @@ export function RegisteredRiders() {
       >
         <CarouselContent>
           {approvedRiders.map((rider) => (
-            <CarouselItem key={rider.id} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/6">
+            <CarouselItem key={rider.id} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
               <div className="p-1">
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center p-3 gap-2 aspect-square">
-                    <Avatar className="w-16 h-16 border-2 border-primary">
+                    <Avatar className="w-20 h-20 border-2 border-primary">
                       <AvatarImage src={rider.photoURL} alt={rider.fullName} />
                       <AvatarFallback>
-                        <User className="w-8 h-8" />
+                        <User className="w-10 h-10" />
                       </AvatarFallback>
                     </Avatar>
                     <p className="text-sm font-semibold text-center truncate w-full px-1">{rider.fullName}</p>
@@ -81,3 +81,4 @@ export function RegisteredRiders() {
     </div>
   );
 }
+
