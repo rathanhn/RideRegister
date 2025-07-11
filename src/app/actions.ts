@@ -137,7 +137,6 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
     return { success: false, message: "Invalid data provided." };
   }
   
-  // FIX: Add a null check to ensure parsed.data exists before destructuring
   if (!parsed.data) {
     console.error("[Server] Parsed data is missing after validation.");
     return { success: false, message: "Server validation failed: data object is missing." };
@@ -147,73 +146,49 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
     const { uid, email, ...registrationData } = parsed.data;
     console.log(`[Server] Starting registration for UID: ${uid}`);
 
+    let photoURL1 = registrationData.photoURL;
+    let photoURL2 = registrationData.photoURL2;
+
+    if (photo1DataUri) {
+        console.log("[Server] Uploading photo 1 to Cloudinary...");
+        const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
+        photoURL1 = result.secure_url;
+        console.log("[Server] Photo 1 uploaded:", photoURL1);
+    }
+    if (photo2DataUri) {
+        console.log("[Server] Uploading photo 2 to Cloudinary...");
+        const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
+        photoURL2 = result.secure_url;
+        console.log("[Server] Photo 2 uploaded:", photoURL2);
+    }
+
     const registrationRef = doc(db, "registrations", uid);
+    const userRef = doc(db, "users", uid);
+
     const dataToSave = {
       ...registrationData,
       email: email,
       uid: uid,
       status: "pending" as const,
       createdAt: serverTimestamp(),
-      photoURL: registrationData.photoURL,
-      photoURL2: registrationData.photoURL2,
+      photoURL: photoURL1,
+      photoURL2: photoURL2,
     };
     
-    // Step 1: Immediately save the registration data.
+    // Save registration data
     await setDoc(registrationRef, dataToSave);
-    console.log(`[Server] Initial registration document created for UID: ${uid}`);
+    console.log(`[Server] Registration document created for UID: ${uid}`);
 
-    // Step 2: Asynchronously update user profile and upload photos. This happens after the initial response.
-    const asyncUpdates = async () => {
-        try {
-            // Update user's display name
-            const userRef = doc(db, "users", uid);
-            await updateDoc(userRef, { displayName: registrationData.fullName });
-            console.log(`[Server-Async] User display name updated for UID: ${uid}`);
+    // Update user's display name and photoURL
+    await updateDoc(userRef, { 
+        displayName: registrationData.fullName,
+        photoURL: photoURL1 // Update main user profile with rider 1's photo
+    });
+    console.log(`[Server] User display name and photo updated for UID: ${uid}`);
 
-            // Process photo uploads
-            let photoURL1 = registrationData.photoURL;
-            let photoURL2 = registrationData.photoURL2;
-            let hasNewPhotos = false;
+    console.log("[Server] Successfully completed registration process.");
+    return { success: true, message: "Registration successful! Your application is pending review." };
 
-            if (photo1DataUri) {
-                console.log("[Server-Async] Uploading photo 1 to Cloudinary...");
-                const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
-                photoURL1 = result.secure_url;
-                hasNewPhotos = true;
-                console.log("[Server-Async] Photo 1 uploaded:", photoURL1);
-            }
-            if (photo2DataUri) {
-                console.log("[Server-Async] Uploading photo 2 to Cloudinary...");
-                const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
-                photoURL2 = result.secure_url;
-                hasNewPhotos = true;
-                console.log("[Server-Async] Photo 2 uploaded:", photoURL2);
-            }
-
-            if (hasNewPhotos) {
-                console.log("[Server-Async] Updating Firestore with new photo URLs.");
-                await updateDoc(registrationRef, {
-                    photoURL: photoURL1,
-                    photoURL2: photoURL2,
-                });
-                 // Also update the user's main profile photo if a new one was uploaded for rider 1
-                if (photo1DataUri) {
-                   await updateDoc(userRef, { photoURL: photoURL1 });
-                }
-                console.log(`[Server-Async] Photo URLs updated for user ID: ${uid}`);
-            } else {
-                console.log("[Server-Async] No new photos to upload.");
-            }
-        } catch (uploadError) {
-            console.error("[Server-Async] Error during photo upload and update:", uploadError);
-        }
-    };
-
-    // Don't await this, let it run in the background.
-    asyncUpdates();
-
-    console.log("[Server] Successfully returned response to client.");
-    return { success: true, message: "Registration successful! Your photos are being processed." };
   } catch (error) {
     console.error("[Server] CRITICAL ERROR in registration process: ", error);
     return { success: false, message: "Could not save your registration. Please try again." };

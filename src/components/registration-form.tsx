@@ -172,9 +172,11 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     try {
       // Convert photos to data URIs if they exist
       const photo1DataUri = photoFile1 ? await fileToDataUri(photoFile1) : undefined;
-      const photo2DataUri = photoFile2 ? await fileToDataUri(photoFile2) : undefined;
+      console.log("[Client] Photo Data URI 1 prepared:", !!photo1DataUri);
       
-      console.log("[Client] Photo Data URIs prepared. Photo 1:", !!photo1DataUri, "Photo 2:", !!photo2DataUri);
+      const photo2DataUri = photoFile2 ? await fileToDataUri(photoFile2) : undefined;
+      console.log("[Client] Photo Data URI 2 prepared:", !!photo2DataUri);
+      
 
       const submissionData = {
           ...values,
