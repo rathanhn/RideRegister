@@ -2,7 +2,7 @@
 "use client";
 
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Registration } from '@/lib/types';
 import { Loader2, AlertTriangle, Users, User, Ticket } from 'lucide-react';
@@ -11,7 +11,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { PieChart, Pie, Cell } from "recharts"
 
 export function StatsOverview() {
-  const [value, loading, error] = useCollection(collection(db, 'registrations'));
+  const [value, loading, error] = useCollection(
+    query(collection(db, 'registrations'), where('status', 'in', ['approved', 'pending']))
+    );
 
   if (loading) {
     return (
@@ -62,19 +64,19 @@ export function StatsOverview() {
   const duoCount = registrations.filter(reg => reg.registrationType === 'duo').length;
 
   const chartData = [
-    { type: 'Solo', count: soloCount, fill: 'hsl(var(--chart-1))' },
-    { type: 'Duo', count: duoCount, fill: 'hsl(var(--chart-2))' },
+    { type: 'Solo', count: soloCount, fill: 'var(--color-solo)' },
+    { type: 'Duo', count: duoCount, fill: 'var(--color-duo)' },
   ];
 
   const chartConfig = {
     count: {
       label: "Count",
     },
-    Solo: {
+    solo: {
       label: "Solo",
       color: "hsl(var(--chart-1))",
     },
-    Duo: {
+    duo: {
       label: "Duo",
       color: "hsl(var(--chart-2))",
     },
@@ -90,7 +92,6 @@ export function StatsOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRegistrations}</div>
-            <p className="text-xs text-muted-foreground">Individual & group registrations</p>
           </CardContent>
         </Card>
         <Card>
@@ -100,7 +101,6 @@ export function StatsOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalParticipants}</div>
-            <p className="text-xs text-muted-foreground">Total number of riders</p>
           </CardContent>
         </Card>
         <Card>
@@ -110,7 +110,6 @@ export function StatsOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{soloCount}</div>
-            <p className="text-xs text-muted-foreground">Single rider registrations</p>
           </CardContent>
         </Card>
         <Card>
@@ -120,7 +119,6 @@ export function StatsOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{duoCount}</div>
-            <p className="text-xs text-muted-foreground">Two-rider team registrations</p>
           </CardContent>
         </Card>
       </div>
@@ -128,11 +126,10 @@ export function StatsOverview() {
       <Card>
         <CardHeader>
           <CardTitle>Registration Types Breakdown</CardTitle>
-          <CardDescription>A visual breakdown of solo vs. duo registrations.</CardDescription>
         </CardHeader>
         <CardContent>
           {totalRegistrations > 0 ? (
-            <ChartContainer config={chartConfig} className="mx-auto aspect-video max-h-[300px]">
+            <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
               <PieChart>
                 <ChartTooltip
                   cursor={false}
@@ -145,9 +142,8 @@ export function StatsOverview() {
                   innerRadius={60}
                   strokeWidth={5}
                 >
-                    {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
+                  <Cell name="Solo" fill="var(--color-solo)" />
+                  <Cell name="Duo" fill="var(--color-duo)" />
                 </Pie>
                 <ChartLegend
                     content={<ChartLegendContent nameKey="type" />}
@@ -156,7 +152,7 @@ export function StatsOverview() {
               </PieChart>
             </ChartContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            <div className="flex items-center justify-center h-[250px] text-muted-foreground">
               No registration data to display.
             </div>
           )}
