@@ -46,9 +46,10 @@ export interface Registration {
     age2?: number;
     phoneNumber2?: string;
     createdAt: any; // Firestore timestamp
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'cancellation_requested';
     rider1CheckedIn?: boolean;
     rider2CheckedIn?: boolean;
+    cancellationReason?: string;
 }
 
 export interface QnaQuestion {

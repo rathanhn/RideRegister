@@ -190,7 +190,7 @@ export async function uploadPhoto(formData: FormData) {
 // Schema for updating a registration status
 const updateStatusSchema = z.object({
   registrationId: z.string().min(1, "Registration ID is required."),
-  status: z.enum(["approved", "rejected", "pending"]),
+  status: z.enum(["approved", "rejected", "pending", "cancellation_requested"]),
   adminId: z.string().min(1, "Admin ID is required."),
 });
 
@@ -471,5 +471,29 @@ export async function deleteAnnouncement(values: z.infer<typeof deleteAnnounceme
     } catch (error) {
         console.error("Error deleting announcement:", error);
         return { success: false, message: "Failed to delete announcement." };
+    }
+}
+
+// Schema for ride cancellation
+const cancelRegistrationSchema = z.object({
+    registrationId: z.string().min(1, "Registration ID is required."),
+    reason: z.string().min(10, "Please provide a reason for cancellation.").max(500),
+});
+
+export async function cancelRegistration(values: z.infer<typeof cancelRegistrationSchema>) {
+    const parsed = cancelRegistrationSchema.safeParse(values);
+    if (!parsed.success) {
+        return { success: false, message: "Invalid data provided." };
+    }
+    try {
+        const registrationRef = doc(db, "registrations", values.registrationId);
+        await updateDoc(registrationRef, {
+            status: 'cancellation_requested',
+            cancellationReason: values.reason,
+        });
+        return { success: true, message: "Your cancellation request has been submitted." };
+    } catch (error) {
+        console.error("Error submitting cancellation request: ", error);
+        return { success: false, message: "Could not submit your request. Please try again." };
     }
 }

@@ -5,31 +5,39 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { DigitalTicket } from '@/components/digital-ticket';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Clock, Ban, User, Shield, ArrowRight } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Registration, AppUser } from '@/lib/types';
 import { RegistrationForm } from '@/components/registration-form';
 import { OrganizerAgreementForm } from '@/components/organizer-agreement-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DigitalTicket } from '@/components/digital-ticket';
+import { DashboardProfileCard } from '@/components/dashboard/dashboard-profile-card';
+import { RideInfoCard } from '@/components/dashboard/ride-info-card';
+import { DashboardActionsCard } from '@/components/dashboard/dashboard-actions-card';
+import { QnaSection } from '@/components/qna-section';
 
 
 type ViewState = 'rider' | 'organizer' | null;
 
 const DashboardSkeleton = () => (
-    <Card>
-        <CardHeader>
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent>
-            <Skeleton className="h-40 w-full" />
-        </CardContent>
-    </Card>
+    <div className="space-y-4">
+        <Skeleton className="h-9 w-1/2" />
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-40 w-full" />
+            </CardContent>
+        </Card>
+    </div>
 );
 
 export default function DashboardPage() {
@@ -42,36 +50,37 @@ export default function DashboardPage() {
     const [view, setView] = useState<ViewState>(null);
 
     useEffect(() => {
-        if (loading) return; // Wait until auth state is loaded
+        if (loading) return;
         if (!user) {
-            router.push('/login'); // Redirect to login if not authenticated
+            router.push('/login');
             return;
         }
 
+        const unsubscribes: (() => void)[] = [];
+
         const fetchData = async () => {
-            if (!user) return;
             setIsLoadingData(true);
             try {
-                const regDocRef = doc(db, 'registrations', user.uid);
                 const userDocRef = doc(db, 'users', user.uid);
-                
-                const [regDocSnap, userDocSnap] = await Promise.all([
-                    getDoc(regDocRef),
-                    getDoc(userDocRef)
-                ]);
+                const unsubUser = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setUserData({ id: doc.id, ...doc.data() } as AppUser);
+                    }
+                });
+                unsubscribes.push(unsubUser);
 
-                if (regDocSnap.exists()) {
-                    setRegistrationData({ id: regDocSnap.id, ...regDocSnap.data() } as Registration);
-                } else {
-                    setRegistrationData(null);
-                }
-
-                if (userDocSnap.exists()) {
-                    setUserData({ id: userDocSnap.id, ...userDocSnap.data() } as AppUser);
-                }
+                const regDocRef = doc(db, 'registrations', user.uid);
+                const unsubReg = onSnapshot(regDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setRegistrationData({ id: doc.id, ...doc.data() } as Registration);
+                    } else {
+                        setRegistrationData(null);
+                    }
+                });
+                unsubscribes.push(unsubReg);
 
             } catch (err) {
-                console.error("Error fetching data:", err);
+                console.error("Error setting up listeners:", err);
                 setFetchError("Failed to load your details. Please try again later.");
             } finally {
                 setIsLoadingData(false);
@@ -80,26 +89,149 @@ export default function DashboardPage() {
 
         fetchData();
 
+        return () => {
+            unsubscribes.forEach(unsub => unsub());
+        };
+
     }, [user, loading, router]);
 
 
     const handleRegistrationSuccess = (newData: Registration) => {
         setRegistrationData(newData);
-        setView(null); // Return to dashboard status view
+        setView(null);
     }
     
     const handleOrganizerRequestSuccess = (newUserData: AppUser) => {
         setUserData(newUserData);
-        setView(null); // Return to dashboard status view
+        setView(null);
+    }
+    
+    const getRegistrationStatusContent = () => {
+        if (!registrationData) return null;
+
+        switch (registrationData.status) {
+            case 'approved':
+                return <DigitalTicket registration={registrationData} user={user!} />;
+            case 'pending':
+                return (
+                    <Card className="text-center">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-center gap-2">
+                                <Clock className="text-primary"/> Registration Pending
+                            </CardTitle>
+                            <CardDescription>
+                                Your registration is being reviewed by our team. Please check back later. We'll notify you once it's approved.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                );
+            case 'rejected':
+                return (
+                    <Card className="text-center">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
+                                <Ban /> Registration Rejected
+                            </CardTitle>
+                            <CardDescription>
+                                Unfortunately, your registration could not be approved. If you believe this is an error, please contact the event organizers.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                );
+             case 'cancellation_requested':
+                return (
+                    <Card className="text-center">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-center gap-2">
+                                <Clock className="text-primary"/> Cancellation Pending
+                            </CardTitle>
+                            <CardDescription>
+                                Your request to cancel your registration has been submitted and is pending review by an admin.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                );
+            default:
+                return null;
+        }
     }
 
+
+    const renderContent = () => {
+        if (view === 'rider') return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
+        if (view === 'organizer') return <OrganizerAgreementForm onSuccess={handleOrganizerRequestSuccess} />;
+
+        if (!registrationData) {
+             return (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Welcome to the Ride!</CardTitle>
+                        <CardDescription>
+                            How would you like to participate? Register as a rider or volunteer as an organizer.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <button onClick={() => setView('rider')} className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group flex flex-col items-center justify-center h-full text-center">
+                            <Ticket className="h-8 w-8 text-primary mb-4" />
+                            <h3 className="font-semibold">Register as a Rider</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Join the ride and get your digital ticket.</p>
+                        </button>
+                         <button onClick={() => setView('organizer')} className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group flex flex-col items-center justify-center h-full text-center">
+                            <Shield className="h-8 w-8 text-primary mb-4" />
+                            <h3 className="font-semibold">Request Organizer Access</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Help manage the event as a volunteer.</p>
+                        </button>
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        const registrationStatusContent = getRegistrationStatusContent();
+
+        return (
+             <Tabs defaultValue="ticket" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="ticket"><Ticket className="w-4 h-4 mr-2" />My Ticket</TabsTrigger>
+                    <TabsTrigger value="community"><MessageSquare className="w-4 h-4 mr-2" />Community Hub</TabsTrigger>
+                    <TabsTrigger value="actions"><ListChecks className="w-4 h-4 mr-2" />Actions</TabsTrigger>
+                </TabsList>
+                <TabsContent value="ticket" className="space-y-4">
+                    {registrationStatusContent}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <DashboardProfileCard user={userData} registration={registrationData} />
+                        <RideInfoCard />
+                    </div>
+                </TabsContent>
+                <TabsContent value="community" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Community & Support</CardTitle>
+                            <CardDescription>Connect with other riders and get help.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white">
+                                <Link href="https://chat.whatsapp.com/B9glPPTpS1oIZD6fN8AeX4" target="_blank">Join WhatsApp Group</Link>
+                            </Button>
+                             <Button asChild className="w-full" variant="outline">
+                                <Link href="https://wa.me/916363148287" target="_blank">Contact Organizers on WhatsApp</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    <QnaSection />
+                </TabsContent>
+                <TabsContent value="actions">
+                    <DashboardActionsCard registration={registrationData} />
+                </TabsContent>
+            </Tabs>
+        )
+    };
+    
     if (loading || isLoadingData) {
         return (
             <div className="flex flex-col min-h-screen bg-secondary/50">
                 <Header />
                  <main className="flex-grow container mx-auto p-4 md:p-8">
-                    <div className="w-full max-w-2xl mx-auto space-y-4">
-                        <Skeleton className="h-9 w-1/2" />
+                    <div className="w-full max-w-4xl mx-auto">
                         <DashboardSkeleton />
                     </div>
                 </main>
@@ -123,117 +255,40 @@ export default function DashboardPage() {
             </div>
         )
     }
-    
-    // The main logic for what to show on the dashboard
-    const renderContent = () => {
-        // 1. If user has a registration, show ticket/status. This is the highest priority.
-        if (registrationData) {
-            switch (registrationData.status) {
-                case 'approved':
-                     return (
-                        <DigitalTicket registration={registrationData} user={user!} />
-                    );
-                case 'pending':
-                    return (
-                        <Card className="text-center">
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-center gap-2">
-                                    <Clock className="text-primary"/> Registration Pending
-                                </CardTitle>
-                                <CardDescription>
-                                    Your registration is being reviewed by our team. Please check back later. We'll notify you once it's approved.
-                                </CardDescription>
-                            </CardHeader>
-                        </Card>
-                    );
-                case 'rejected':
-                    return (
-                        <Card className="text-center">
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-                                    <Ban /> Registration Rejected
-                                </CardTitle>
-                                <CardDescription>
-                                    Unfortunately, your registration could not be approved. If you believe this is an error, please contact the event organizers.
-                                </CardDescription>
-                            </CardHeader>
-                        </Card>
-                    );
-            }
-        }
-        
-        // 2. If user is already an admin/viewer, show a specific message.
-        if (userData && (userData.role === 'admin' || userData.role === 'superadmin' || userData.role === 'viewer')) {
-            return (
-                 <Card className="text-center">
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2">
-                            <Shield className="text-primary"/> Organizer Account
-                        </CardTitle>
-                        <CardDescription>
-                            Your account has <span className='font-bold'>{userData.role}</span> permissions.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button asChild>
-                            <Link href="/admin">
-                                Go to Admin Dashboard
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            )
-        }
 
-        // 3. If a view (rider/organizer form) is explicitly selected, show it.
-        if (view === 'rider') {
-            return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
-        }
-        if (view === 'organizer') {
-            return <OrganizerAgreementForm onSuccess={handleOrganizerRequestSuccess} />;
-        }
-
-        // 4. If none of the above, show the initial choice.
+    if (userData && (userData.role === 'admin' || userData.role === 'superadmin' || userData.role === 'viewer')) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Welcome to the Ride!</CardTitle>
-                    <CardDescription>
-                        How would you like to participate in this event? Please select an option below.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group">
-                        <button onClick={() => setView('rider')} className="absolute inset-0 z-10" aria-label="Register as a Rider"></button>
-                        <div className="flex flex-col items-center justify-center h-full text-center">
-                             <User className="h-8 w-8 text-primary mb-4" />
-                            <h3 className="font-semibold">Register as a Rider</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Join the ride, get your digital ticket, and be part of the cycling community.
-                            </p>
-                        </div>
-                    </div>
-                     <div className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group">
-                        <button onClick={() => setView('organizer')} className="absolute inset-0 z-10" aria-label="Request Organizer Access"></button>
-                        <div className="flex flex-col items-center justify-center h-full text-center">
-                            <Shield className="h-8 w-8 text-primary mb-4" />
-                            <h3 className="font-semibold">Request Organizer Access</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Join the event staff as a volunteer or organizer to help manage the event.
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        );
+            <div className="flex flex-col min-h-screen bg-secondary/50">
+                <Header />
+                <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
+                     <Card className="text-center w-full max-w-md">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-center gap-2">
+                                <Shield className="text-primary"/> Organizer Account
+                            </CardTitle>
+                            <CardDescription>
+                                Your account has <span className='font-bold'>{userData.role}</span> permissions.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button asChild>
+                                <Link href="/admin">
+                                    Go to Admin Dashboard
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
+        )
     }
 
     return (
         <div className="flex flex-col min-h-screen bg-secondary/50">
             <Header />
             <main className="flex-grow container mx-auto p-4 md:p-8">
-                <div className="w-full max-w-2xl mx-auto space-y-4">
+                <div className="w-full max-w-4xl mx-auto space-y-4">
                     <h1 className="text-3xl font-bold font-headline">
                       Your Dashboard
                     </h1>
