@@ -48,37 +48,36 @@ export function RegisteredRiders() {
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold font-headline text-center mb-4">registered riders</h2>
+      <h2 className="text-2xl font-bold font-headline text-center mb-4">Registered Riders</h2>
       <Carousel
         opts={{
           align: "start",
-          loop: approvedRiders.length > 5, // Only loop if there are enough riders to scroll
+          loop: approvedRiders.length > 5,
         }}
         className="w-full"
       >
         <CarouselContent>
           {approvedRiders.map((rider) => (
-            <CarouselItem key={rider.id} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+            <CarouselItem key={rider.id} className="md:basis-1/2 lg:basis-1/3">
               <div className="p-1">
                 <Card>
-                  <CardContent className="flex flex-col items-center justify-center p-3 gap-2 aspect-square">
-                    <Avatar className="w-20 h-20 border-2 border-primary">
+                  <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
+                    <Avatar className="w-32 h-32 border-4 border-primary/50">
                       <AvatarImage src={rider.photoURL} alt={rider.fullName} />
                       <AvatarFallback>
-                        <User className="w-10 h-10" />
+                        <User className="w-16 h-16" />
                       </AvatarFallback>
                     </Avatar>
-                    <p className="text-sm font-semibold text-center truncate w-full px-1">{rider.fullName}</p>
+                    <p className="text-lg font-semibold text-center truncate w-full px-1">{rider.fullName}</p>
                   </CardContent>
                 </Card>
               </div>
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="hidden sm:flex" />
-        <CarouselNext className="hidden sm:flex" />
+        <CarouselPrevious />
+        <CarouselNext />
       </Carousel>
     </div>
   );
 }
-
