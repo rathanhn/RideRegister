@@ -2,17 +2,18 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import HeroImage from "@/hero.png";
 
 export function Hero() {
     return (
         <div className="relative overflow-hidden rounded-lg bg-card shadow-lg min-h-[400px] md:min-h-[350px]">
             <div className="absolute inset-0 z-0">
                  <Image
-                    src="/Hero.png"
+                    src={HeroImage}
                     alt="Motorcyclists on a freedom ride with Indian and event flags"
                     fill
                     className="object-cover"
-                    data-ai-hint="motorcycle ride"
+                    placeholder="blur"
                     priority
                 />
                  <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent"></div>
