@@ -18,7 +18,6 @@ import { Badge } from '@/components/ui/badge';
 import { RidersListTable } from '@/components/admin/riders-list-table';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
 import { CheckedInListTable } from '@/components/admin/checked-in-list-table';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { FinishersListTable } from '@/components/admin/finishers-list-table';
 
 export default function AdminPage() {
@@ -53,130 +52,88 @@ export default function AdminPage() {
         
         <StatsOverview />
 
-        <Accordion type="single" collapsible className="w-full space-y-4">
-            <AccordionItem value="item-1">
-                <Card>
-                    <AccordionTrigger className="w-full p-6">
-                        <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <RegistrationsTable />
-                        </CardContent>
-                    </AccordionContent>
-                </Card>
-            </AccordionItem>
-            
-            <AccordionItem value="item-2">
-                <Card>
-                    <AccordionTrigger className="w-full p-6">
-                         <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <RidersListTable />
-                        </CardContent>
-                    </AccordionContent>
-                </Card>
-            </AccordionItem>
-
-             <AccordionItem value="item-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="lg:col-span-2 space-y-8">
                  <Card>
-                    <AccordionTrigger className="w-full p-6">
-                        <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <CheckedInListTable />
-                        </CardContent>
-                    </AccordionContent>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <RegistrationsTable />
+                    </CardContent>
                 </Card>
-            </AccordionItem>
-
-            <AccordionItem value="item-finishers">
+                
                  <Card>
-                    <AccordionTrigger className="w-full p-6">
-                        <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><Flag className="h-6 w-6 text-primary"/>Finishers List</CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <FinishersListTable />
-                        </CardContent>
-                    </AccordionContent>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <RidersListTable />
+                    </CardContent>
                 </Card>
-            </AccordionItem>
-            
-            <AccordionItem value="item-4">
-                <Card>
-                    <AccordionTrigger className="w-full p-6">
-                        <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className="flex items-center gap-2">
-                                <ScanLine className="h-6 w-6 text-primary" />
-                                Ticket Scanner
-                            </CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <QrScanner />
-                        </CardContent>
-                    </AccordionContent>
-                </Card>
-            </AccordionItem>
-            
-            <AccordionItem value="item-5">
-                 <Card>
-                    <AccordionTrigger className="w-full p-6">
-                        <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <AnnouncementManager />
-                        </CardContent>
-                    </AccordionContent>
-                </Card>
-            </AccordionItem>
 
-            <AccordionItem value="item-6">
-                <Card>
-                    <AccordionTrigger className="w-full p-6">
-                        <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&amp;A</CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <AdminQna />
-                        </CardContent>
-                    </AccordionContent>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CheckedInListTable />
+                    </CardContent>
                 </Card>
-            </AccordionItem>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Flag className="h-6 w-6 text-primary"/>Finishers List</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FinishersListTable />
+                    </CardContent>
+                </Card>
+            </div>
             
-             <AccordionItem value="item-7">
-                <Card>
-                    <AccordionTrigger className="w-full p-6">
-                        <CardHeader className="p-0 text-left w-full">
-                            <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
-                        </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <CardContent>
-                            <UserRolesManager />
-                        </CardContent>
-                    </AccordionContent>
+            <div className="space-y-8">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ScanLine className="h-6 w-6 text-primary" />
+                            Ticket Scanner
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <QrScanner />
+                    </CardContent>
                 </Card>
-            </AccordionItem>
-        </Accordion>
+            
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AnnouncementManager />
+                    </CardContent>
+                </Card>
+                
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <UserRolesManager />
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="lg:col-span-2">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&amp;A</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AdminQna />
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
       </main>
     </div>
   );
