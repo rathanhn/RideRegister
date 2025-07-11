@@ -2,7 +2,7 @@
 "use client";
 
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Registration } from '@/lib/types';
 import {
@@ -33,8 +33,9 @@ const RiderSkeleton = () => (
 );
 
 export function RegisteredRiders() {
+  // Simpler query without ordering to avoid needing a composite index
   const [registrations, loading, error] = useCollection(
-    query(collection(db, 'registrations'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'))
+    query(collection(db, 'registrations'), where('status', '==', 'approved'))
   );
 
   const allParticipants = useMemo(() => {
@@ -45,7 +46,7 @@ export function RegisteredRiders() {
       participants.push({
         id: `${rider.id}-1`,
         name: rider.fullName,
-        photo: rider.photoURL,
+        photo: rider.photoURL || rider.photoURL,
         type: rider.registrationType === 'duo' ? 'Duo Rider' : 'Solo Rider'
       });
       if (rider.registrationType === 'duo' && rider.fullName2) {
@@ -61,7 +62,6 @@ export function RegisteredRiders() {
   }, [registrations]);
 
   if (error) {
-    // Silently fail to avoid breaking the page for a non-critical component.
     console.error("Error loading registered riders:", error);
     return null;
   }
@@ -73,14 +73,18 @@ export function RegisteredRiders() {
                 <CardTitle className="text-2xl font-bold font-headline">Registered Riders</CardTitle>
            </CardHeader>
            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  <RiderSkeleton />
+                  <RiderSkeleton />
+                  <RiderSkeleton />
+                  <RiderSkeleton />
                   <RiderSkeleton />
               </div>
            </CardContent>
        </Card>
     );
   }
-
+  
   if (allParticipants.length === 0) {
     return (
         <Card>
@@ -91,13 +95,13 @@ export function RegisteredRiders() {
                 <p className="text-muted-foreground text-center">No riders have been approved yet. Be the first to register and see your profile here!</p>
             </CardContent>
         </Card>
-    )
+    );
   }
 
   return (
     <Card>
        <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold font-headline">Registered Riders</CardTitle>
+            <CardTitle className="text-2xl font-bold font-headline">Our Registered Riders</CardTitle>
        </CardHeader>
        <CardContent>
           <Carousel
@@ -169,3 +173,4 @@ export function RegisteredRiders() {
     </Card>
   );
 }
+
