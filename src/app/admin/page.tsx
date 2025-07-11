@@ -25,12 +25,14 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchUserRole = async () => {
       if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           setUserRole(userDoc.data().role as UserRole);
         }
       }
     };
+
     if (user) {
       fetchUserRole();
     }
