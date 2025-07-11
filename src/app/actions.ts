@@ -129,16 +129,17 @@ const registrationFormSchema = z
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
 export async function registerRider(values: RegistrationInput, photo1DataUri?: string, photo2DataUri?: string) {
-  const parsed = registrationFormSchema.safeParse(values);
+  console.log("[Server] registerRider action started.");
 
+  const parsed = registrationFormSchema.safeParse(values);
   if (!parsed.success) {
-    console.error("Validation Errors:", parsed.error.flatten());
+    console.error("[Server] Validation Errors:", parsed.error.flatten());
     return { success: false, message: "Invalid data provided." };
   }
 
   try {
     const { uid, email, ...registrationData } = parsed.data;
-    console.log(`[registerRider] Starting registration for UID: ${uid}`);
+    console.log(`[Server] Starting registration for UID: ${uid}`);
 
     const registrationRef = doc(db, "registrations", uid);
     const dataToSave = {
@@ -151,9 +152,9 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
       photoURL2: registrationData.photoURL2,
     };
     
-    // Step 1: Immediately save the registration data. No transaction needed for a single write.
+    // Step 1: Immediately save the registration data.
     await setDoc(registrationRef, dataToSave);
-    console.log(`[registerRider] Initial registration document created for UID: ${uid}`);
+    console.log(`[Server] Initial registration document created for UID: ${uid}`);
 
     // Step 2: Asynchronously update user profile and upload photos. This happens after the initial response.
     const asyncUpdates = async () => {
@@ -161,7 +162,7 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
             // Update user's display name
             const userRef = doc(db, "users", uid);
             await updateDoc(userRef, { displayName: registrationData.fullName });
-            console.log(`[asyncUpdates] User display name updated for UID: ${uid}`);
+            console.log(`[Server-Async] User display name updated for UID: ${uid}`);
 
             // Process photo uploads
             let photoURL1 = registrationData.photoURL;
@@ -169,22 +170,22 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
             let hasNewPhotos = false;
 
             if (photo1DataUri) {
-                console.log("[asyncUpdates] Uploading photo 1 to Cloudinary...");
+                console.log("[Server-Async] Uploading photo 1 to Cloudinary...");
                 const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
                 photoURL1 = result.secure_url;
                 hasNewPhotos = true;
-                console.log("[asyncUpdates] Photo 1 uploaded:", photoURL1);
+                console.log("[Server-Async] Photo 1 uploaded:", photoURL1);
             }
             if (photo2DataUri) {
-                console.log("[asyncUpdates] Uploading photo 2 to Cloudinary...");
+                console.log("[Server-Async] Uploading photo 2 to Cloudinary...");
                 const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
                 photoURL2 = result.secure_url;
                 hasNewPhotos = true;
-                console.log("[asyncUpdates] Photo 2 uploaded:", photoURL2);
+                console.log("[Server-Async] Photo 2 uploaded:", photoURL2);
             }
 
             if (hasNewPhotos) {
-                console.log("[asyncUpdates] Updating Firestore with new photo URLs.");
+                console.log("[Server-Async] Updating Firestore with new photo URLs.");
                 await updateDoc(registrationRef, {
                     photoURL: photoURL1,
                     photoURL2: photoURL2,
@@ -193,22 +194,22 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
                 if (photo1DataUri) {
                    await updateDoc(userRef, { photoURL: photoURL1 });
                 }
-                console.log(`[asyncUpdates] Photo URLs updated for user ID: ${uid}`);
+                console.log(`[Server-Async] Photo URLs updated for user ID: ${uid}`);
             } else {
-                console.log("[asyncUpdates] No new photos to upload.");
+                console.log("[Server-Async] No new photos to upload.");
             }
         } catch (uploadError) {
-            console.error("[asyncUpdates] Error during photo upload and update:", uploadError);
+            console.error("[Server-Async] Error during photo upload and update:", uploadError);
         }
     };
 
     // Don't await this, let it run in the background.
     asyncUpdates();
 
-    console.log("[registerRider] Successfully returned response to client.");
+    console.log("[Server] Successfully returned response to client.");
     return { success: true, message: "Registration successful! Your photos are being processed." };
   } catch (error) {
-    console.error("[registerRider] CRITICAL ERROR in registration process: ", error);
+    console.error("[Server] CRITICAL ERROR in registration process: ", error);
     return { success: false, message: "Could not save your registration. Please try again." };
   }
 }

@@ -160,8 +160,10 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("[Client] Form submitted. Values:", values);
     if (!user) {
         toast({ variant: "destructive", title: "Error", description: "You must be logged in to register."});
+        console.error("[Client] User not logged in during submission.");
         return;
     }
     
@@ -171,6 +173,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       // Convert photos to data URIs if they exist
       const photo1DataUri = photoFile1 ? await fileToDataUri(photoFile1) : undefined;
       const photo2DataUri = photoFile2 ? await fileToDataUri(photoFile2) : undefined;
+      
+      console.log("[Client] Photo Data URIs prepared. Photo 1:", !!photo1DataUri, "Photo 2:", !!photo2DataUri);
 
       const submissionData = {
           ...values,
@@ -181,7 +185,9 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           photoURL2: photoFile2 ? undefined : values.photoURL2,
       };
 
+      console.log("[Client] Calling registerRider with data:", submissionData);
       const result = await registerRider(submissionData, photo1DataUri, photo2DataUri);
+      console.log("[Client] Got result from server action:", result);
 
       if (result.success) {
         toast({
@@ -208,6 +214,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         throw new Error(result.message || "An unknown error occurred while saving your registration.");
       }
     } catch (e) {
+      console.error("[Client] Error in onSubmit:", e);
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
