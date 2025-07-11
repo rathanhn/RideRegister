@@ -20,9 +20,11 @@ import { useState, useEffect } from "react";
 import { Loader2, PartyPopper } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createUser } from "@/app/actions";
-import { useSignInWithEmailAndPassword, useSignInWithRedirect, useGetRedirectResult } from "react-firebase-hooks/auth";
+import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { getRedirectResult, GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
+
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -48,10 +50,10 @@ export function CreateAccountForm() {
   const router = useRouter();
   
   const [signInWithEmailAndPassword, , loadingSignIn] = useSignInWithEmailAndPassword(auth);
-  const [signInWithRedirect, , googleLoading, googleError] = useSignInWithRedirect(auth);
-  const { data: redirectResult } = useGetRedirectResult(auth);
   
   const [isCreating, setIsCreating] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,43 +64,43 @@ export function CreateAccountForm() {
       confirmPassword: ""
     },
   });
-
-  const isSubmitting = isCreating || loadingSignIn || googleLoading;
-
-  // Effect to handle user creation in Firestore after Google Sign-in
+  
   useEffect(() => {
-    const setupGoogleUser = async () => {
-        if (redirectResult?.user) {
-            const user = redirectResult.user;
-            const userRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userRef);
+    const processRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          const user = result.user;
+          const userRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userRef);
 
-            if (!userDoc.exists()) {
-                await setDoc(userRef, {
-                    email: user.email,
-                    displayName: user.displayName || user.email?.split('@')[0],
-                    role: 'user',
-                    photoURL: user.photoURL,
-                    createdAt: serverTimestamp(),
-                });
-            }
-            router.push('/dashboard');
+          if (!userDoc.exists()) {
+            await setDoc(userRef, {
+              email: user.email,
+              displayName: user.displayName || user.email?.split('@')[0],
+              role: 'user',
+              photoURL: user.photoURL,
+              createdAt: serverTimestamp(),
+            });
+          }
+          router.push('/dashboard');
         }
+      } catch (error: any) {
+        console.error("Error processing redirect result:", error);
+         toast({
+            variant: "destructive",
+            title: "Google Sign-In Failed",
+            description: error.message?.replace('Firebase: ', ''),
+        });
+      } finally {
+        setIsProcessingRedirect(false);
+      }
     };
-    setupGoogleUser();
-  }, [redirectResult, router]);
+    processRedirectResult();
+  }, [router, toast]);
 
-  // Effect to handle Google sign-in errors
-   useEffect(() => {
-    if (googleError) {
-      toast({
-        variant: "destructive",
-        title: "Google Sign-In Failed",
-        description: googleError.message.replace('Firebase: ', ''),
-      });
-    }
-  }, [googleError, toast]);
-
+  
+  const isSubmitting = isCreating || loadingSignIn || googleLoading || isProcessingRedirect;
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsCreating(true);
@@ -129,6 +131,35 @@ export function CreateAccountForm() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithRedirect(auth, provider);
+    } catch(e: any) {
+        toast({
+            variant: "destructive",
+            title: "Google Sign-In Failed",
+            description: e.message?.replace('Firebase: ', ''),
+        });
+        setGoogleLoading(false);
+    }
+  }
+  
+  if (isProcessingRedirect) {
+    return (
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle className="font-headline text-3xl">Create an Account</CardTitle>
+                <CardDescription>Get started by creating an account. It's quick and easy.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center items-center h-48">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </CardContent>
+        </Card>
+    )
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -137,7 +168,7 @@ export function CreateAccountForm() {
       </CardHeader>
       <CardContent>
          <div className="grid grid-cols-1 gap-2">
-            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={() => signInWithRedirect()}>
+            <Button variant="outline" className="w-full" disabled={isSubmitting} onClick={handleGoogleSignIn}>
                 {googleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                 Sign up with Google
             </Button>
