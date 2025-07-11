@@ -98,11 +98,11 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     mode: "onChange",
     defaultValues: {
       registrationType: "solo",
-      fullName: user?.displayName ?? "",
+      fullName: "",
       age: 18,
       phoneNumber: "",
       whatsappNumber: "",
-      photoURL: user?.photoURL ?? "",
+      photoURL: "",
       consent: false,
     },
   });
@@ -118,12 +118,12 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   }, [sameAsPhone, phoneNumber, form]);
 
   useEffect(() => {
-    if (user?.displayName) {
-        form.setValue("fullName", user.displayName);
-    }
-    if (user?.photoURL) {
-        form.setValue("photoURL", user.photoURL);
-        setPhotoPreview(user.photoURL);
+    if (user) {
+        form.setValue("fullName", user.displayName || "");
+        if (user.photoURL) {
+            form.setValue("photoURL", user.photoURL);
+            setPhotoPreview(user.photoURL);
+        }
     }
   }, [user, form]);
   
@@ -284,7 +284,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                       />
                   </div>
               </FormControl>
-              <FormDescription>Upload a clear photo of yourself. This will be shown on the riders list.</FormDescription>
+              <FormDescription>Upload a clear photo. If not provided, your Gmail photo will be used.</FormDescription>
               <FormMessage />
             </FormItem>
 

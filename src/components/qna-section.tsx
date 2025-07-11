@@ -66,7 +66,7 @@ export function QnaSection() {
     const result = await addQuestion({
       ...values,
       userId: user.uid,
-      userName: user.displayName || "Anonymous",
+      userName: user.displayName || user.email?.split('@')[0] || "User",
       userPhotoURL: user.photoURL,
     });
 

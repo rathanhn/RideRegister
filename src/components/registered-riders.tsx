@@ -2,7 +2,7 @@
 "use client";
 
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Registration } from '@/lib/types';
 import {
@@ -36,17 +36,37 @@ const RiderSkeleton = () => (
 export function RegisteredRiders() {
   // Fetch all registrations and order them
   const [registrations, loading, error] = useCollection(
-    query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
+    query(collection(db, 'registrations'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'))
   );
 
   // Filter for approved riders on the client side
   const approvedRiders = useMemo(() => {
     if (!registrations) return [];
     return registrations.docs
-      .map(doc => ({ id: doc.id, ...doc.data() } as Registration))
-      .filter(rider => rider.status === 'approved');
+      .map(doc => ({ id: doc.id, ...doc.data() } as Registration));
   }, [registrations]);
 
+  const allParticipants = useMemo(() => {
+    if (!approvedRiders) return [];
+    const participants: { id: string; name: string; photo?: string; type: string }[] = [];
+    approvedRiders.forEach(rider => {
+      participants.push({
+        id: `${rider.id}-1`,
+        name: rider.fullName,
+        photo: rider.photoURL,
+        type: rider.registrationType === 'duo' ? 'Duo Rider' : 'Solo Rider'
+      });
+      if (rider.registrationType === 'duo' && rider.fullName2) {
+        participants.push({
+          id: `${rider.id}-2`,
+          name: rider.fullName2,
+          photo: rider.photoURL2,
+          type: 'Duo Co-rider'
+        });
+      }
+    });
+    return participants;
+  }, [approvedRiders]);
 
   if (loading) {
     return (
@@ -77,23 +97,23 @@ export function RegisteredRiders() {
           <Carousel
             opts={{
               align: "start",
-              loop: approvedRiders.length > 5,
+              loop: allParticipants.length > 5,
             }}
             className="w-full"
           >
             <CarouselContent>
-              {approvedRiders.map((rider) => (
+              {allParticipants.map((rider) => (
                 <CarouselItem key={rider.id} className="md:basis-1/2 lg:basis-1/3">
                   <div className="p-1">
                     <Card>
                       <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
                         <Avatar className="w-32 h-32 border-4 border-primary/50">
-                          <AvatarImage src={rider.photoURL} alt={rider.fullName} />
+                          <AvatarImage src={rider.photo} alt={rider.name} />
                           <AvatarFallback>
                             <User className="w-16 h-16" />
                           </AvatarFallback>
                         </Avatar>
-                        <p className="text-lg font-semibold text-center truncate w-full px-1">{rider.fullName}</p>
+                        <p className="text-lg font-semibold text-center truncate w-full px-1">{rider.name}</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -111,7 +131,7 @@ export function RegisteredRiders() {
           <div className="text-center mt-4">
             <Sheet>
                 <SheetTrigger asChild>
-                    <Button variant="outline">View All Riders ({approvedRiders.length})</Button>
+                    <Button variant="outline">View All Riders ({allParticipants.length})</Button>
                 </SheetTrigger>
                 <SheetContent side="right">
                     <SheetHeader>
@@ -122,15 +142,15 @@ export function RegisteredRiders() {
                     </SheetHeader>
                     <ScrollArea className="h-[calc(100vh-8rem)] mt-4 pr-4">
                         <div className="space-y-4">
-                            {approvedRiders.map((rider) => (
+                            {allParticipants.map((rider) => (
                                 <div key={rider.id} className="flex items-center gap-4 p-2 border rounded-md">
                                     <Avatar className="h-12 w-12">
-                                        <AvatarImage src={rider.photoURL} />
+                                        <AvatarImage src={rider.photo} />
                                         <AvatarFallback><User /></AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <p className="font-semibold">{rider.fullName}</p>
-                                        <p className="text-sm text-muted-foreground">{rider.registrationType === 'duo' ? 'Duo Rider' : 'Solo Rider'}</p>
+                                        <p className="font-semibold">{rider.name}</p>
+                                        <p className="text-sm text-muted-foreground">{rider.type}</p>
                                     </div>
                                 </div>
                             ))}
