@@ -12,7 +12,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, User, MoveRight } from 'lucide-react';
 import { useMemo } from 'react';
@@ -72,7 +72,7 @@ export function RegisteredRiders() {
     return (
        <Card>
            <CardHeader className="text-center">
-                <h2 className="text-2xl font-bold font-headline">Registered Riders</h2>
+                <CardTitle className="text-2xl font-bold font-headline">Registered Riders</CardTitle>
            </CardHeader>
            <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -83,15 +83,28 @@ export function RegisteredRiders() {
     );
   }
 
-  // If there's an error or no approved riders, render nothing.
-  if (error || approvedRiders.length === 0) {
+  // If there's an error, render nothing to avoid breaking the page.
+  if (error) {
     return null;
+  }
+  
+  if (allParticipants.length === 0) {
+    return (
+        <Card>
+            <CardHeader className="text-center">
+                <CardTitle className="text-2xl font-bold font-headline">Join the Ride!</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground text-center">No riders have been approved yet. Be the first to register and see your profile here!</p>
+            </CardContent>
+        </Card>
+    )
   }
 
   return (
     <Card>
        <CardHeader className="text-center">
-            <h2 className="text-2xl font-bold font-headline">Registered Riders</h2>
+            <CardTitle className="text-2xl font-bold font-headline">Registered Riders</CardTitle>
        </CardHeader>
        <CardContent>
           <Carousel
@@ -103,17 +116,17 @@ export function RegisteredRiders() {
           >
             <CarouselContent>
               {allParticipants.map((rider) => (
-                <CarouselItem key={rider.id} className="md:basis-1/2 lg:basis-1/3">
+                <CarouselItem key={rider.id} className="basis-1/2 md:basis-1/3 lg:basis-1/5">
                   <div className="p-1">
                     <Card>
                       <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
-                        <Avatar className="w-32 h-32 border-4 border-primary/50">
+                        <Avatar className="w-24 h-24 border-4 border-primary/50">
                           <AvatarImage src={rider.photo} alt={rider.name} />
                           <AvatarFallback>
-                            <User className="w-16 h-16" />
+                            <User className="w-12 h-12" />
                           </AvatarFallback>
                         </Avatar>
-                        <p className="text-lg font-semibold text-center truncate w-full px-1">{rider.name}</p>
+                        <p className="text-base font-semibold text-center truncate w-full px-1">{rider.name}</p>
                       </CardContent>
                     </Card>
                   </div>
