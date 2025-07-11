@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks, Send } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Registration, AppUser } from '@/lib/types';
@@ -109,6 +109,9 @@ export default function DashboardPage() {
     const getRegistrationStatusContent = () => {
         if (!registrationData) return null;
 
+        const notifyText = `Hi Telefun, I have registered for the ride. My details are:\nName: ${registrationData.fullName}\nRegistration ID: ${registrationData.id}`;
+        const whatsappUrl = `https://wa.me/916363148287?text=${encodeURIComponent(notifyText)}`;
+
         switch (registrationData.status) {
             case 'approved':
                 return <DigitalTicket registration={registrationData} user={user!} />;
@@ -120,9 +123,17 @@ export default function DashboardPage() {
                                 <Clock className="text-primary"/> Registration Pending
                             </CardTitle>
                             <CardDescription>
-                                Your registration is being reviewed by our team. Please check back later. We'll notify you once it's approved.
+                                Your registration is being reviewed. For faster approval, you can notify us.
                             </CardDescription>
                         </CardHeader>
+                        <CardContent>
+                             <Button asChild>
+                                <Link href={whatsappUrl} target="_blank">
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Notify Telefun via WhatsApp
+                                </Link>
+                            </Button>
+                        </CardContent>
                     </Card>
                 );
             case 'rejected':
