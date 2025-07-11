@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Clock, MapPin, ListRules, ShieldCheck } from "lucide-react";
+import { Calendar, Clock, MapPin, ListChecks, ShieldCheck } from "lucide-react";
 
 const rideRules = [
     "A helmet is compulsory for all riders.",
@@ -31,7 +31,7 @@ export function RideInfoCard() {
                     <AccordionItem value="rules">
                         <AccordionTrigger>
                             <div className="flex items-center gap-2">
-                                <ListRules className="h-5 w-5 text-primary" />
+                                <ListChecks className="h-5 w-5 text-primary" />
                                 <span className="font-semibold">Ride Rules</span>
                             </div>
                         </AccordionTrigger>
