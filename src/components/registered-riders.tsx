@@ -48,7 +48,7 @@ export function RegisteredRiders() {
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold font-headline text-center mb-4">Our Community of Riders</h2>
+      <h2 className="text-2xl font-bold font-headline text-center mb-4">registered riders</h2>
       <Carousel
         opts={{
           align: "start",
