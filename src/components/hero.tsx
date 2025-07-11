@@ -25,7 +25,7 @@ export function Hero() {
             </div>
             <div className="hidden md:block relative h-full min-h-[300px] md:min-h-full">
                 <Image
-                    src="/Hero.png"
+                    src="/hero.png"
                     alt="Motorcyclists on a freedom ride with Indian and event flags"
                     fill
                     className="object-cover"
