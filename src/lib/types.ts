@@ -51,6 +51,8 @@ export interface Registration {
     rider1CheckedIn?: boolean;
     rider2CheckedIn?: boolean;
     cancellationReason?: string;
+    statusLastUpdatedAt?: any; // Firestore timestamp
+    statusLastUpdatedBy?: string; // Admin User ID
 }
 
 export interface QnaQuestion {

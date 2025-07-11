@@ -56,8 +56,9 @@ export async function createUser(values: z.infer<typeof createAccountSchema>) {
         if (!userDoc.exists()) {
              await setDoc(userRef, {
                 email: user.email,
-                displayName: user.email?.split('@')[0] || "New User",
+                displayName: user.displayName || user.email?.split('@')[0] || "New User",
                 role: 'user', 
+                photoURL: user.photoURL,
                 createdAt: serverTimestamp(),
             });
         }
@@ -208,9 +209,13 @@ export async function updateRegistrationStatus(values: z.infer<typeof updateStat
     }
 
     try {
-        const { registrationId, status } = parsed.data;
+        const { registrationId, status, adminId } = parsed.data;
         const registrationRef = doc(db, "registrations", registrationId);
-        await updateDoc(registrationRef, { status });
+        await updateDoc(registrationRef, { 
+          status,
+          statusLastUpdatedAt: serverTimestamp(),
+          statusLastUpdatedBy: adminId, // Record which admin made the change
+        });
         return { success: true, message: `Registration status updated to ${status}.` };
     } catch (error) {
         console.error("Error updating registration status: ", error);
