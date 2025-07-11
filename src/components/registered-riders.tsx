@@ -19,6 +19,19 @@ import { useMemo } from 'react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 import { ScrollArea } from './ui/scroll-area';
+import { Skeleton } from './ui/skeleton';
+
+const RiderSkeleton = () => (
+    <div className="p-1">
+        <Card>
+            <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
+                <Skeleton className="w-32 h-32 rounded-full" />
+                <Skeleton className="h-6 w-3/4" />
+            </CardContent>
+        </Card>
+    </div>
+);
+
 
 export function RegisteredRiders() {
   // Fetch all registrations and order them
@@ -37,10 +50,18 @@ export function RegisteredRiders() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8 bg-secondary/50 rounded-lg">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="ml-2 text-muted-foreground">Loading Registered Riders...</p>
-      </div>
+       <Card>
+           <CardHeader className="text-center">
+                <h2 className="text-2xl font-bold font-headline">Registered Riders</h2>
+           </CardHeader>
+           <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <RiderSkeleton />
+                  <RiderSkeleton />
+                  <RiderSkeleton />
+              </div>
+           </CardContent>
+       </Card>
     );
   }
 
