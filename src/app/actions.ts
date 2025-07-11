@@ -140,85 +140,70 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
     const { uid, email, ...registrationData } = parsed.data;
     console.log(`[registerRider] Starting registration for UID: ${uid}`);
 
-    // Step 1: Create the initial registration document in a transaction.
-    // This makes the primary registration fast and avoids timeouts.
-    await runTransaction(db, async (transaction) => {
-      console.log(`[registerRider] Inside transaction for UID: ${uid}`);
-      const userRef = doc(db, "users", uid);
-      const registrationRef = doc(db, "registrations", uid);
+    const registrationRef = doc(db, "registrations", uid);
+    const dataToSave = {
+      ...registrationData,
+      email: email,
+      uid: uid,
+      status: "pending" as const,
+      createdAt: serverTimestamp(),
+      photoURL: registrationData.photoURL,
+      photoURL2: registrationData.photoURL2,
+    };
+    
+    // Step 1: Immediately save the registration data. No transaction needed for a single write.
+    await setDoc(registrationRef, dataToSave);
+    console.log(`[registerRider] Initial registration document created for UID: ${uid}`);
 
-      // Update user's main profile using set with merge to avoid errors on new users
-      console.log(`[registerRider] Setting user display name to: ${registrationData.fullName}`);
-      transaction.set(userRef, {
-        displayName: registrationData.fullName,
-      }, { merge: true });
-
-      // Save initial registration data
-      const dataToSave = {
-        ...registrationData,
-        email: email,
-        uid: uid,
-        status: "pending" as const,
-        createdAt: serverTimestamp(),
-        photoURL: registrationData.photoURL, // Save initial photo URL (e.g., from Google)
-        photoURL2: registrationData.photoURL2,
-      };
-      console.log("[registerRider] Saving initial registration data:", dataToSave);
-      transaction.set(registrationRef, dataToSave);
-    });
-
-    console.log(`[registerRider] Transaction completed successfully for user ID: ${uid}`);
-
-    // Step 2: Asynchronously upload photos and update the document.
-    // This happens after the initial response, preventing timeouts.
-    const uploadAndUpdatePhotos = async () => {
+    // Step 2: Asynchronously update user profile and upload photos. This happens after the initial response.
+    const asyncUpdates = async () => {
         try {
-            console.log(`[uploadAndUpdatePhotos] Starting photo processing for UID: ${uid}`);
+            // Update user's display name
+            const userRef = doc(db, "users", uid);
+            await updateDoc(userRef, { displayName: registrationData.fullName });
+            console.log(`[asyncUpdates] User display name updated for UID: ${uid}`);
+
+            // Process photo uploads
             let photoURL1 = registrationData.photoURL;
             let photoURL2 = registrationData.photoURL2;
             let hasNewPhotos = false;
 
             if (photo1DataUri) {
-                console.log("[uploadAndUpdatePhotos] Uploading photo 1 to Cloudinary...");
+                console.log("[asyncUpdates] Uploading photo 1 to Cloudinary...");
                 const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
                 photoURL1 = result.secure_url;
                 hasNewPhotos = true;
-                console.log("[uploadAndUpdatePhotos] Photo 1 uploaded:", photoURL1);
+                console.log("[asyncUpdates] Photo 1 uploaded:", photoURL1);
             }
             if (photo2DataUri) {
-                console.log("[uploadAndUpdatePhotos] Uploading photo 2 to Cloudinary...");
+                console.log("[asyncUpdates] Uploading photo 2 to Cloudinary...");
                 const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
                 photoURL2 = result.secure_url;
                 hasNewPhotos = true;
-                console.log("[uploadAndUpdatePhotos] Photo 2 uploaded:", photoURL2);
+                console.log("[asyncUpdates] Photo 2 uploaded:", photoURL2);
             }
 
             if (hasNewPhotos) {
-                console.log("[uploadAndUpdatePhotos] Updating Firestore with new photo URLs.");
-                const registrationRef = doc(db, "registrations", uid);
+                console.log("[asyncUpdates] Updating Firestore with new photo URLs.");
                 await updateDoc(registrationRef, {
                     photoURL: photoURL1,
                     photoURL2: photoURL2,
                 });
-
-                // Also update the user's main profile photo if a new one was uploaded for rider 1
+                 // Also update the user's main profile photo if a new one was uploaded for rider 1
                 if (photo1DataUri) {
-                   const userRef = doc(db, "users", uid);
                    await updateDoc(userRef, { photoURL: photoURL1 });
                 }
-                console.log(`[uploadAndUpdatePhotos] Photo URLs updated for user ID: ${uid}`);
+                console.log(`[asyncUpdates] Photo URLs updated for user ID: ${uid}`);
             } else {
-                console.log("[uploadAndUpdatePhotos] No new photos to upload.");
+                console.log("[asyncUpdates] No new photos to upload.");
             }
         } catch (uploadError) {
-            console.error("[uploadAndUpdatePhotos] Error during photo upload and update:", uploadError);
-            // The registration still exists, but photos failed.
-            // Could add more robust error handling here, e.g., flag for admin.
+            console.error("[asyncUpdates] Error during photo upload and update:", uploadError);
         }
     };
 
     // Don't await this, let it run in the background.
-    uploadAndUpdatePhotos();
+    asyncUpdates();
 
     console.log("[registerRider] Successfully returned response to client.");
     return { success: true, message: "Registration successful! Your photos are being processed." };
@@ -627,3 +612,5 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
         return { success: false, message: "Could not submit your request. Please try again." };
     }
 }
+
+    
