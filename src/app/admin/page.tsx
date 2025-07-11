@@ -31,7 +31,9 @@ export default function AdminPage() {
         }
       }
     };
-    fetchUserRole();
+    if (user) {
+        fetchUserRole();
+    }
   }, [user]);
 
   return (
