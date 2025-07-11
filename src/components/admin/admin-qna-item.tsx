@@ -123,18 +123,18 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
   return (
     <div className="p-4 border rounded-lg bg-background space-y-4">
         {/* Question */}
-        <div className="flex gap-4">
+        <div className="flex gap-3 sm:gap-4">
             <Avatar>
                 <AvatarImage src={question.userPhotoURL ?? undefined} alt={question.userName} />
                 <AvatarFallback><User /></AvatarFallback>
             </Avatar>
             <div className="w-full">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                         <p className="font-semibold">{question.userName}</p>
                         {question.isPinned && <Badge variant="secondary" className="bg-primary/10 text-primary"><Pin className="h-3 w-3 mr-1"/> Pinned</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-1 sm:mt-0">
                         {question.createdAt ? formatDistanceToNow(question.createdAt.toDate(), { addSuffix: true }) : 'just now'}
                     </p>
                 </div>
@@ -144,12 +144,12 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
 
         {/* Replies */}
         {(replies && replies.docs.length > 0) && (
-            <div className="pl-16 space-y-4">
+            <div className="pl-4 sm:pl-16 space-y-4">
                 <Separator />
                 {replies.docs.map(doc => {
                     const reply = { id: doc.id, ...doc.data() } as QnaReply;
                     return (
-                        <div key={reply.id} className="flex gap-4">
+                        <div key={reply.id} className="flex gap-3 sm:gap-4">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={reply.userPhotoURL ?? undefined} alt={reply.userName} />
                                 <AvatarFallback><User className="h-4 w-4"/></AvatarFallback>
@@ -169,13 +169,13 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
                 })}
             </div>
         )}
-        {repliesLoading && <div className="flex justify-center pl-16"><Loader2 className="h-5 w-5 animate-spin" /></div>}
+        {repliesLoading && <div className="flex justify-center pl-4 sm:pl-16"><Loader2 className="h-5 w-5 animate-spin" /></div>}
 
         {/* Reply Form & Actions */}
        {canModerate && (
-         <div className="pl-16">
+         <div className="pl-0 sm:pl-16">
             <Separator />
-            <div className="flex justify-between items-end pt-4 gap-4">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-end pt-4 gap-4">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onReplySubmit)} className="space-y-2 flex-grow">
                         <FormField
@@ -196,7 +196,7 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
                         </Button>
                     </form>
                 </Form>
-                <div className="flex gap-2">
+                <div className="flex gap-2 self-end sm:self-auto">
                     <Button onClick={handlePin} variant="outline" size="icon" disabled={isProcessing}>
                         {question.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
                     </Button>
