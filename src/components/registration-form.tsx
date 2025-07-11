@@ -178,6 +178,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       
       const submissionData = {
           ...values,
+          uid: user.uid,
+          email: user.email || 'no-email@provided.com',
           // Use existing photoURL if no new photo is selected
           photoURL: photoFile1 ? undefined : values.photoURL || user.photoURL || undefined,
           photoURL2: photoFile2 ? undefined : values.photoURL2,
