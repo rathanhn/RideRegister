@@ -15,7 +15,19 @@ export function Hero() {
                 <p className="mt-4 text-lg text-foreground/80 max-w-2xl mx-auto">
                     Join TeleFun Mobile for an exhilarating bike ride to celebrate the spirit of freedom. Register now and be part of the excitement!
                 </p>
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+
+                <div className="my-8 flex justify-center">
+                    <Image
+                        src={HeroImage}
+                        alt="Motorcyclists on a freedom ride with Indian and event flags"
+                        width={600}
+                        height={400}
+                        className="rounded-lg shadow-md object-cover"
+                        priority
+                    />
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button asChild size="lg">
                         <Link href="/register">Register Now</Link>
                     </Button>
@@ -23,16 +35,6 @@ export function Hero() {
                         <Link href="/login">Check Status / Login</Link>
                     </Button>
                 </div>
-            </div>
-            <div className="w-full">
-                <Image
-                    src={HeroImage}
-                    alt="Motorcyclists on a freedom ride with Indian and event flags"
-                    width={600}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                    priority
-                />
             </div>
         </div>
     );
