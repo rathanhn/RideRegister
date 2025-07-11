@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { RidersListTable } from '@/components/admin/riders-list-table';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
 import { CheckedInListTable } from '@/components/admin/checked-in-list-table';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -50,90 +51,138 @@ export default function AdminPage() {
             ) : null}
         </div>
         
-        <div className="grid grid-cols-1 gap-8">
-            <StatsOverview />
+        <StatsOverview />
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
-                    <CardDescription>
-                        Review pending applications and manage cancellation requests.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <RegistrationsTable />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
-                    <CardDescription>
-                        View, contact, or remove all approved riders for the event.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <RidersListTable />
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
-                    <CardDescription>
-                       View all riders who have been successfully checked in.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <CheckedInListTable />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <ScanLine className="h-6 w-6 text-primary" />
-                        Ticket Scanner
-                    </CardTitle>
-                    <CardDescription>
-                    Scan rider tickets for real-time check-in.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <QrScanner />
-                </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-              <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
-              <CardDescription>
-                  Create and delete event announcements.
-              </CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <AnnouncementManager />
-              </CardContent>
-          </Card>
-          <Card>
-              <CardHeader>
-              <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&A</CardTitle>
-              <CardDescription>
-                  Respond to user questions and manage conversations.
-              </CardDescription>
-              </CardHeader>
-              <CardContent>
-              <AdminQna />
-              </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-                <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
-                <CardDescription>
-                Assign roles to users. This section is only visible to Super Admins.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <UserRolesManager />
-            </CardContent>
-            </Card>
-        </div>
+        <Accordion type="single" collapsible className="w-full space-y-4">
+            <AccordionItem value="item-1">
+                <Card>
+                    <AccordionTrigger className="w-full p-6">
+                        <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
+                            <CardDescription>
+                                Review pending applications and manage cancellation requests.
+                            </CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <RegistrationsTable />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+            
+            <AccordionItem value="item-2">
+                <Card>
+                    <AccordionTrigger className="w-full p-6">
+                         <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
+                            <CardDescription>
+                                View, contact, or remove all approved riders for the event.
+                            </CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <RidersListTable />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+
+             <AccordionItem value="item-3">
+                 <Card>
+                    <AccordionTrigger className="w-full p-6">
+                        <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
+                            <CardDescription>
+                               View all riders who have been successfully checked in.
+                            </CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <CheckedInListTable />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+            
+            <AccordionItem value="item-4">
+                <Card>
+                    <AccordionTrigger className="w-full p-6">
+                        <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className="flex items-center gap-2">
+                                <ScanLine className="h-6 w-6 text-primary" />
+                                Ticket Scanner
+                            </CardTitle>
+                            <CardDescription>
+                            Scan rider tickets for real-time check-in.
+                            </CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <QrScanner />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+            
+            <AccordionItem value="item-5">
+                 <Card>
+                    <AccordionTrigger className="w-full p-6">
+                        <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
+                            <CardDescription>
+                                Create and delete event announcements.
+                            </CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <AnnouncementManager />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+
+            <AccordionItem value="item-6">
+                <Card>
+                    <AccordionTrigger className="w-full p-6">
+                        <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&A</CardTitle>
+                            <CardDescription>
+                                Respond to user questions and manage conversations.
+                            </CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <AdminQna />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+            
+             <AccordionItem value="item-7">
+                <Card>
+                    <AccordionTrigger className="w-full p-6">
+                        <CardHeader className="p-0 text-left w-full">
+                            <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
+                            <CardDescription>
+                            Assign roles to users. This section is only visible to Super Admins.
+                            </CardDescription>
+                        </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <CardContent>
+                            <UserRolesManager />
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+        </Accordion>
       </main>
     </div>
   );
