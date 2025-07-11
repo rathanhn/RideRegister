@@ -138,14 +138,17 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
 
   try {
     const { uid, email, ...registrationData } = parsed.data;
+    console.log(`[registerRider] Starting registration for UID: ${uid}`);
 
     // Step 1: Create the initial registration document in a transaction.
     // This makes the primary registration fast and avoids timeouts.
     await runTransaction(db, async (transaction) => {
+      console.log(`[registerRider] Inside transaction for UID: ${uid}`);
       const userRef = doc(db, "users", uid);
       const registrationRef = doc(db, "registrations", uid);
 
       // Update user's main profile using set with merge to avoid errors on new users
+      console.log(`[registerRider] Setting user display name to: ${registrationData.fullName}`);
       transaction.set(userRef, {
         displayName: registrationData.fullName,
       }, { merge: true });
@@ -160,31 +163,38 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
         photoURL: registrationData.photoURL, // Save initial photo URL (e.g., from Google)
         photoURL2: registrationData.photoURL2,
       };
+      console.log("[registerRider] Saving initial registration data:", dataToSave);
       transaction.set(registrationRef, dataToSave);
     });
 
-    console.log(`Initial registration document written for user ID: ${uid}`);
+    console.log(`[registerRider] Transaction completed successfully for user ID: ${uid}`);
 
     // Step 2: Asynchronously upload photos and update the document.
     // This happens after the initial response, preventing timeouts.
     const uploadAndUpdatePhotos = async () => {
         try {
+            console.log(`[uploadAndUpdatePhotos] Starting photo processing for UID: ${uid}`);
             let photoURL1 = registrationData.photoURL;
             let photoURL2 = registrationData.photoURL2;
             let hasNewPhotos = false;
 
             if (photo1DataUri) {
+                console.log("[uploadAndUpdatePhotos] Uploading photo 1 to Cloudinary...");
                 const result = await cloudinary.uploader.upload(photo1DataUri, { folder: 'rideregister' });
                 photoURL1 = result.secure_url;
                 hasNewPhotos = true;
+                console.log("[uploadAndUpdatePhotos] Photo 1 uploaded:", photoURL1);
             }
             if (photo2DataUri) {
+                console.log("[uploadAndUpdatePhotos] Uploading photo 2 to Cloudinary...");
                 const result = await cloudinary.uploader.upload(photo2DataUri, { folder: 'rideregister' });
                 photoURL2 = result.secure_url;
                 hasNewPhotos = true;
+                console.log("[uploadAndUpdatePhotos] Photo 2 uploaded:", photoURL2);
             }
 
             if (hasNewPhotos) {
+                console.log("[uploadAndUpdatePhotos] Updating Firestore with new photo URLs.");
                 const registrationRef = doc(db, "registrations", uid);
                 await updateDoc(registrationRef, {
                     photoURL: photoURL1,
@@ -196,10 +206,12 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
                    const userRef = doc(db, "users", uid);
                    await updateDoc(userRef, { photoURL: photoURL1 });
                 }
-                console.log(`Photo URLs updated for user ID: ${uid}`);
+                console.log(`[uploadAndUpdatePhotos] Photo URLs updated for user ID: ${uid}`);
+            } else {
+                console.log("[uploadAndUpdatePhotos] No new photos to upload.");
             }
         } catch (uploadError) {
-            console.error("Error during photo upload and update:", uploadError);
+            console.error("[uploadAndUpdatePhotos] Error during photo upload and update:", uploadError);
             // The registration still exists, but photos failed.
             // Could add more robust error handling here, e.g., flag for admin.
         }
@@ -208,9 +220,10 @@ export async function registerRider(values: RegistrationInput, photo1DataUri?: s
     // Don't await this, let it run in the background.
     uploadAndUpdatePhotos();
 
+    console.log("[registerRider] Successfully returned response to client.");
     return { success: true, message: "Registration successful! Your photos are being processed." };
   } catch (error) {
-    console.error("Error adding document: ", error);
+    console.error("[registerRider] CRITICAL ERROR in registration process: ", error);
     return { success: false, message: "Could not save your registration. Please try again." };
   }
 }
