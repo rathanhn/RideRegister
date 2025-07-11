@@ -208,6 +208,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             createdAt: new Date(), 
             rider1CheckedIn: false,
             rider2CheckedIn: false,
+            rider1Finished: false,
+            rider2Finished: false,
         }
         onSuccess(newRegistrationData);
       } else {
@@ -277,7 +279,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   <div className="flex items-center gap-4">
                       <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
                         {photoPreview1 ? (
-                            <Image src={photoPreview1} alt="Profile preview" layout="fill" className="rounded-full object-cover" />
+                            <Image src={photoPreview1} alt="Profile preview" fill className="rounded-full object-cover" />
                         ) : (
                             <User className="w-10 h-10 text-muted-foreground" />
                         )}
@@ -344,7 +346,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                             <div className="flex items-center gap-4">
                                 <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
                                     {photoPreview2 ? (
-                                        <Image src={photoPreview2} alt="Rider 2 preview" layout="fill" className="rounded-full object-cover" />
+                                        <Image src={photoPreview2} alt="Rider 2 preview" fill className="rounded-full object-cover" />
                                     ) : (
                                         <User className="w-10 h-10 text-muted-foreground" />
                                     )}
