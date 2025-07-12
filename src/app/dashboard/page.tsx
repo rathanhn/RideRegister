@@ -149,7 +149,7 @@ export default function DashboardPage() {
                         </CardHeader>
                     </Card>
                 );
-             case 'cancellation_requested':
+            case 'cancellation_requested':
                 return (
                     <Card className="text-center">
                         <CardHeader>
