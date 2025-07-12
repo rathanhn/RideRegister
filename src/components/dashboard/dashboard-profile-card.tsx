@@ -19,10 +19,10 @@ export function DashboardProfileCard({ user, registration }: DashboardProfileCar
 
     return (
         <Card>
-            <CardHeader className="items-center text-center">
-                <Avatar className="h-24 w-24 border-2 border-primary">
+            <CardHeader className="flex flex-row items-center gap-4">
+                <Avatar className="h-16 w-16 border-2 border-primary">
                     <AvatarImage src={photoSrc} alt={user.displayName ?? 'User'} />
-                    <AvatarFallback><User className="w-12 h-12"/></AvatarFallback>
+                    <AvatarFallback><User className="w-8 h-8"/></AvatarFallback>
                 </Avatar>
                 <div className="pt-2">
                     <CardTitle>{user.displayName}</CardTitle>

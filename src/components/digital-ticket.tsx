@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Phone } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -22,15 +22,17 @@ interface DigitalTicketProps {
 interface SingleTicketProps {
   registration: Registration;
   riderNumber: 1 | 2;
+  userEmail?: string | null;
 }
 
 const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
-export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
+export function SingleTicket({ registration, riderNumber, userEmail }: SingleTicketProps) {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
+  const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
   const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
   const photoUrl = riderNumber === 1 ? registration.photoURL : registration.photoURL2;
 
@@ -54,64 +56,61 @@ export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-white to-green-500" />
         </div>
         
-        <div className="p-4 flex flex-col sm:flex-row gap-4">
-            <div className="flex-grow space-y-4">
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20 border-2 border-primary/50">
-                        <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
-                        <AvatarFallback><UserIcon className="w-10 h-10" /></AvatarFallback>
-                    </Avatar>
-                     <div>
-                        <p className="text-sm text-muted-foreground">Rider Name {isDuo ? `(${riderNumber}/2)` : ''}</p>
-                        <h4 className="font-bold text-2xl">{riderName}</h4>
-                     </div>
-                </div>
-                 
-                 <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-                     <div className="flex items-center gap-1">
-                        <p className="font-semibold text-muted-foreground mr-2">Reg. Type:</p>
-                        <div className="flex items-center gap-2">
-                            {registration.registrationType === 'solo' ? <Bike className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-                            <h4 className="font-semibold capitalize">{registration.registrationType}</h4>
-                        </div>
-                     </div>
-                     <div className="flex items-center gap-1">
-                        <p className="font-semibold text-muted-foreground mr-2">Check-in:</p>
-                         <Badge variant={isCheckedIn ? 'default' : 'secondary'} className={`mt-1 ${isCheckedIn ? 'bg-green-600' : ''}`}>
-                             {isCheckedIn ? <CheckCircle className="mr-1 h-3 w-3" /> : null}
-                             {isCheckedIn ? 'Checked-in' : 'Pending'}
-                          </Badge>
-                     </div>
+        <div className="p-4 flex flex-col items-center text-center gap-4">
+            <Avatar className="h-28 w-28 border-4 border-primary/50">
+                <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
+                <AvatarFallback><UserIcon className="w-14 h-14" /></AvatarFallback>
+            </Avatar>
+            
+            <div>
+                <h4 className="font-bold text-2xl">{riderName}</h4>
+                <p className="text-sm text-muted-foreground">{userEmail}</p>
+            </div>
+            
+            <div className="w-full flex justify-around items-center pt-2">
+                 <div className="text-center">
+                    <p className="font-semibold text-muted-foreground text-xs">Reg. Type</p>
+                    <div className="flex items-center gap-1 mt-1 justify-center">
+                        {registration.registrationType === 'solo' ? <Bike className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                        <h4 className="font-semibold capitalize">{registration.registrationType}</h4>
+                    </div>
+                 </div>
+                 <div className="text-center">
+                    <p className="font-semibold text-muted-foreground text-xs">Check-in</p>
+                     <Badge variant={isCheckedIn ? 'default' : 'secondary'} className={`mt-1 ${isCheckedIn ? 'bg-green-600' : ''}`}>
+                         {isCheckedIn ? <CheckCircle className="mr-1 h-3 w-3" /> : null}
+                         {isCheckedIn ? 'Checked-in' : 'Pending'}
+                      </Badge>
                  </div>
             </div>
-
-            <div className="flex-shrink-0 flex flex-col items-center justify-center text-center bg-muted/10 p-3 rounded-lg w-full sm:w-auto">
-                <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center border">
-                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
-                </div>
-                 <div className="mt-2 flex flex-col items-center gap-1">
-                    <p className="text-xs text-muted-foreground">Reg. ID</p>
-                    <p className="font-mono text-sm font-bold tracking-tighter">{registration.id.substring(0, 10).toUpperCase()}</p>
-                </div>
+            
+            <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center border mt-2">
+                <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
+            </div>
+             <div className="mt-1 flex flex-col items-center gap-1">
+                <p className="text-xs text-muted-foreground">Reg. ID</p>
+                <p className="font-mono text-sm font-bold tracking-tighter">{registration.id.substring(0, 10).toUpperCase()}</p>
             </div>
         </div>
 
         <div className="bg-muted/10 p-4 border-t border-white/10 space-y-3">
-             <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                <div>
-                    <p className="font-semibold">Date</p>
-                    <p className="text-sm text-muted-foreground">August 15, 2025</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3 p-3 bg-secondary/10 rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                        <p className="font-semibold">Date</p>
+                        <p className="text-sm text-muted-foreground">August 15, 2025</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-secondary/10 rounded-lg">
+                    <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                        <p className="font-semibold">Time</p>
+                        <p className="text-sm text-muted-foreground">6:00 AM Assembly</p>
+                    </div>
                 </div>
             </div>
-             <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                <div>
-                    <p className="font-semibold">Time</p>
-                    <p className="text-sm text-muted-foreground">6:00 AM Assembly</p>
-                </div>
-            </div>
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 p-3 bg-secondary/10 rounded-lg">
                 <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
                 <div>
                     <p className="font-semibold">Location</p>
@@ -148,10 +147,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         <Carousel setApi={setCarouselApi} className="w-full max-w-xl mx-auto">
           <CarouselContent>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={1} />
+              <SingleTicket registration={registration} riderNumber={1} userEmail={user.email}/>
             </CarouselItem>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={2} />
+              <SingleTicket registration={registration} riderNumber={2} userEmail={user.email}/>
             </CarouselItem>
           </CarouselContent>
           <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
@@ -159,7 +158,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         </Carousel>
     ) : (
        <div className="max-w-xl mx-auto">
-          <SingleTicket registration={registration} riderNumber={1} />
+          <SingleTicket registration={registration} riderNumber={1} userEmail={user.email} />
       </div>
     )
   );
