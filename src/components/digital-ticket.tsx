@@ -11,7 +11,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, Download, Phone, User as UserIcon, Loader2, Calendar, Clock, MapPin, Share2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Bike, CheckCircle, Users, Phone, User as UserIcon, Calendar, Clock, MapPin, Share2, ShieldCheck, AlertTriangle } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -53,7 +53,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
         <CardHeader className="p-4 bg-primary/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-               <div className="relative h-12 w-12 rounded-full border border-primary/20 flex-shrink-0 flex items-center justify-center bg-white p-1 overflow-hidden">
+               <div className="relative h-12 w-12 rounded-full border border-primary/20 flex items-center justify-center bg-white p-1 overflow-hidden">
                 <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="object-contain" />
               </div>
               <div>
@@ -78,7 +78,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
             <CardTitle className="text-xl md:text-2xl font-headline">
               Your Ride Ticket {isDuo ? `(Rider ${riderNumber} of 2)` : ''}
             </CardTitle>
-            <CardDescription>Present this ticket at the check-in counter.</CardDescription>
+            <CardDescription>Present this QR code at the check-in counter.</CardDescription>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -136,81 +136,7 @@ SingleTicket.displayName = 'SingleTicket';
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [isDownloading, setIsDownloading] = useState(false);
 
-  const getBase64Image = async (img: HTMLImageElement) => {
-    // This is required to prevent a CORS tainted canvas
-    img.crossOrigin = "anonymous";
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return '';
-    ctx.drawImage(img, 0, 0);
-    return canvas.toDataURL("image/png");
-  }
-
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    try {
-        const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
-        const riderNumber = (currentSlide + 1) as 1 | 2;
-        const ticketElement = document.getElementById(`ticket-rider-${riderNumber}`);
-        
-        if (!ticketElement) {
-            throw new Error("Could not find ticket element to download.");
-        }
-
-        const clonedTicket = ticketElement.cloneNode(true) as HTMLElement;
-        const images = clonedTicket.getElementsByTagName('img');
-        
-        for (const img of Array.from(images)) {
-            try {
-                const response = await fetch(img.src);
-                const blob = await response.blob();
-                const dataUrl = await new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.readAsDataURL(blob);
-                });
-                img.src = dataUrl;
-            } catch (e) {
-                console.error("Could not convert image to base64:", img.src, e);
-            }
-        }
-        
-        const response = await fetch('/api/generate-pdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: clonedTicket.innerHTML }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Failed to generate PDF and could not parse error response.' }));
-            throw new Error(errorData.error || 'Failed to generate PDF.');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const riderName = (riderNumber === 1 ? registration.fullName : registration.fullName2) || 'rider';
-        a.download = `RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        
-        toast({ title: 'Download Started', description: 'Your ticket is being downloaded as a PDF file.' });
-
-    } catch(err) {
-        console.error("Error downloading PDF:", err);
-        toast({ variant: 'destructive', title: 'Download Failed', description: (err as Error).message });
-    } finally {
-        setIsDownloading(false);
-    }
-  };
-  
   const handleShare = async () => {
     const shareUrl = window.location.href;
     const shareText = "Check out my ride ticket for the Independence Day Freedom Ride! You can register here: https://rideregister.web.app";
@@ -263,10 +189,6 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       {ticketContainer}
       <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
         <div className="flex flex-col sm:flex-row w-full gap-4">
-            <Button onClick={handleDownload} disabled={isDownloading} className="w-full">
-                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                Download Ticket
-            </Button>
             <Button onClick={handleShare} variant="outline" className="w-full">
                 <Share2 className="mr-2 h-4 w-4" />
                 Share Ticket
@@ -277,7 +199,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             <div className="flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 <p>
-                    <strong>Important:</strong> A digital or printed copy of your ticket is required for check-in.
+                    <strong>Important:</strong> Present the QR code on your ticket for check-in.
                 </p>
             </div>
         </div>
