@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { User } from 'firebase/auth';
@@ -38,18 +37,22 @@ const generateQrCodeUrl = (text: string) => {
 }
 
 // Helper to fetch an image and convert it to a Base64 Data URI
-const toDataURL = (url: string) => {
-    return new Promise<string>((resolve, reject) => {
+const toDataURL = (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.onload = function () {
-            const reader = new FileReader();
-            reader.onloadend = function () {
-                resolve(reader.result as string);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(xhr.response);
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const reader = new FileReader();
+                reader.onloadend = function () {
+                    resolve(reader.result as string);
+                };
+                reader.onerror = (error) => reject(new Error(`FileReader error: ${error}`));
+                reader.readAsDataURL(xhr.response);
+            } else {
+                reject(new Error(`Failed to fetch image: ${xhr.status} ${xhr.statusText}`));
+            }
         };
-        xhr.onerror = reject;
+        xhr.onerror = (error) => reject(new Error(`Network error fetching image: ${error}`));
         xhr.open('GET', url);
         xhr.responseType = 'blob';
         xhr.send();
@@ -176,9 +179,20 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             rider: riderNumber,
         });
 
-        // Pre-fetch images. We can't fetch the QR code directly due to CORS.
+        // Pre-fetch images
         const logoDataUrl = await toDataURL(Logo.src);
-
+        const qrCodeDataUrl = await toDataURL(generateQrCodeUrl(qrData));
+        
+        let photoDataUrl: string | null = null;
+        if (photoUrl) {
+            try {
+                photoDataUrl = await toDataURL(photoUrl);
+            } catch (error) {
+                console.error("Error converting profile photo to Data URL:", error);
+                toast({ variant: 'destructive', title: 'Photo Skipped', description: 'Could not load the profile photo for the PDF.' });
+            }
+        }
+        
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [350, 500] });
 
         const primaryColor = '#FF9933';
@@ -232,12 +246,22 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.setTextColor(mutedColor);
         doc.text('Present this ticket at the check-in counter.', 20, 98);
 
-        // --- Rider Details Placeholder ---
-        doc.setFillColor(226, 232, 240); // muted color
-        doc.circle(45, 140, 25, 'F');
+        // --- Rider Details ---
+        doc.saveGraphicsState();
+        doc.beginFormObject(20, 115, 50, 50, 1);
+        doc.circle(45, 140, 25, 'S');
+        doc.clip();
+        if (photoDataUrl) {
+          doc.addImage(photoDataUrl, 'JPEG', 20, 115, 50, 50);
+        } else {
+            // Fallback placeholder
+            doc.setFillColor(226, 232, 240); // muted color
+            doc.circle(45, 140, 25, 'F');
+        }
+        doc.endFormObject(20, 115);
+        doc.restoreGraphicsState();
         
         const textStartX = 80;
-        
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(textColor);
@@ -265,12 +289,8 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.setTextColor(textColor);
         doc.text(registration.id.substring(0, 10).toUpperCase(), 120, 205);
         
-        // --- QR Code Placeholder ---
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.text('QR code will be scannable from your on-screen ticket.', 220, 170, { maxWidth: 100, align: 'center' });
-        doc.setDrawColor(textColor);
-        doc.rect(220, 120, 100, 100, 'S');
+        // --- QR Code ---
+        doc.addImage(qrCodeDataUrl, 'PNG', 220, 120, 100, 100);
 
         // --- Separator ---
         doc.setDrawColor(226, 232, 240); // border color
