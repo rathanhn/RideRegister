@@ -1,21 +1,20 @@
 
 import type { User } from 'firebase/auth';
 import React, { useState, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import {
   Card,
   CardContent,
 } from "@/components/ui/card";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, Phone, User as UserIcon, Calendar, Clock, MapPin, Share2, ShieldCheck, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Download, Loader2 } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 interface DigitalTicketProps {
     registration: Registration;
@@ -29,13 +28,12 @@ interface SingleTicketProps {
 }
 
 const generateQrCodeUrl = (text: string) => {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(text)}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
 const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber }, ref) => {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
-  const riderAge = riderNumber === 1 ? registration.age : registration.age2;
   const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
   const photoUrl = riderNumber === 1 ? registration.photoURL : registration.photoURL2;
 
@@ -45,10 +43,9 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   });
 
   return (
-    <div ref={ref} id={`ticket-rider-${riderNumber}`} className="bg-card p-0.5 rounded-lg shadow-2xl border-2 border-primary/20">
-      <div className="bg-background rounded-md">
+    <div ref={ref} className="bg-card rounded-lg shadow-2xl border border-primary/20 overflow-hidden">
         {/* Header */}
-        <div className="p-4">
+        <div className="p-4 bg-muted/30">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                  <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full" />
@@ -57,60 +54,60 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                     <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
                  </div>
               </div>
-              <Badge variant={isCheckedIn ? 'default' : 'secondary'} className={isCheckedIn ? 'bg-green-600' : ''}>
-                 {isCheckedIn ? <CheckCircle className="mr-1 h-3 w-3" /> : null}
-                 {isCheckedIn ? 'Checked-in' : 'Pending Check-in'}
-              </Badge>
            </div>
         </div>
-        <div className="w-full h-2 bg-gradient-to-r from-primary via-white to-green-600" />
+        <div className="w-full h-1.5 bg-gradient-to-r from-primary via-white to-green-600" />
         
         {/* Main Content */}
-        <div className="p-4 flex gap-4">
+        <div className="p-4 flex flex-col sm:flex-row gap-4">
             {/* Left Side - Rider Info */}
             <div className="flex-grow space-y-4">
-                <Avatar className="h-24 w-24 border-4 border-primary/50">
-                    <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
-                    <AvatarFallback><UserIcon className="w-12 h-12" /></AvatarFallback>
-                </Avatar>
-                 <div>
-                    <p className="text-sm text-muted-foreground">Rider Name {isDuo ? `(${riderNumber}/2)` : ''}</p>
-                    <h4 className="font-bold text-2xl">{riderName}</h4>
-                 </div>
-                 <div>
-                    <p className="text-sm text-muted-foreground">Age</p>
-                    <h4 className="font-semibold">{riderAge} years</h4>
-                 </div>
-                 <div>
-                    <p className="text-sm text-muted-foreground">Registration Type</p>
-                    <h4 className="font-semibold capitalize flex items-center gap-2">
-                        {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                        {registration.registrationType}
-                    </h4>
+                <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20 border-2 border-primary/50">
+                        <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
+                        <AvatarFallback><UserIcon className="w-10 h-10" /></AvatarFallback>
+                    </Avatar>
+                     <div>
+                        <p className="text-sm text-muted-foreground">Rider Name {isDuo ? `(${riderNumber}/2)` : ''}</p>
+                        <h4 className="font-bold text-2xl">{riderName}</h4>
+                     </div>
+                </div>
+                 
+                 <div className="grid grid-cols-2 gap-4 text-sm pt-2">
+                     <div>
+                        <p className="font-semibold text-muted-foreground">Reg. Type</p>
+                        <h4 className="font-semibold capitalize flex items-center gap-2">
+                            {registration.registrationType === 'solo' ? <Bike className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                            {registration.registrationType}
+                        </h4>
+                     </div>
+                     <div>
+                        <p className="font-semibold text-muted-foreground">Check-in Status</p>
+                         <Badge variant={isCheckedIn ? 'default' : 'secondary'} className={`mt-1 ${isCheckedIn ? 'bg-green-600' : ''}`}>
+                             {isCheckedIn ? <CheckCircle className="mr-1 h-3 w-3" /> : null}
+                             {isCheckedIn ? 'Checked-in' : 'Pending'}
+                          </Badge>
+                     </div>
                  </div>
             </div>
 
             {/* Right Side - QR Code */}
-            <div className="flex-shrink-0 flex flex-col items-center justify-between text-center w-[160px]">
-                <div className="w-[150px] h-[150px] p-2 bg-white rounded-md flex items-center justify-center border">
-                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={140} height={140} />
+            <div className="flex-shrink-0 flex flex-col items-center justify-center text-center bg-muted/30 p-3 rounded-lg w-full sm:w-[150px]">
+                <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center border">
+                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
                 </div>
                  <div className="mt-2">
-                    <p className="text-xs text-muted-foreground">Registration ID</p>
-                    <p className="font-mono text-sm font-bold">{registration.id.substring(0, 10).toUpperCase()}</p>
+                    <p className="text-xs text-muted-foreground">Reg. ID</p>
+                    <p className="font-mono text-sm font-bold tracking-tighter">{registration.id.substring(0, 10).toUpperCase()}</p>
                 </div>
             </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-muted/50 p-4 border-t rounded-b-md">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-start gap-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Location</p><p className="text-muted-foreground">Telefun Mobiles, Madikeri</p></div></div>
-                <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date & Time</p><p className="text-muted-foreground">Aug 15, 2025 - 6:00 AM</p></div></div>
-            </div>
+        <div className="bg-muted/30 p-2 border-t text-center">
+             <p className="text-xs text-muted-foreground">Present this ticket for check-in on August 15, 2025 at Telefun Mobiles, Madikeri.</p>
         </div>
       </div>
-    </div>
   );
 });
 SingleTicket.displayName = 'SingleTicket';
@@ -119,7 +116,31 @@ SingleTicket.displayName = 'SingleTicket';
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  
+  const ticketRef1 = useRef<HTMLDivElement>(null);
+  const ticketRef2 = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const handlePrint = useReactToPrint({
+    content: () => {
+        const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
+        if (registration.registrationType === 'duo') {
+            return currentSlide === 0 ? ticketRef1.current : ticketRef2.current;
+        }
+        return ticketRef1.current;
+    },
+    onBeforeGetContent: () => {
+        setIsDownloading(true);
+        return new Promise<void>((resolve) => {
+            // small delay to let state update
+            setTimeout(resolve, 300);
+        });
+    },
+    onAfterPrint: () => {
+        setIsDownloading(false);
+    },
+    documentTitle: `RideRegister-Ticket-${registration.id.substring(0,6)}`,
+  });
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -146,55 +167,16 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       }
     }
   };
-  
-  const handleDownload = async () => {
-    const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
-    const ticketElement = document.getElementById(`ticket-rider-${currentSlide + 1}`);
-
-    if (!ticketElement) {
-        toast({ variant: "destructive", title: "Error", description: "Could not find ticket to download." });
-        return;
-    }
-
-    setIsDownloading(true);
-
-    try {
-        const canvas = await html2canvas(ticketElement, {
-            scale: 2, 
-            useCORS: true,
-            backgroundColor: '#09090b', // Force dark background for consistency
-            logging: false,
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'px',
-            format: [canvas.width, canvas.height]
-        });
-
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`RideRegister-Ticket-${registration.id.substring(0, 6)}.pdf`);
-
-    } catch (error) {
-        console.error("Error generating PDF", error);
-        toast({ variant: "destructive", title: "Download Failed", description: "Could not generate PDF from ticket." });
-    } finally {
-        setIsDownloading(false);
-    }
-  };
-
 
   const ticketContainer = (
     registration.registrationType === 'duo' ? (
         <Carousel setApi={setCarouselApi} className="w-full max-w-xl mx-auto">
           <CarouselContent>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={1} user={user} />
+              <SingleTicket ref={ticketRef1} registration={registration} riderNumber={1} user={user} />
             </CarouselItem>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={2} user={user} />
+              <SingleTicket ref={ticketRef2} registration={registration} riderNumber={2} user={user} />
             </CarouselItem>
           </CarouselContent>
           <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
@@ -202,7 +184,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         </Carousel>
     ) : (
        <div className="max-w-xl mx-auto">
-          <SingleTicket registration={registration} riderNumber={1} user={user} />
+          <SingleTicket ref={ticketRef1} registration={registration} riderNumber={1} user={user} />
       </div>
     )
   );
@@ -212,7 +194,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       {ticketContainer}
       <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
         <div className="flex flex-col sm:flex-row w-full gap-4">
-            <Button onClick={handleDownload} className="w-full" disabled={isDownloading}>
+            <Button onClick={handlePrint} className="w-full" disabled={isDownloading}>
                 {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 Download Ticket
             </Button>
