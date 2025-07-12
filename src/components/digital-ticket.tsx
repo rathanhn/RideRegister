@@ -20,6 +20,8 @@ import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface DigitalTicketProps {
     registration: Registration;
@@ -151,71 +153,29 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             throw new Error("Could not find ticket element to download.");
         }
         
-        const clonedElement = ticketElement.cloneNode(true) as HTMLElement;
-
-        // Process images to embed them as Base64
-        const images = clonedElement.getElementsByTagName('img');
-        for (const img of Array.from(images)) {
-            // The Next.js optimizer URL is in a weird format, so we get the original src
-            const originalSrc = new URL(img.src).searchParams.get('url');
-            if (originalSrc) {
-                try {
-                    const response = await fetch(originalSrc);
-                    const blob = await response.blob();
-                    const reader = new FileReader();
-                    const dataUrl = await new Promise<string>(resolve => {
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.readAsDataURL(blob);
-                    });
-                    img.src = dataUrl;
-                } catch (e) {
-                    console.error("Could not embed image:", originalSrc, e);
-                }
-            }
-        }
+        // Use html2canvas to render the element
+        const canvas = await html2canvas(ticketElement, {
+            useCORS: true, // This is important for fetching cross-origin images
+            scale: 2, // Increase scale for better quality
+        });
         
-        // Fetch and inline the CSS
-        const stylesheetUrl = Array.from(document.styleSheets).find(ss => ss.href?.includes('globals.css'))?.href;
-        let cssText = '';
-        if (stylesheetUrl) {
-           try {
-               const cssResponse = await fetch(stylesheetUrl);
-               cssText = await cssResponse.text();
-           } catch (e) {
-               console.error("Could not fetch stylesheet:", e);
-           }
-        }
-
-        const htmlContent = `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Ride Ticket - ${riderName}</title>
-                <style>${cssText}</style>
-            </head>
-            <body class="bg-gray-100 p-4 sm:p-8 flex items-center justify-center min-h-screen">
-                ${clonedElement.innerHTML}
-            </body>
-            </html>
-        `;
+        const imgData = canvas.toDataURL('image/png');
         
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `RideRegister-Ticket-${riderName.replace(/ /g, '_')}.html`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+        // Create PDF
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
         
-        toast({ title: 'Download Started', description: 'Your ticket is being downloaded as an HTML file.' });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
+        
+        toast({ title: 'Download Started', description: 'Your ticket is being downloaded as a PDF file.' });
 
     } catch(err) {
         console.error("Error downloading ticket:", err);
-        toast({ variant: 'destructive', title: 'Download Failed', description: (err as Error).message });
+        toast({ variant: 'destructive', title: 'Download Failed', description: "There was an issue generating your PDF ticket." });
     } finally {
         setIsDownloading(false);
     }
