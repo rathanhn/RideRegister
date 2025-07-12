@@ -259,20 +259,34 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.text('Present this ticket at the check-in counter.', 20, 98);
 
         // --- Rider Details ---
+        const photoX = 45;
+        const photoY = 140;
+        const photoRadius = 25;
+        
         if (riderPhotoDataUrl) {
             const imgFormat = riderPhotoDataUrl.substring(riderPhotoDataUrl.indexOf('/') + 1, riderPhotoDataUrl.indexOf(';'));
-            doc.addImage(riderPhotoDataUrl, imgFormat.toUpperCase(), 20, 115, 50, 50);
+            doc.save();
+            doc.beginPath();
+            doc.arc(photoX, photoY, photoRadius, 0, Math.PI * 2, true);
+            doc.closePath();
+            doc.clip();
+            doc.addImage(riderPhotoDataUrl, imgFormat.toUpperCase(), photoX - photoRadius, photoY - photoRadius, photoRadius * 2, photoRadius * 2);
+            doc.restore();
+        } else {
+            // Draw a fallback circle
+            doc.setFillColor(226, 232, 240); // muted color
+            doc.circle(photoX, photoY, photoRadius, 'F');
         }
         
-        const textStartX = riderPhotoDataUrl ? 80 : 20;
+        const textStartX = 80;
         
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(textColor);
-        doc.text(`${riderName}, ${riderAge} years`, textStartX, 130);
+        doc.text(`${riderName}, ${riderAge} years`, textStartX, 138);
         doc.setFontSize(10);
         doc.setTextColor(mutedColor);
-        doc.text(riderPhone || '', textStartX, 144);
+        doc.text(riderPhone || '', textStartX, 152);
         
         // --- Reg Type & ID ---
         doc.setFontSize(10);
