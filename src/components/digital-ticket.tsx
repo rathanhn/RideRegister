@@ -157,9 +157,18 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
           text: 'Check out my ticket for the TeleFun Independence Day Ride!',
           url: shareUrl,
         });
-      } catch (error) {
-        console.error('Error sharing:', error);
-        // Toast for share error is optional as user might cancel intentionally
+      } catch (error: any) {
+        // AbortError is thrown when the user cancels the share dialog.
+        // We can safely ignore this.
+        if (error.name === 'AbortError') {
+          console.log('Share was cancelled by the user.');
+          return;
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Share Failed',
+          description: 'An unexpected error occurred while trying to share.'
+        });
       }
     } else {
         toast({ variant: 'destructive', title: 'Not Supported', description: 'Your browser does not support this share feature.' });
