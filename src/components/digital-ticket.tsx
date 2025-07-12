@@ -138,6 +138,18 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [isDownloading, setIsDownloading] = useState(false);
 
+  const getBase64Image = async (img: HTMLImageElement) => {
+    // This is required to prevent a CORS tainted canvas
+    img.crossOrigin = "anonymous";
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return '';
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL("image/png");
+  }
+
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
@@ -148,12 +160,29 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         if (!ticketElement) {
             throw new Error("Could not find ticket element to download.");
         }
+
+        const clonedTicket = ticketElement.cloneNode(true) as HTMLElement;
+        const images = clonedTicket.getElementsByTagName('img');
         
-        // The API route now only needs the HTML. IronPDF will fetch assets.
+        for (const img of Array.from(images)) {
+            try {
+                const response = await fetch(img.src);
+                const blob = await response.blob();
+                const dataUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(blob);
+                });
+                img.src = dataUrl;
+            } catch (e) {
+                console.error("Could not convert image to base64:", img.src, e);
+            }
+        }
+        
         const response = await fetch('/api/generate-pdf', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: ticketElement.innerHTML }),
+            body: JSON.stringify({ html: clonedTicket.innerHTML }),
         });
 
         if (!response.ok) {
