@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { PdfTicketDocument } from '@/components/pdf-ticket-document';
 import { renderToStream } from '@react-pdf/renderer';
+import React from 'react';
 
 // Zod schema for input validation
 const pdfRequestSchema = z.object({
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
 
     const ticketData = validation.data;
     
-    const stream = await renderToStream(<PdfTicketDocument data={ticketData} />);
+    const stream = await renderToStream(React.createElement(PdfTicketDocument, { data: ticketData }));
     
     const pdfFilename = `RideRegister-Ticket-${ticketData.riderName.replace(/ /g, '_')}.pdf`;
     
