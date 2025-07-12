@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Download } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -28,7 +28,7 @@ const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
-export const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber }, ref) => {
+export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
   const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
@@ -40,7 +40,7 @@ export const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(
   });
 
   return (
-    <div ref={ref} id={`ticket-${riderNumber}`} className="bg-[#09090b] text-white rounded-lg shadow-2xl border border-primary/20 overflow-hidden font-body">
+    <div className="bg-[#09090b] text-white rounded-lg shadow-2xl border border-primary/20 overflow-hidden font-body">
         <div className="p-4 bg-muted/10 relative">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -68,15 +68,15 @@ export const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(
                 </div>
                  
                  <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-                     <div className="flex flex-col items-start gap-1">
-                        <p className="font-semibold text-muted-foreground">Reg. Type</p>
+                     <div className="flex items-center gap-1">
+                        <p className="font-semibold text-muted-foreground mr-2">Reg. Type:</p>
                         <div className="flex items-center gap-2">
                             {registration.registrationType === 'solo' ? <Bike className="h-4 w-4" /> : <Users className="h-4 w-4" />}
                             <h4 className="font-semibold capitalize">{registration.registrationType}</h4>
                         </div>
                      </div>
-                     <div className="flex flex-col items-start gap-1">
-                        <p className="font-semibold text-muted-foreground">Check-in Status</p>
+                     <div className="flex items-center gap-1">
+                        <p className="font-semibold text-muted-foreground mr-2">Check-in:</p>
                          <Badge variant={isCheckedIn ? 'default' : 'secondary'} className={`mt-1 ${isCheckedIn ? 'bg-green-600' : ''}`}>
                              {isCheckedIn ? <CheckCircle className="mr-1 h-3 w-3" /> : null}
                              {isCheckedIn ? 'Checked-in' : 'Pending'}
@@ -85,9 +85,9 @@ export const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(
                  </div>
             </div>
 
-            <div className="flex-shrink-0 flex flex-col items-center justify-center text-center bg-muted/10 p-3 rounded-lg w-full sm:w-[150px]">
+            <div className="flex-shrink-0 flex flex-col items-center justify-center text-center bg-muted/10 p-3 rounded-lg w-full sm:w-auto">
                 <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center border">
-                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} crossOrigin="anonymous" />
+                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
                 </div>
                  <div className="mt-2 flex flex-col items-center gap-1">
                     <p className="text-xs text-muted-foreground">Reg. ID</p>
@@ -101,8 +101,7 @@ export const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(
         </div>
       </div>
   );
-});
-SingleTicket.displayName = 'SingleTicket';
+}
 
 
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
