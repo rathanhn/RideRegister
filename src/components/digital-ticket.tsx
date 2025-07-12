@@ -1,6 +1,6 @@
 
 import type { User } from 'firebase/auth';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import {
   Card,
@@ -130,11 +130,11 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         return ticketRef1.current;
     },
     onBeforeGetContent: () => {
+      return new Promise((resolve) => {
         setIsDownloading(true);
-        return new Promise<void>((resolve) => {
-            // small delay to let state update
-            setTimeout(resolve, 300);
-        });
+        // Add a small delay to ensure all content is rendered, especially images
+        setTimeout(() => resolve(void 0), 250); 
+      });
     },
     onAfterPrint: () => {
         setIsDownloading(false);
