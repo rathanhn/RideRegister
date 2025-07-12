@@ -168,7 +168,6 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
           throw new Error(errorData.error || 'Failed to generate PDF.');
         }
 
-        // Trigger browser download
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
