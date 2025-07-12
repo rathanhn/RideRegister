@@ -6,12 +6,9 @@ import { Page, Text, View, Document, StyleSheet, Font, Image, Svg, Circle, Defs,
 Font.register({
   family: 'Inter',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 'normal' },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 400 },
+    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.ttf', fontWeight: 400 },
     { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 500 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 'semibold' },
     { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 600 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 'bold' },
     { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 700 },
   ],
 });
@@ -58,7 +55,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: 700,
     color: '#FF9933',
   },
   headerSubtitle: {
@@ -76,7 +73,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 8,
     fontSize: 8,
-    fontWeight: 'bold',
+    fontWeight: 700,
     color: '#FFFFFF',
     backgroundColor: '#4CAF50', // Default approved
   },
@@ -93,7 +90,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: 700,
     marginBottom: 4,
   },
   description: {
@@ -130,7 +127,7 @@ const styles = StyleSheet.create({
   },
   riderName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 700,
   },
   riderInfo: {
     fontSize: 12,
@@ -148,13 +145,13 @@ const styles = StyleSheet.create({
   },
   regLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: 600,
     color: '#64748B',
     marginBottom: 5,
   },
   regValue: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 700,
     textTransform: 'capitalize',
     marginBottom: 15,
   },
@@ -182,7 +179,7 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: 700,
     marginBottom: 4,
   },
   footerValue: {
@@ -255,7 +252,7 @@ export const PdfTicketDocument = ({ data }: PdfTicketProps) => {
                       />
                     </Svg>
                     ) : (
-                    <Text>ICON</Text> // Placeholder, react-pdf doesn't support lucide icons easily
+                    <Text>USER</Text> 
                    )}
                 </View>
                 <View style={styles.riderTextContainer}>
