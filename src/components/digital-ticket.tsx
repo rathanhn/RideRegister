@@ -1,6 +1,6 @@
 
 import type { User } from 'firebase/auth';
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -83,14 +83,14 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
             <CardDescription>Present this QR code at the check-in counter.</CardDescription>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2 space-y-4">
+          <div className="flex justify-between items-start gap-4">
+            <div className="space-y-4">
               <div className="flex items-start gap-3">
                  <Avatar className="h-16 w-16 border-2 border-primary/50">
                     <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
                     <AvatarFallback><UserIcon className="w-8 h-8" /></AvatarFallback>
                 </Avatar>
-                <div className="space-y-1">
+                <div className="space-y-1 mt-1">
                     <h4 className="font-bold text-base md:text-lg">{riderName}</h4>
                     <p className="text-sm text-muted-foreground">{riderAge} years</p>
                     <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
@@ -113,7 +113,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-center">
+            <div className="flex-shrink-0">
               <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center">
                 <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
               </div>
@@ -179,14 +179,13 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
     try {
         const canvas = await html2canvas(ticketElement, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true, // Important for external images
+            scale: 2, 
+            useCORS: true,
             logging: true,
         });
 
         const imgData = canvas.toDataURL('image/png');
-
-        // Calculate dimensions for the PDF
+        
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'px',
