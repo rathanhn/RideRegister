@@ -1,5 +1,4 @@
 
-
 import type { User } from 'firebase/auth';
 import React, { useState, useRef } from 'react';
 import {
@@ -19,8 +18,6 @@ import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface DigitalTicketProps {
     registration: Registration;
@@ -135,11 +132,10 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
 });
 SingleTicket.displayName = 'SingleTicket';
 
+
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
-  const [showCanvas, setShowCanvas] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -147,70 +143,53 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     try {
         const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
         const riderNumber = (currentSlide + 1) as 1 | 2;
-        const riderName = (riderNumber === 1 ? registration.fullName : registration.fullName2) || 'rider';
-        
         const ticketElement = document.getElementById(`ticket-rider-${riderNumber}`);
+        
         if (!ticketElement) {
             throw new Error("Could not find ticket element to download.");
         }
         
-        const canvas = await html2canvas(ticketElement, {
-            useCORS: true,
-            scale: 2,
+        // Fetch the CSS content
+        const cssResponse = await fetch('/src/app/globals.css');
+        const cssText = await cssResponse.text();
+
+        const response = await fetch('/api/generate-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                html: ticketElement.outerHTML,
+                css: cssText
+             }),
         });
-        
-        const imgData = canvas.toDataURL('image/png');
-        
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'px',
-            format: [canvas.width, canvas.height]
-        });
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to generate PDF.');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const riderName = (riderNumber === 1 ? registration.fullName : registration.fullName2) || 'rider';
+        a.download = `RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
         
         toast({ title: 'Download Started', description: 'Your ticket is being downloaded as a PDF file.' });
 
     } catch(err) {
-        console.error("Error downloading ticket:", err);
-        toast({ variant: 'destructive', title: 'Download Failed', description: "There was an issue generating your PDF ticket." });
+        console.error("Error downloading PDF:", err);
+        toast({ variant: 'destructive', title: 'Download Failed', description: (err as Error).message });
     } finally {
         setIsDownloading(false);
     }
   };
-
-  const handleDebugCanvas = async () => {
-    setIsDownloading(true);
-    setShowCanvas(false);
-    if (canvasContainerRef.current) {
-      canvasContainerRef.current.innerHTML = '';
-    }
-
-    try {
-      const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
-      const riderNumber = (currentSlide + 1) as 1 | 2;
-
-      const ticketElement = document.getElementById(`ticket-rider-${riderNumber}`);
-      if (!ticketElement) {
-        throw new Error("Could not find ticket element to debug.");
-      }
-
-      const canvas = await html2canvas(ticketElement, {
-        useCORS: true,
-        scale: 2,
-      });
-
-      canvasContainerRef.current?.appendChild(canvas);
-      setShowCanvas(true);
-    } catch (err) {
-      console.error("Error generating debug canvas:", err);
-      toast({ variant: 'destructive', title: 'Debug Failed', description: "There was an issue generating the debug canvas." });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
+  
   const handleShare = async () => {
     const shareUrl = window.location.href;
     const shareText = "Check out my ride ticket for the Independence Day Freedom Ride! You can register here: https://rideregister.web.app";
@@ -239,7 +218,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
   const ticketContainer = (
     registration.registrationType === 'duo' ? (
-        <Carousel setApi={setCarouselApi} className="w-full max-w-md mx-auto">
+        <Carousel setApi={setCarouselApi} className="w-full max-w-xl mx-auto">
           <CarouselContent>
             <CarouselItem>
               <SingleTicket registration={registration} riderNumber={1} user={user} />
@@ -252,14 +231,16 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
           <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
         </Carousel>
     ) : (
-      <SingleTicket registration={registration} riderNumber={1} user={user} />
+       <div className="max-w-xl mx-auto">
+          <SingleTicket registration={registration} riderNumber={1} user={user} />
+      </div>
     )
   );
 
   return (
     <div className="space-y-4">
       {ticketContainer}
-      <div className="flex flex-col items-center gap-4 max-w-md mx-auto">
+      <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
         <div className="flex flex-col sm:flex-row w-full gap-4">
             <Button onClick={handleDownload} disabled={isDownloading} className="w-full">
                 {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -270,14 +251,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                 Share Ticket
             </Button>
         </div>
-        {process.env.NODE_ENV === 'development' && (
- <Button onClick={handleDebugCanvas} disabled={isDownloading} className="w-full" variant="secondary">
-            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Debug Canvas
-          </Button>
-        )}
-
-        {showCanvas && <div ref={canvasContainerRef} className="mt-4 p-2 border border-dashed border-gray-400 bg-gray-100 overflow-auto"></div>}
+        
         <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg w-full">
             <div className="flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
