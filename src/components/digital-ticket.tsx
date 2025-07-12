@@ -40,9 +40,22 @@ const generateQrCodeUrl = (text: string) => {
 // Helper to fetch an image and convert it to a Base64 Data URI
 const toDataURL = async (url: string) => {
   try {
-    const response = await fetch(url);
+    // Using a proxy to bypass potential CORS issues
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
     if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+        // If proxy fails, try direct fetch
+        const directResponse = await fetch(url);
+        if (!directResponse.ok) {
+            throw new Error(`Failed to fetch image directly: ${directResponse.statusText}`);
+        }
+        const blob = await directResponse.blob();
+        return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
     }
     const blob = await response.blob();
     return new Promise<string>((resolve, reject) => {
@@ -52,20 +65,8 @@ const toDataURL = async (url: string) => {
         reader.readAsDataURL(blob);
     });
   } catch (error) {
-     // Fallback to proxy for potential CORS issues
-     console.warn("Direct image fetch failed, trying proxy. Error:", error);
-     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-     const proxyResponse = await fetch(proxyUrl);
-     if (!proxyResponse.ok) {
-        throw new Error(`Proxy fetch failed: ${proxyResponse.status} ${proxyResponse.statusText}`);
-     }
-     const blob = await proxyResponse.blob();
-     return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+     console.error("Error converting image to Data URL:", error);
+     throw new Error("Could not load image for PDF.");
   }
 };
 
@@ -259,23 +260,12 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.text('Present this ticket at the check-in counter.', 20, 98);
 
         // --- Rider Details ---
-        const photoX = 45;
-        const photoY = 140;
-        const photoRadius = 25;
-        
         if (riderPhotoDataUrl) {
             const imgFormat = riderPhotoDataUrl.substring(riderPhotoDataUrl.indexOf('/') + 1, riderPhotoDataUrl.indexOf(';'));
-            doc.save();
-            doc.beginPath();
-            doc.arc(photoX, photoY, photoRadius, 0, Math.PI * 2, true);
-            doc.closePath();
-            doc.clip();
-            doc.addImage(riderPhotoDataUrl, imgFormat.toUpperCase(), photoX - photoRadius, photoY - photoRadius, photoRadius * 2, photoRadius * 2);
-            doc.restore();
+            doc.addImage(riderPhotoDataUrl, imgFormat.toUpperCase(), 20, 115, 50, 50);
         } else {
-            // Draw a fallback circle
-            doc.setFillColor(226, 232, 240); // muted color
-            doc.circle(photoX, photoY, photoRadius, 'F');
+             doc.setFillColor(226, 232, 240); // muted color
+             doc.rect(20, 115, 50, 50, 'F');
         }
         
         const textStartX = 80;
