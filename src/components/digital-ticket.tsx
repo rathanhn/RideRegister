@@ -20,6 +20,7 @@ import { Badge } from './ui/badge';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface DigitalTicketProps {
     registration: Registration;
@@ -56,6 +57,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   const riderAge = riderNumber === 1 ? registration.age : registration.age2;
   const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
   const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
+  const photoUrl = riderNumber === 1 ? registration.photoURL : registration.photoURL2;
 
   const qrData = JSON.stringify({
     registrationId: registration.id,
@@ -98,13 +100,16 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
 
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2 space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <UserIcon className="h-4 w-4 text-muted-foreground" />
-                  <h4 className="font-semibold text-muted-foreground text-sm">Rider Details</h4>
+              <div className="flex items-start gap-3">
+                 <Avatar className="h-16 w-16 border-2 border-primary/50">
+                    <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
+                    <AvatarFallback><UserIcon className="w-8 h-8" /></AvatarFallback>
+                </Avatar>
+                <div className="space-y-1">
+                    <h4 className="font-bold text-base md:text-lg">{riderName}</h4>
+                    <p className="text-sm text-muted-foreground">{riderAge} years</p>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
                 </div>
-                <p className="font-bold text-base md:text-lg">{riderName}, {riderAge} years</p>
-                <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
               </div>
 
               <div className="flex gap-8 pt-2">
