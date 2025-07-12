@@ -148,27 +148,16 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         if (!ticketElement) {
             throw new Error("Could not find ticket element to download.");
         }
-
-        // Fetch the main stylesheet
-        const cssResponse = await fetch('/globals.css');
-        if (!cssResponse.ok) {
-            throw new Error('Could not fetch stylesheet.');
-        }
-        const cssText = await cssResponse.text();
-
+        
+        // The API route now only needs the HTML. IronPDF will fetch assets.
         const response = await fetch('/api/generate-pdf', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                html: ticketElement.outerHTML,
-                css: cssText
-             }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html: ticketElement.innerHTML }),
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({ error: 'Failed to generate PDF and could not parse error response.' }));
             throw new Error(errorData.error || 'Failed to generate PDF.');
         }
 

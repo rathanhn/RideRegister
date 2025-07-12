@@ -1,11 +1,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { Pdf, IronPdfGlobalConfig } from "@ironsoftware/ironpdf";
+import { Pdf, IronPdfGlobalConfig, PdfRenderOptions } from "@ironsoftware/ironpdf";
 import { z } from 'zod';
 
 const ticketSchema = z.object({
   html: z.string(),
-  css: z.string(),
 });
 
 // Optional: Set a license key if you have one
@@ -20,34 +19,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid input.' }, { status: 400 });
     }
     
-    const { html, css } = validation.data;
-
-    // Combine HTML and CSS
-    const fullHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>${css}</style>
-        </head>
-        <body>
-          ${html}
-        </body>
-      </html>
-    `;
+    const { html } = validation.data;
     
-    const pdf = await Pdf.renderHtml(fullHtml, {
-      displayHeaderFooter: false,
-      margin: {
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0
-      }
-    });
+    // Get the base URL from the request headers to resolve relative paths for CSS/images
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    const host = request.headers.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
+    // IronPDF will use this baseUrl to fetch CSS and images referenced in the HTML
+    const renderOptions = new PdfRenderOptions();
+    renderOptions.baseUrl = baseUrl;
+    
+    const pdf = await Pdf.renderHtml(html, renderOptions);
 
     const pdfBuffer = await pdf.toBuffer();
 
     return new NextResponse(pdfBuffer, {
+      status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="RideRegister-Ticket.pdf"',
