@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User } from 'firebase/auth';
@@ -16,7 +17,6 @@ import { Bike, CheckCircle, Users, Download, Phone, User as UserIcon, Loader2, C
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -35,30 +35,6 @@ interface SingleTicketProps {
 const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
-
-// Helper to fetch an image and convert it to a Base64 Data URI
-const toDataURL = (url: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const reader = new FileReader();
-                reader.onloadend = function () {
-                    resolve(reader.result as string);
-                };
-                reader.onerror = (error) => reject(new Error(`FileReader error: ${error}`));
-                reader.readAsDataURL(xhr.response);
-            } else {
-                reject(new Error(`Failed to fetch image: ${xhr.status} ${xhr.statusText}`));
-            }
-        };
-        xhr.onerror = (error) => reject(new Error(`Network error fetching image: ${error}`));
-        xhr.open('GET', url);
-        xhr.responseType = 'blob';
-        xhr.send();
-    });
-};
-
 
 const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber, user }, ref) => {
   const isDuo = registration.registrationType === 'duo';
@@ -168,163 +144,52 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     try {
         const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
         const riderNumber = (currentSlide + 1) as 1 | 2;
-        const riderName = riderNumber === 1 ? registration.fullName : (registration.fullName2 || 'Rider 2');
-        const riderAge = riderNumber === 1 ? registration.age : registration.age2;
-        const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
-        const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
-        const photoUrl = riderNumber === 1 ? registration.photoURL : registration.photoURL2;
-
-        const qrData = JSON.stringify({
-            registrationId: registration.id,
-            rider: riderNumber,
+        
+        const riderData = {
+          registrationId: registration.id,
+          riderNumber,
+          registrationType: registration.registrationType,
+          status: registration.status,
+          isCheckedIn: riderNumber === 1 ? !!registration.rider1CheckedIn : !!registration.rider2CheckedIn,
+          riderName: (riderNumber === 1 ? registration.fullName : registration.fullName2) || '',
+          riderAge: (riderNumber === 1 ? registration.age : registration.age2) || 0,
+          riderPhone: (riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2) || '',
+          photoUrl: riderNumber === 1 ? registration.photoURL : registration.photoURL2,
+        };
+        
+        const response = await fetch('/api/generate-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(riderData),
         });
 
-        // Pre-fetch images
-        const logoDataUrl = await toDataURL(Logo.src);
-        const qrCodeDataUrl = await toDataURL(generateQrCodeUrl(qrData));
-        
-        let photoDataUrl: string | null = null;
-        if (photoUrl) {
-            try {
-                photoDataUrl = await toDataURL(photoUrl);
-            } catch (error) {
-                console.error("Error converting profile photo to Data URL:", error);
-                toast({ variant: 'destructive', title: 'Photo Skipped', description: 'Could not load the profile photo for the PDF.' });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate PDF.');
+        }
+
+        // Trigger browser download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const contentDisposition = response.headers.get('content-disposition');
+        let fileName = 'ticket.pdf';
+        if (contentDisposition) {
+            const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+            if (fileNameMatch && fileNameMatch.length === 2) {
+                fileName = fileNameMatch[1];
             }
         }
-        
-        const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [350, 500] });
-
-        const primaryColor = '#FF9933';
-        const textColor = '#1A202C';
-        const mutedColor = '#64748B';
-
-        // --- Drawing the ticket ---
-        doc.setFillColor(255, 255, 255);
-        doc.setDrawColor(primaryColor);
-        doc.setLineWidth(1.5);
-        
-        // Header Background
-        doc.setFillColor(255, 247, 237); // primary/10
-        doc.roundedRect(6, 6, 338, 55, 8, 8, 'F');
-        
-        doc.setFillColor(255, 255, 255);
-        doc.rect(6, 50, 338, 20, 'F');
-        
-        doc.roundedRect(5, 5, 340, 490, 8, 8, 'S');
-
-        // --- Header Content ---
-        doc.addImage(logoDataUrl, 'PNG', 15, 16, 30, 30);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(primaryColor);
-        doc.setFontSize(12);
-        doc.text('TeleFun Mobile', 55, 28);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(mutedColor);
-        doc.setFontSize(9);
-        doc.text('Independence Day Ride 2025', 55, 42);
-
-        // --- Status Badges ---
-        doc.setFillColor(registration.status === 'approved' ? primaryColor : '#E53E3E');
-        doc.roundedRect(260, 15, 75, 14, 7, 7, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.text(registration.status.toUpperCase(), 300, 24, { align: 'center' });
-
-        doc.setFillColor(isCheckedIn ? '#C6F6D5' : '#E2E8F0');
-        doc.roundedRect(260, 33, 75, 14, 7, 7, 'F');
-        doc.setTextColor(isCheckedIn ? '#22543D' : '#4A5568');
-        doc.text(isCheckedIn ? 'CHECKED-IN' : 'NOT CHECKED-IN', 300, 42, { align: 'center' });
-        
-        // --- Main Content ---
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.setFontSize(18);
-        doc.text('Your Ride Ticket', 20, 85);
-        doc.setFontSize(10);
-        doc.setTextColor(mutedColor);
-        doc.text('Present this ticket at the check-in counter.', 20, 98);
-
-        // --- Rider Details ---
-        doc.saveGraphicsState();
-        doc.beginFormObject(20, 115, 50, 50, 1);
-        doc.circle(45, 140, 25, 'S');
-        doc.clip();
-        if (photoDataUrl) {
-          doc.addImage(photoDataUrl, 'JPEG', 20, 115, 50, 50);
-        } else {
-            // Fallback placeholder
-            doc.setFillColor(226, 232, 240); // muted color
-            doc.circle(45, 140, 25, 'F');
-        }
-        doc.endFormObject(20, 115);
-        doc.restoreGraphicsState();
-        
-        const textStartX = 80;
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text(`${riderName}, ${riderAge} years`, textStartX, 138);
-        doc.setFontSize(10);
-        doc.setTextColor(mutedColor);
-        doc.text(riderPhone || '', textStartX, 152);
-        
-        // --- Reg Type & ID ---
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(mutedColor);
-        doc.text('Reg. Type', 20, 190);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text(registration.registrationType.charAt(0).toUpperCase() + registration.registrationType.slice(1), 20, 205);
-
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(mutedColor);
-        doc.text('Reg. ID', 120, 190);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(12);
-        doc.setTextColor(textColor);
-        doc.text(registration.id.substring(0, 10).toUpperCase(), 120, 205);
-        
-        // --- QR Code ---
-        doc.addImage(qrCodeDataUrl, 'PNG', 220, 120, 100, 100);
-
-        // --- Separator ---
-        doc.setDrawColor(226, 232, 240); // border color
-        doc.setLineWidth(0.5);
-        doc.line(20, 240, 330, 240);
-
-        // --- Footer Details ---
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text('Date', 20, 260);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(mutedColor);
-        doc.text('August 15, 2025', 20, 275);
-
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text('Assembly Time', 180, 260);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(mutedColor);
-        doc.text('6:00 AM', 180, 275);
-
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(textColor);
-        doc.text('Starting Point', 20, 300);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(mutedColor);
-        doc.text('Telefun Mobiles: Mahadevpet, Madikeri', 20, 315);
-        
-        doc.save(`RideRegister-Ticket-${riderName.replace(/ /g, '_')}.pdf`);
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
         
     } catch(err) {
-        console.error("Error generating PDF:", err);
-        toast({ variant: 'destructive', title: 'Download Failed', description: 'There was an issue creating the PDF.' });
+        console.error("Error downloading PDF:", err);
+        toast({ variant: 'destructive', title: 'Download Failed', description: (err as Error).message });
     } finally {
         setIsDownloading(false);
     }
@@ -347,7 +212,6 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         toast({ variant: 'destructive', title: 'Could not share', description: 'There was an error trying to share your ticket.' });
       }
     } else {
-      // Fallback for browsers that do not support the Web Share API
       try {
         await navigator.clipboard.writeText(shareUrl);
         toast({ title: 'Link Copied!', description: 'The link to your dashboard has been copied to your clipboard.' });
