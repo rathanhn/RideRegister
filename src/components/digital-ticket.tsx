@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -96,8 +96,28 @@ export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
             </div>
         </div>
 
-        <div className="bg-muted/10 p-2 border-t border-white/10 text-center">
-             <p className="text-xs text-muted-foreground">Present this ticket for check-in on August 15, 2025 at Telefun Mobiles, Madikeri.</p>
+        <div className="bg-muted/10 p-4 border-t border-white/10 space-y-3">
+             <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                <div>
+                    <p className="font-semibold">Date</p>
+                    <p className="text-sm text-muted-foreground">August 15, 2025</p>
+                </div>
+            </div>
+             <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                <div>
+                    <p className="font-semibold">Time</p>
+                    <p className="text-sm text-muted-foreground">6:00 AM Assembly</p>
+                </div>
+            </div>
+            <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                <div>
+                    <p className="font-semibold">Location</p>
+                    <p className="text-sm text-muted-foreground">Telefun Mobiles, Mahadevpet, Madikeri</p>
+                </div>
+            </div>
         </div>
       </div>
   );
