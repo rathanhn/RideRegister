@@ -53,7 +53,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
 
   return (
     <div ref={ref} id={`ticket-rider-${riderNumber}`}>
-      <Card className="max-w-md mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
+      <Card className="w-full bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
         <CardHeader className="p-4 bg-primary/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -111,7 +111,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                 </div>
                 <div>
                   <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
-                  <p className="font-mono text-xs md:text-base pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
+                  <p className="font-mono text-xs md:text-sm pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
                 </div>
               </div>
             </div>
