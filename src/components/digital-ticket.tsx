@@ -2,7 +2,7 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -36,7 +36,7 @@ const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
-const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber, user }, ref) => {
+const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber }, ref) => {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
   const riderAge = riderNumber === 1 ? registration.age : registration.age2;
@@ -50,7 +50,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   });
 
   return (
-    <div ref={ref}>
+    <div ref={ref} id={`ticket-rider-${riderNumber}`}>
       <Card className="max-w-md mx-auto bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
         <CardHeader className="p-4 bg-primary/10">
           <div className="flex items-center justify-between">
@@ -144,44 +144,47 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     try {
         const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
         const riderNumber = (currentSlide + 1) as 1 | 2;
+        const riderName = (riderNumber === 1 ? registration.fullName : registration.fullName2) || 'rider';
         
-        const riderData = {
-          registrationId: registration.id,
-          riderNumber,
-          riderName: (riderNumber === 1 ? registration.fullName : registration.fullName2) || '',
-        };
-        
-        const response = await fetch('/api/generate-pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(riderData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to generate PDF.');
+        const ticketElement = document.getElementById(`ticket-rider-${riderNumber}`);
+        if (!ticketElement) {
+            throw new Error("Could not find ticket element to download.");
         }
-
-        const blob = await response.blob();
+        
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Ride Ticket - ${riderName}</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                <style>
+                    body {
+                        font-family: sans-serif;
+                    }
+                </style>
+            </head>
+            <body class="bg-gray-100 p-8">
+                ${ticketElement.innerHTML}
+            </body>
+            </html>
+        `;
+        
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const contentDisposition = response.headers.get('content-disposition');
-        let fileName = 'ticket.pdf';
-        if (contentDisposition) {
-            const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
-            if (fileNameMatch && fileNameMatch.length === 2) {
-                fileName = fileNameMatch[1];
-            }
-        }
-        a.download = fileName;
+        a.download = `RideRegister-Ticket-${riderName.replace(/ /g, '_')}.html`;
         document.body.appendChild(a);
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
         
+        toast({ title: 'Download Started', description: 'Your ticket is being downloaded as an HTML file.' });
+
     } catch(err) {
-        console.error("Error downloading PDF:", err);
+        console.error("Error downloading ticket:", err);
         toast({ variant: 'destructive', title: 'Download Failed', description: (err as Error).message });
     } finally {
         setIsDownloading(false);
@@ -259,3 +262,5 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     </div>
   );
 }
+
+    
