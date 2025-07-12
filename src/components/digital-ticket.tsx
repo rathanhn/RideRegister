@@ -1,12 +1,8 @@
 
 import type { User } from 'firebase/auth';
 import React, { useState, useRef, useEffect } from 'react';
-import { useReactToPrint } from 'react-to-print';
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import Logo from "@/Logo.png";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import Image from 'next/image';
 import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Download, Loader2 } from 'lucide-react';
 import type { Registration } from '@/lib/types';
@@ -43,24 +39,21 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   });
 
   return (
-    <div ref={ref} className="bg-card rounded-lg shadow-2xl border border-primary/20 overflow-hidden">
-        {/* Header */}
-        <div className="p-4 bg-muted/30">
+    <div ref={ref} id={`ticket-${riderNumber}`} className="bg-[#09090b] text-white rounded-lg shadow-2xl border border-primary/20 overflow-hidden font-body">
+        <div className="p-4 bg-muted/10 relative">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                 <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full" />
+                 <Image src="/Logo.png" alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full" />
                  <div>
                     <h3 className="font-bold text-primary">TeleFun Mobile</h3>
                     <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
                  </div>
               </div>
            </div>
+           <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-white to-green-500" />
         </div>
-        <div className="w-full h-1.5 bg-gradient-to-r from-primary via-white to-green-600" />
         
-        {/* Main Content */}
         <div className="p-4 flex flex-col sm:flex-row gap-4">
-            {/* Left Side - Rider Info */}
             <div className="flex-grow space-y-4">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20 border-2 border-primary/50">
@@ -91,10 +84,9 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
                  </div>
             </div>
 
-            {/* Right Side - QR Code */}
-            <div className="flex-shrink-0 flex flex-col items-center justify-center text-center bg-muted/30 p-3 rounded-lg w-full sm:w-[150px]">
+            <div className="flex-shrink-0 flex flex-col items-center justify-center text-center bg-muted/10 p-3 rounded-lg w-full sm:w-[150px]">
                 <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center border">
-                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
+                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} crossOrigin="anonymous" />
                 </div>
                  <div className="mt-2">
                     <p className="text-xs text-muted-foreground">Reg. ID</p>
@@ -103,8 +95,7 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
             </div>
         </div>
 
-        {/* Footer */}
-        <div className="bg-muted/30 p-2 border-t text-center">
+        <div className="bg-muted/10 p-2 border-t border-white/10 text-center">
              <p className="text-xs text-muted-foreground">Present this ticket for check-in on August 15, 2025 at Telefun Mobiles, Madikeri.</p>
         </div>
       </div>
@@ -121,26 +112,44 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const ticketRef2 = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const handlePrint = useReactToPrint({
-    content: () => {
-        const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
-        if (registration.registrationType === 'duo') {
-            return currentSlide === 0 ? ticketRef1.current : ticketRef2.current;
-        }
-        return ticketRef1.current;
-    },
-    onBeforeGetContent: () => {
-      return new Promise((resolve) => {
-        setIsDownloading(true);
-        // Add a small delay to ensure all content is rendered, especially images
-        setTimeout(() => resolve(void 0), 250); 
-      });
-    },
-    onAfterPrint: () => {
+  const handleDownload = async () => {
+    const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
+    const isDuo = registration.registrationType === 'duo';
+    const elementToCapture = (isDuo && currentSlide === 1) ? ticketRef2.current : ticketRef1.current;
+    
+    if (!elementToCapture) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find the ticket element to download.' });
+        return;
+    }
+    
+    setIsDownloading(true);
+
+    try {
+        const canvas = await html2canvas(elementToCapture, {
+            allowTaint: true,
+            useCORS: true, // Allow fetching images from other domains (like the QR code)
+            backgroundColor: '#09090b', // Force a dark background for consistency
+            scale: 2, // Increase resolution
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`RideRegister-Ticket-${registration.id.substring(0,6)}.pdf`);
+
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not generate the PDF.' });
+    } finally {
         setIsDownloading(false);
-    },
-    documentTitle: `RideRegister-Ticket-${registration.id.substring(0,6)}`,
-  });
+    }
+  };
+
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -194,7 +203,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       {ticketContainer}
       <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
         <div className="flex flex-col sm:flex-row w-full gap-4">
-            <Button onClick={handlePrint} className="w-full" disabled={isDownloading}>
+            <Button onClick={handleDownload} className="w-full" disabled={isDownloading}>
                 {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 Download Ticket
             </Button>
