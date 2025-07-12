@@ -39,9 +39,11 @@ const generateQrCodeUrl = (text: string) => {
 
 // Helper to fetch an image and convert it to a Base64 Data URI
 const toDataURL = async (url: string) => {
-    // A trick to bypass CORS issues with some browsers/servers when fetching images.
-    // We use a simple proxy that just fetches the image.
-    const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+    }
     const blob = await response.blob();
     return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -49,6 +51,22 @@ const toDataURL = async (url: string) => {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
+  } catch (error) {
+     // Fallback to proxy for potential CORS issues
+     console.warn("Direct image fetch failed, trying proxy. Error:", error);
+     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+     const proxyResponse = await fetch(proxyUrl);
+     if (!proxyResponse.ok) {
+        throw new Error(`Proxy fetch failed: ${proxyResponse.status} ${proxyResponse.statusText}`);
+     }
+     const blob = await proxyResponse.blob();
+     return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+  }
 };
 
 const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber, user }, ref) => {
@@ -173,12 +191,17 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         // Pre-fetch images
         const logoDataUrl = Logo.src; 
         const qrCodeDataUrl = await toDataURL(generateQrCodeUrl(qrData));
-        let riderPhotoDataUrl = '';
+        let riderPhotoDataUrl: string | null = null;
         if (photoUrl) {
             try {
                 riderPhotoDataUrl = await toDataURL(photoUrl);
             } catch (e) {
                 console.error("Could not fetch rider photo for PDF, will skip.", e);
+                toast({
+                    variant: 'destructive',
+                    title: 'Photo Skipped',
+                    description: 'Could not load the profile photo for the PDF.'
+                })
             }
         }
 
@@ -197,13 +220,9 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.setFillColor(255, 247, 237); // primary/10
         doc.roundedRect(6, 6, 338, 55, 8, 8, 'F');
         
-        // This is a trick: Draw a white rectangle just below the header
-        // to cover the bottom part of the header rect, creating a "cut-off"
-        // that makes the main rounded rectangle's border appear correctly.
         doc.setFillColor(255, 255, 255);
         doc.rect(6, 50, 338, 20, 'F');
         
-        // Main Card Rounded Border (drawn over everything to get the outline)
         doc.roundedRect(5, 5, 340, 490, 8, 8, 'S');
 
         // --- Header Content ---
@@ -218,7 +237,6 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.text('Independence Day Ride 2025', 55, 42);
 
         // --- Status Badges ---
-        // Approved/Rejected Badge
         doc.setFillColor(registration.status === 'approved' ? primaryColor : '#E53E3E');
         doc.roundedRect(260, 15, 75, 14, 7, 7, 'F');
         doc.setFont('helvetica', 'bold');
@@ -226,10 +244,9 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.setFontSize(8);
         doc.text(registration.status.toUpperCase(), 300, 24, { align: 'center' });
 
-        // Checked-in Badge
-        doc.setFillColor(isCheckedIn ? '#C6F6D5' : '#E2E8F0'); // green-100 or gray-200
+        doc.setFillColor(isCheckedIn ? '#C6F6D5' : '#E2E8F0');
         doc.roundedRect(260, 33, 75, 14, 7, 7, 'F');
-        doc.setTextColor(isCheckedIn ? '#22543D' : '#4A5568'); // green-800 or gray-600
+        doc.setTextColor(isCheckedIn ? '#22543D' : '#4A5568');
         doc.text(isCheckedIn ? 'CHECKED-IN' : 'NOT CHECKED-IN', 300, 42, { align: 'center' });
         
         // --- Main Content ---
@@ -243,7 +260,8 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
         // --- Rider Details ---
         if (riderPhotoDataUrl) {
-            doc.addImage(riderPhotoDataUrl, 'JPEG', 20, 115, 50, 50);
+            const imgFormat = riderPhotoDataUrl.substring(riderPhotoDataUrl.indexOf('/') + 1, riderPhotoDataUrl.indexOf(';'));
+            doc.addImage(riderPhotoDataUrl, imgFormat.toUpperCase(), 20, 115, 50, 50);
         }
         
         const textStartX = riderPhotoDataUrl ? 80 : 20;
