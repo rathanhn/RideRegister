@@ -14,9 +14,10 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
     const [registration, setRegistration] = useState<Registration | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { id } = params;
 
     useEffect(() => {
-        if (!params.id) {
+        if (!id) {
             setError("No ticket ID provided.");
             setLoading(false);
             return;
@@ -24,7 +25,7 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
 
         const fetchTicket = async () => {
             try {
-                const regDocRef = doc(db, 'registrations', params.id);
+                const regDocRef = doc(db, 'registrations', id);
                 const regDoc = await getDoc(regDocRef);
 
                 if (regDoc.exists()) {
@@ -46,7 +47,7 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
         };
 
         fetchTicket();
-    }, [params.id]);
+    }, [id]);
     
     const renderTicket = () => {
         if (!registration) return null;
