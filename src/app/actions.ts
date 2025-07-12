@@ -7,7 +7,7 @@ import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, ru
 import type { UserRole } from "./lib/types";
 import { auth } from "@/lib/firebase";
 import { headers } from "next/headers";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 
 // Helper to get a user's role
 async function getUserRole(uid: string): Promise<UserRole> {
@@ -552,5 +552,27 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
     } catch (error) {
         console.error("Error submitting cancellation request: ", error);
         return { success: false, message: "Could not submit your request. Please try again." };
+    }
+}
+
+// Schema for password reset
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address."),
+});
+
+// Server action to send a password reset link
+export async function sendPasswordResetLink(values: z.infer<typeof forgotPasswordSchema>) {
+    const parsed = forgotPasswordSchema.safeParse(values);
+    if (!parsed.success) {
+        return { success: false, message: "Invalid email provided." };
+    }
+
+    try {
+        await sendPasswordResetEmail(auth, parsed.data.email);
+        return { success: true, message: "If an account exists for this email, a password reset link has been sent." };
+    } catch (error: any) {
+        console.error("Error sending password reset email: ", error);
+        // We return a generic message to prevent email enumeration attacks
+        return { success: true, message: "If an account exists for this email, a password reset link has been sent." };
     }
 }
