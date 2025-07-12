@@ -11,13 +11,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, Phone, User as UserIcon, Calendar, Clock, MapPin, Share2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Bike, CheckCircle, Users, Phone, User as UserIcon, Calendar, Clock, MapPin, Share2, ShieldCheck, AlertTriangle, Download, Loader2 } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface DigitalTicketProps {
     registration: Registration;
@@ -136,6 +138,7 @@ SingleTicket.displayName = 'SingleTicket';
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -162,6 +165,45 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       }
     }
   };
+  
+  const handleDownload = async () => {
+    const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
+    const ticketElement = document.getElementById(`ticket-rider-${currentSlide + 1}`);
+
+    if (!ticketElement) {
+        toast({ variant: "destructive", title: "Error", description: "Could not find ticket to download." });
+        return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+        const canvas = await html2canvas(ticketElement, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true, // Important for external images
+            logging: true,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+
+        // Calculate dimensions for the PDF
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`RideRegister-Ticket-${registration.id.substring(0, 6)}.pdf`);
+
+    } catch (error) {
+        console.error("Error generating PDF", error);
+        toast({ variant: "destructive", title: "Download Failed", description: "Could not generate PDF from ticket." });
+    } finally {
+        setIsDownloading(false);
+    }
+  };
+
 
   const ticketContainer = (
     registration.registrationType === 'duo' ? (
@@ -189,6 +231,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       {ticketContainer}
       <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
         <div className="flex flex-col sm:flex-row w-full gap-4">
+            <Button onClick={handleDownload} className="w-full" disabled={isDownloading}>
+                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Download Ticket
+            </Button>
             <Button onClick={handleShare} variant="outline" className="w-full">
                 <Share2 className="mr-2 h-4 w-4" />
                 Share Ticket

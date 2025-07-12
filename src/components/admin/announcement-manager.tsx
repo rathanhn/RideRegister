@@ -4,7 +4,7 @@
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { Loader2, Trash2, AlertTriangle, Send, User, Sparkles } from 'lucide-react';
+import { Loader2, Trash2, AlertTriangle, Send, User } from 'lucide-react';
 import type { Announcement, UserRole } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,18 +21,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEffect, useState } from 'react';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
-import { getSuggestions } from '@/ai/flows/content-assistant-flow';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose
-} from "@/components/ui/dialog"
-
 
 const announcementSchema = z.object({
   message: z.string().min(5, "Min 5 characters.").max(280, "Max 280 characters."),
@@ -53,8 +41,6 @@ export function AnnouncementManager() {
   const [user, authLoading] = useAuthState(auth);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const { toast } = useToast();
-  const [isSuggesting, setIsSuggesting] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   
   const form = useForm<z.infer<typeof announcementSchema>>({
     resolver: zodResolver(announcementSchema),
@@ -107,88 +93,31 @@ export function AnnouncementManager() {
     }
   }
 
-  const handleGetSuggestions = async () => {
-    const message = form.getValues('message');
-    if (!message || message.length < 10) {
-        toast({ variant: 'destructive', title: 'Error', description: "Please enter a message of at least 10 characters." });
-        return;
-    }
-    setIsSuggesting(true);
-    setSuggestions([]);
-    try {
-        const result = await getSuggestions({ text: message });
-        setSuggestions(result.suggestions);
-    } catch (e) {
-        console.error(e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not get suggestions from AI.' });
-    } finally {
-        setIsSuggesting(false);
-    }
-  }
-
   const isLoading = authLoading || announcementsLoading;
 
   return (
     <div className="space-y-4">
       {canPost && (
-        <Dialog>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-                <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormControl>
-                        <Textarea placeholder="Type your announcement here..." {...field} rows={3} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <div className="flex flex-wrap gap-2">
-                    <Button type="submit" disabled={isSubmitting || isLoading}>
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        Post Announcement
-                    </Button>
-                    <DialogTrigger asChild>
-                        <Button type="button" variant="outline" onClick={handleGetSuggestions}>
-                           <Sparkles className="mr-2 h-4 w-4"/> AI Assistant
-                        </Button>
-                    </DialogTrigger>
-                </div>
-                </form>
-            </Form>
-
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>AI Content Assistant</DialogTitle>
-                    <DialogDescription>
-                        Here are some AI-powered suggestions to improve your message for clarity and engagement.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    {isSuggesting && <div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}
-                    {!isSuggesting && suggestions.length > 0 && (
-                        <div className="space-y-3">
-                            {suggestions.map((s, i) => (
-                                <button key={i} onClick={() => form.setValue('message', s)} className="w-full text-left p-3 border rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
-                                    <p className="text-sm">{s}</p>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                    {!isSuggesting && suggestions.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center">No suggestions available.</p>
-                    )}
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">Close</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea placeholder="Type your announcement here..." {...field} rows={3} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={isSubmitting || isLoading}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              Post Announcement
+            </Button>
+          </form>
+        </Form>
       )}
       
       <Separator />
