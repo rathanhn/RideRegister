@@ -1,5 +1,4 @@
 
-"use client";
 
 import type { User } from 'firebase/auth';
 import React, { useState, useRef } from 'react';
@@ -138,7 +137,9 @@ SingleTicket.displayName = 'SingleTicket';
 
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
+  const [showCanvas, setShowCanvas] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -178,6 +179,37 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         toast({ variant: 'destructive', title: 'Download Failed', description: "There was an issue generating your PDF ticket." });
     } finally {
         setIsDownloading(false);
+    }
+  };
+
+  const handleDebugCanvas = async () => {
+    setIsDownloading(true); // Use the same loading state for simplicity
+    setShowCanvas(false); // Hide previous canvas
+    if (canvasContainerRef.current) {
+      canvasContainerRef.current.innerHTML = ''; // Clear previous canvas
+    }
+
+    try {
+      const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
+      const riderNumber = (currentSlide + 1) as 1 | 2;
+
+      const ticketElement = document.getElementById(`ticket-rider-${riderNumber}`);
+      if (!ticketElement) {
+        throw new Error("Could not find ticket element to debug.");
+      }
+
+      const canvas = await html2canvas(ticketElement, {
+        useCORS: true,
+        scale: 2,
+      });
+
+      canvasContainerRef.current?.appendChild(canvas);
+      setShowCanvas(true);
+    } catch (err) {
+      console.error("Error generating debug canvas:", err);
+      toast({ variant: 'destructive', title: 'Debug Failed', description: "There was an issue generating the debug canvas." });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -240,6 +272,14 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                 Share Ticket
             </Button>
         </div>
+        {process.env.NODE_ENV === 'development' && (
+ <Button onClick={handleDebugCanvas} disabled={isDownloading} className="w-full" variant="secondary">
+            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Debug Canvas
+          </Button>
+        )}
+
+        {showCanvas && <div ref={canvasContainerRef} className="mt-4 p-2 border border-dashed border-gray-400 bg-gray-100 overflow-auto"></div>}
         <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg w-full">
             <div className="flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
