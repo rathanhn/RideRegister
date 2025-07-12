@@ -4,9 +4,6 @@ import React, { useState, useRef } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
@@ -33,7 +30,7 @@ interface SingleTicketProps {
 }
 
 const generateQrCodeUrl = (text: string) => {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(text)}`;
 }
 
 const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ registration, riderNumber }, ref) => {
@@ -50,85 +47,71 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   });
 
   return (
-    <div ref={ref} id={`ticket-rider-${riderNumber}`}>
-      <Card className="w-full bg-card shadow-2xl overflow-hidden border-2 border-primary/20">
-        <CardHeader className="p-4 bg-primary/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-               <div className="relative h-12 w-12 rounded-full border border-primary/20 flex items-center justify-center bg-white p-1 overflow-hidden">
-                <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="object-contain" />
+    <div ref={ref} id={`ticket-rider-${riderNumber}`} className="bg-card p-0.5 rounded-lg shadow-2xl border-2 border-primary/20">
+      <div className="bg-background rounded-md">
+        {/* Header */}
+        <div className="p-4">
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                 <Image src={Logo} alt="TeleFun Mobile Logo" width={40} height={40} className="rounded-full" />
+                 <div>
+                    <h3 className="font-bold text-primary">TeleFun Mobile</h3>
+                    <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
+                 </div>
               </div>
-              <div>
-                <h3 className="font-bold text-primary">TeleFun Mobile</h3>
-                <p className="text-sm text-muted-foreground">Independence Day Ride 2025</p>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1.5">
-              <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="capitalize"><ShieldCheck className="mr-1 h-3 w-3"/>{registration.status}</Badge>
-              {isCheckedIn ? (
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  <CheckCircle className="mr-1 h-3 w-3" /> Checked-in
-                </Badge>
-              ) : (
-                <Badge variant="secondary">Not Checked-in</Badge>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="mb-4">
-            <CardTitle className="text-xl md:text-2xl font-headline">
-              Your Ride Ticket {isDuo ? `(Rider ${riderNumber} of 2)` : ''}
-            </CardTitle>
-            <CardDescription>Present this QR code at the check-in counter.</CardDescription>
-          </div>
-
-          <div className="flex justify-between items-start gap-4">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                 <Avatar className="h-16 w-16 border-2 border-primary/50">
+              <Badge variant={isCheckedIn ? 'default' : 'secondary'} className={isCheckedIn ? 'bg-green-600' : ''}>
+                 {isCheckedIn ? <CheckCircle className="mr-1 h-3 w-3" /> : null}
+                 {isCheckedIn ? 'Checked-in' : 'Pending Check-in'}
+              </Badge>
+           </div>
+        </div>
+        <div className="w-full h-2 bg-gradient-to-r from-primary via-white to-green-600" />
+        
+        {/* Main Content */}
+        <div className="p-4 flex gap-4">
+            {/* Left Side - Rider Info */}
+            <div className="flex-grow space-y-4">
+                <Avatar className="h-24 w-24 border-4 border-primary/50">
                     <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
-                    <AvatarFallback><UserIcon className="w-8 h-8" /></AvatarFallback>
+                    <AvatarFallback><UserIcon className="w-12 h-12" /></AvatarFallback>
                 </Avatar>
-                <div className="space-y-1 mt-1">
-                    <h4 className="font-bold text-base md:text-lg">{riderName}</h4>
-                    <p className="text-sm text-muted-foreground">{riderAge} years</p>
-                    <div className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> {riderPhone}</div>
-                </div>
-              </div>
-
-              <div className="flex gap-8 pt-2">
-                <div>
-                  <h4 className="font-semibold text-muted-foreground text-sm">Reg. Type</h4>
-                  <div className="mt-1 flex items-center gap-2">
-                    {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                    <p className="font-bold text-base md:text-lg capitalize">
-                      {registration.registrationType}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-muted-foreground text-sm">Reg. ID</h4>
-                  <p className="font-mono text-xs md:text-sm pt-1">{registration.id.substring(0, 10).toUpperCase()}</p>
-                </div>
-              </div>
+                 <div>
+                    <p className="text-sm text-muted-foreground">Rider Name {isDuo ? `(${riderNumber}/2)` : ''}</p>
+                    <h4 className="font-bold text-2xl">{riderName}</h4>
+                 </div>
+                 <div>
+                    <p className="text-sm text-muted-foreground">Age</p>
+                    <h4 className="font-semibold">{riderAge} years</h4>
+                 </div>
+                 <div>
+                    <p className="text-sm text-muted-foreground">Registration Type</p>
+                    <h4 className="font-semibold capitalize flex items-center gap-2">
+                        {registration.registrationType === 'solo' ? <Bike className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+                        {registration.registrationType}
+                    </h4>
+                 </div>
             </div>
-            <div className="flex-shrink-0">
-              <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center">
-                <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
-              </div>
+
+            {/* Right Side - QR Code */}
+            <div className="flex-shrink-0 flex flex-col items-center justify-between text-center w-[160px]">
+                <div className="w-[150px] h-[150px] p-2 bg-white rounded-md flex items-center justify-center border">
+                    <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={140} height={140} />
+                </div>
+                 <div className="mt-2">
+                    <p className="text-xs text-muted-foreground">Registration ID</p>
+                    <p className="font-mono text-sm font-bold">{registration.id.substring(0, 10).toUpperCase()}</p>
+                </div>
             </div>
-          </div>
+        </div>
 
-          <Separator className="my-4" />
-
-          <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
-            <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date</p><p className="text-muted-foreground">August 15, 2025</p></div></div>
-            <div className="flex items-start gap-2"><Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Assembly Time</p><p className="text-muted-foreground">6:00 AM</p></div></div>
-            <div className="flex items-start gap-2 col-span-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Starting Point</p><p className="text-muted-foreground">Telefun Mobiles: Mahadevpet, Madikeri</p></div></div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Footer */}
+        <div className="bg-muted/50 p-4 border-t rounded-b-md">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-start gap-2"><MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Location</p><p className="text-muted-foreground">Telefun Mobiles, Madikeri</p></div></div>
+                <div className="flex items-start gap-2"><Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="font-bold">Date & Time</p><p className="text-muted-foreground">Aug 15, 2025 - 6:00 AM</p></div></div>
+            </div>
+        </div>
+      </div>
     </div>
   );
 });
@@ -181,9 +164,11 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         const canvas = await html2canvas(ticketElement, {
             scale: 2, 
             useCORS: true,
-            logging: true,
+            logging: false, // set to true for debugging
             width: ticketElement.scrollWidth,
             height: ticketElement.scrollHeight,
+            windowWidth: ticketElement.scrollWidth,
+            windowHeight: ticketElement.scrollHeight,
         });
 
         const imgData = canvas.toDataURL('image/png');
