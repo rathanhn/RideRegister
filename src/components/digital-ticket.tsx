@@ -151,6 +151,41 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             throw new Error("Could not find ticket element to download.");
         }
         
+        const clonedElement = ticketElement.cloneNode(true) as HTMLElement;
+
+        // Process images to embed them as Base64
+        const images = clonedElement.getElementsByTagName('img');
+        for (const img of Array.from(images)) {
+            // The Next.js optimizer URL is in a weird format, so we get the original src
+            const originalSrc = new URL(img.src).searchParams.get('url');
+            if (originalSrc) {
+                try {
+                    const response = await fetch(originalSrc);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    const dataUrl = await new Promise<string>(resolve => {
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.readAsDataURL(blob);
+                    });
+                    img.src = dataUrl;
+                } catch (e) {
+                    console.error("Could not embed image:", originalSrc, e);
+                }
+            }
+        }
+        
+        // Fetch and inline the CSS
+        const stylesheetUrl = Array.from(document.styleSheets).find(ss => ss.href?.includes('globals.css'))?.href;
+        let cssText = '';
+        if (stylesheetUrl) {
+           try {
+               const cssResponse = await fetch(stylesheetUrl);
+               cssText = await cssResponse.text();
+           } catch (e) {
+               console.error("Could not fetch stylesheet:", e);
+           }
+        }
+
         const htmlContent = `
             <!DOCTYPE html>
             <html lang="en">
@@ -158,15 +193,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Ride Ticket - ${riderName}</title>
-                <script src="https://cdn.tailwindcss.com"></script>
-                <style>
-                    body {
-                        font-family: sans-serif;
-                    }
-                </style>
+                <style>${cssText}</style>
             </head>
-            <body class="bg-gray-100 p-8">
-                ${ticketElement.innerHTML}
+            <body class="bg-gray-100 p-4 sm:p-8 flex items-center justify-center min-h-screen">
+                ${clonedElement.innerHTML}
             </body>
             </html>
         `;
@@ -262,5 +292,3 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     </div>
   );
 }
-
-    
