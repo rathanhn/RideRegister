@@ -29,6 +29,7 @@ export async function POST(request: Request) {
 
     const ticketData = validation.data;
     
+    // Use React.createElement instead of JSX to avoid parsing errors in .ts files
     const stream = await renderToStream(React.createElement(PdfTicketDocument, { data: ticketData }));
     
     const pdfFilename = `RideRegister-Ticket-${ticketData.riderName.replace(/ /g, '_')}.pdf`;
