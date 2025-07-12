@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Font, Image, Svg, Circle, Defs, ClipPath } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 
 // Register fonts
 // Using built-in Helvetica font to avoid server-side fetching issues with Google Fonts.
@@ -95,24 +95,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    marginRight: 15,
-    backgroundColor: '#E5E7EB', // Fallback color
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-  },
-  avatarPlaceholder: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 18,
-    color: '#9CA3AF'
+    borderRadius: 8,
+    marginRight: 15,
+    backgroundColor: '#E5E7EB', // Fallback color
   },
   riderTextContainer: {
     flexDirection: 'column',
@@ -229,24 +217,14 @@ export const PdfTicketDocument = ({ data }: PdfTicketProps) => {
               <Text style={styles.description}>Present this ticket at the check-in counter.</Text>
               
               <View style={styles.riderDetails}>
-                <View style={styles.avatarContainer}>
-                   {data.photoUrl ? (
-                    <Svg width="64" height="64">
-                      <Defs>
-                        <ClipPath id="clipCircle">
-                          <Circle cx="32" cy="32" r="32" />
-                        </ClipPath>
-                      </Defs>
-                      <Image
+                {data.photoUrl ? (
+                    <Image
                         src={data.photoUrl}
                         style={styles.avatar}
-                        clipPath="url(#clipCircle)"
                       />
-                    </Svg>
-                    ) : (
-                    <Text style={styles.avatarPlaceholder}>USER</Text> 
-                   )}
-                </View>
+                ) : (
+                    <View style={styles.avatar} />
+                )}
                 <View style={styles.riderTextContainer}>
                   <Text style={styles.riderName}>{data.riderName}</Text>
                   <Text style={styles.riderInfo}>{data.riderAge} years</Text>
