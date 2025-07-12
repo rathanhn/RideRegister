@@ -19,21 +19,19 @@ export function DashboardProfileCard({ user, registration }: DashboardProfileCar
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16 border-2 border-primary">
-                        <AvatarImage src={photoSrc} alt={user.displayName ?? 'User'} />
-                        <AvatarFallback><User className="w-8 h-8"/></AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <CardTitle>{user.displayName}</CardTitle>
-                        <CardDescription>{user.email}</CardDescription>
-                    </div>
+            <CardHeader className="items-center text-center">
+                <Avatar className="h-24 w-24 border-2 border-primary">
+                    <AvatarImage src={photoSrc} alt={user.displayName ?? 'User'} />
+                    <AvatarFallback><User className="w-12 h-12"/></AvatarFallback>
+                </Avatar>
+                <div className="pt-2">
+                    <CardTitle>{user.displayName}</CardTitle>
+                    <CardDescription>{user.email}</CardDescription>
                 </div>
             </CardHeader>
             <CardContent>
                 {registration ? (
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
                         <div className="flex items-center gap-2">
                             <Phone className="h-4 w-4 text-muted-foreground" />
                             <span>{registration.phoneNumber}</span>
@@ -52,7 +50,7 @@ export function DashboardProfileCard({ user, registration }: DashboardProfileCar
                                     <AvatarImage src={registration.photoURL2 ?? undefined} alt={registration.fullName2} />
                                     <AvatarFallback><User /></AvatarFallback>
                                 </Avatar>
-                                <div className="flex-grow">
+                                <div className="flex-grow text-left">
                                     <p className="font-semibold">{registration.fullName2}</p>
                                     <p className="text-xs text-muted-foreground">{registration.phoneNumber2}</p>
                                     <p className="text-xs text-muted-foreground">{registration.age2} years old</p>
@@ -61,9 +59,8 @@ export function DashboardProfileCard({ user, registration }: DashboardProfileCar
                         )}
                     </div>
                 ) : (
-                   <div className="space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
+                   <div className="space-y-2 text-center text-muted-foreground border-t pt-4">
+                        <p>You haven&apos;t registered for the ride yet.</p>
                    </div>
                 )}
             </CardContent>
