@@ -3,15 +3,7 @@ import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font, Image, Svg, Circle, Defs, ClipPath } from '@react-pdf/renderer';
 
 // Register fonts
-Font.register({
-  family: 'Inter',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.ttf', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 500 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 600 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.ttf', fontWeight: 700 },
-  ],
-});
+// Using built-in Helvetica font to avoid server-side fetching issues with Google Fonts.
 Font.register({
     family: 'Roboto Mono',
     src: 'https://fonts.gstatic.com/s/robotomono/v23/L0x5DF4xlVMF-BfR8bXMIjhGq3-cXbKDO1w.ttf',
@@ -21,7 +13,7 @@ Font.register({
 // Define styles
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Inter',
+    fontFamily: 'Helvetica',
     backgroundColor: '#fff',
     padding: 5,
   },
@@ -55,7 +47,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 14,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#FF9933',
   },
   headerSubtitle: {
@@ -73,7 +65,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 8,
     fontSize: 8,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#FFFFFF',
     backgroundColor: '#4CAF50', // Default approved
   },
@@ -90,7 +82,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 4,
   },
   description: {
@@ -118,8 +110,8 @@ const styles = StyleSheet.create({
     borderRadius: 32,
   },
   avatarPlaceholder: {
-    width: 32,
-    height: 32,
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 18,
     color: '#9CA3AF'
   },
   riderTextContainer: {
@@ -127,7 +119,7 @@ const styles = StyleSheet.create({
   },
   riderName: {
     fontSize: 18,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
   },
   riderInfo: {
     fontSize: 12,
@@ -145,13 +137,13 @@ const styles = StyleSheet.create({
   },
   regLabel: {
     fontSize: 12,
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     color: '#64748B',
     marginBottom: 5,
   },
   regValue: {
     fontSize: 18,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     textTransform: 'capitalize',
     marginBottom: 15,
   },
@@ -179,7 +171,7 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     fontSize: 12,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 4,
   },
   footerValue: {
@@ -252,7 +244,7 @@ export const PdfTicketDocument = ({ data }: PdfTicketProps) => {
                       />
                     </Svg>
                     ) : (
-                    <Text>USER</Text> 
+                    <Text style={styles.avatarPlaceholder}>USER</Text> 
                    )}
                 </View>
                 <View style={styles.riderTextContainer}>
