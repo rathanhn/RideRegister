@@ -142,7 +142,7 @@ export default function DashboardPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
                                 <Ban /> Registration Rejected
-                            </CardTitle>
+                            </Title>
                             <CardDescription>
                                 Unfortunately, your registration could not be approved. If you believe this is an error, please contact the event organizers.
                             </CardDescription>
@@ -155,7 +155,7 @@ export default function DashboardPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center justify-center gap-2">
                                 <Clock className="text-primary"/> Cancellation Pending
-                            </CardTitle>
+                            </Title>
                             <CardDescription>
                                 Your request to cancel your registration has been submitted and is pending review by an admin.
                             </CardDescription>
