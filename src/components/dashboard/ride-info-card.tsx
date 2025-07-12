@@ -22,22 +22,24 @@ export function RideInfoCard() {
                 <CardDescription>Key details about the Independence Day Ride.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
-                        <Calendar className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <p className="font-semibold">Date</p>
-                            <p className="text-muted-foreground">August 15, 2025</p>
+                 <div className="space-y-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
+                            <Calendar className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div>
+                                <p className="font-semibold">Date</p>
+                                <p className="text-muted-foreground">August 15, 2025</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
+                            <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div>
+                                <p className="font-semibold">Time</p>
+                                <p className="text-muted-foreground">6:00 AM Assembly</p>
+                            </div>
                         </div>
                     </div>
                     <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
-                        <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <p className="font-semibold">Time</p>
-                            <p className="text-muted-foreground">6:00 AM Assembly</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg col-span-1 sm:col-span-2">
                         <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
                         <div>
                             <p className="font-semibold">Location</p>
