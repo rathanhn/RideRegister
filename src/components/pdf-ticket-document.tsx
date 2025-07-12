@@ -2,8 +2,8 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 
-// Register fonts
-// Using built-in Helvetica font to avoid server-side fetching issues with Google Fonts.
+// Using built-in Helvetica font to avoid server-side fetching issues.
+// Register a font for the monospace registration ID.
 Font.register({
     family: 'Roboto Mono',
     src: 'https://fonts.gstatic.com/s/robotomono/v23/L0x5DF4xlVMF-BfR8bXMIjhGq3-cXbKDO1w.ttf',
@@ -58,7 +58,6 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     flexDirection: 'column',
     alignItems: 'flex-end',
-    gap: 4
   },
   statusBadge: {
     paddingHorizontal: 6,
@@ -68,6 +67,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     color: '#FFFFFF',
     backgroundColor: '#4CAF50', // Default approved
+    marginBottom: 4,
   },
   rejectedBadge: {
     backgroundColor: '#E53E3E',
