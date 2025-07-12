@@ -40,22 +40,11 @@ const generateQrCodeUrl = (text: string) => {
 // Helper to fetch an image and convert it to a Base64 Data URI
 const toDataURL = async (url: string) => {
   try {
-    // Using a proxy to bypass potential CORS issues
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
+    // Using a reliable proxy to bypass potential CORS issues
+    const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+    const response = await fetch(proxyUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
     if (!response.ok) {
-        // If proxy fails, try direct fetch
-        const directResponse = await fetch(url);
-        if (!directResponse.ok) {
-            throw new Error(`Failed to fetch image directly: ${directResponse.statusText}`);
-        }
-        const blob = await directResponse.blob();
-        return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+        throw new Error(`Failed to fetch image via proxy: ${response.statusText}`);
     }
     const blob = await response.blob();
     return new Promise<string>((resolve, reject) => {
