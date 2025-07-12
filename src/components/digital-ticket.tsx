@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import Logo from "@/Logo.png";
 import Image from 'next/image';
 import { Bike, CheckCircle, Users, Phone, User as UserIcon, Calendar, Clock, MapPin, Share2, ShieldCheck, AlertTriangle, Download, Loader2 } from 'lucide-react';
@@ -37,7 +36,6 @@ const SingleTicket = React.forwardRef<HTMLDivElement, SingleTicketProps>(({ regi
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
   const riderAge = riderNumber === 1 ? registration.age : registration.age2;
-  const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
   const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
   const photoUrl = riderNumber === 1 ? registration.photoURL : registration.photoURL2;
 
@@ -164,11 +162,8 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         const canvas = await html2canvas(ticketElement, {
             scale: 2, 
             useCORS: true,
-            logging: false, // set to true for debugging
-            width: ticketElement.scrollWidth,
-            height: ticketElement.scrollHeight,
-            windowWidth: ticketElement.scrollWidth,
-            windowHeight: ticketElement.scrollHeight,
+            backgroundColor: '#09090b', // Force dark background for consistency
+            logging: false,
         });
 
         const imgData = canvas.toDataURL('image/png');
