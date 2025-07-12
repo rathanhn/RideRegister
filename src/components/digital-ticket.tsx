@@ -148,13 +148,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         const riderData = {
           registrationId: registration.id,
           riderNumber,
-          registrationType: registration.registrationType,
-          status: registration.status,
-          isCheckedIn: riderNumber === 1 ? !!registration.rider1CheckedIn : !!registration.rider2CheckedIn,
           riderName: (riderNumber === 1 ? registration.fullName : registration.fullName2) || '',
-          riderAge: (riderNumber === 1 ? registration.age : registration.age2) || 0,
-          riderPhone: (riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2) || '',
-          photoUrl: riderNumber === 1 ? registration.photoURL : registration.photoURL2,
         };
         
         const response = await fetch('/api/generate-pdf', {

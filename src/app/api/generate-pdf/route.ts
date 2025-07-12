@@ -5,17 +5,11 @@ import { PdfTicketDocument } from '@/components/pdf-ticket-document';
 import { renderToStream } from '@react-pdf/renderer';
 import React from 'react';
 
-// Zod schema for input validation
+// Zod schema for input validation - simplified to isolate errors
 const pdfRequestSchema = z.object({
   registrationId: z.string(),
   riderNumber: z.union([z.literal(1), z.literal(2)]),
-  registrationType: z.enum(['solo', 'duo']),
-  status: z.string(),
-  isCheckedIn: z.boolean(),
   riderName: z.string(),
-  riderAge: z.coerce.number(),
-  riderPhone: z.string(),
-  photoUrl: z.string().url().optional().nullable(),
 });
 
 export async function POST(request: Request) {
@@ -24,6 +18,7 @@ export async function POST(request: Request) {
     const validation = pdfRequestSchema.safeParse(body);
 
     if (!validation.success) {
+      console.error("PDF generation validation error:", validation.error.flatten());
       return NextResponse.json({ error: 'Invalid input', details: validation.error.flatten() }, { status: 400 });
     }
 
@@ -43,6 +38,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Error generating PDF with react-pdf:', error);
-    return NextResponse.json({ error: 'Failed to generate PDF.' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to generate PDF.', details: errorMessage }, { status: 500 });
   }
 }
