@@ -1,6 +1,6 @@
 
 import type { User } from 'firebase/auth';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -182,6 +182,8 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             scale: 2, 
             useCORS: true,
             logging: true,
+            width: ticketElement.scrollWidth,
+            height: ticketElement.scrollHeight,
         });
 
         const imgData = canvas.toDataURL('image/png');
