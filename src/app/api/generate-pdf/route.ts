@@ -14,14 +14,19 @@ const imageToDataUri = async (url: string) => {
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const type = await fileTypeFromBuffer(buffer);
-        if (!type) {
+        let mime = type?.mime;
+        if (!mime) {
             // Fallback for SVGs or other types not detected by file-type
             if (url.endsWith('.svg')) {
-                 return `data:image/svg+xml;base64,${buffer.toString('base64')}`;
+                 mime = 'image/svg+xml';
+            } else if (url.includes('googleusercontent')) {
+                 // Assume JPEG for Google user content
+                 mime = 'image/jpeg';
+            } else {
+                 throw new Error('Could not determine file type');
             }
-            throw new Error('Could not determine file type');
         }
-        return `data:${type.mime};base64,${buffer.toString('base64')}`;
+        return `data:${mime};base64,${buffer.toString('base64')}`;
     } catch (error) {
         console.error(`Error converting image from URL ${url}:`, error);
         return null;
@@ -29,7 +34,7 @@ const imageToDataUri = async (url: string) => {
 };
 
 const generateQrCodeUrl = (text: string) => {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(text)}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
 // Zod schema for input validation
@@ -64,7 +69,6 @@ export async function POST(request: Request) {
     const qrData = JSON.stringify({ registrationId, rider: riderNumber });
     const logoUrl = 'https://res.cloudinary.com/dfk9licqv/image/upload/v1721749595/RideRegister/Logo_xjan6k.png';
     
-    // Concurrently fetch images
     const [qrCodeDataUrl, photoDataUrl, logoDataUrl] = await Promise.all([
         imageToDataUri(generateQrCodeUrl(qrData)),
         photoUrl ? imageToDataUri(photoUrl) : Promise.resolve(null),
@@ -75,137 +79,143 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to generate QR code for PDF.' }, { status: 500 });
     }
 
-    // Initialize PDF - A4 aspect ratio, using points as units
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [350, 550] });
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [400, 600] });
     const primaryColor = '#FF9933';
     const textColor = '#1A202C';
     const mutedColor = '#64748B';
+    const cardBg = '#FFFFFF';
+    const headerBg = 'rgba(255, 153, 51, 0.1)';
 
-    // --- Drawing the ticket ---
-    doc.setFillColor(255, 255, 255);
+    // --- Card Background ---
+    doc.setFillColor(cardBg);
     doc.setDrawColor('#E2E8F0'); // border color
-    doc.setLineWidth(1);
-    doc.roundedRect(5, 5, 340, 540, 10, 10, 'FD');
+    doc.setLineWidth(1.5);
+    doc.roundedRect(5, 5, 390, 590, 10, 10, 'FD');
 
-    // Header Background
-    doc.setFillColor(255, 247, 237); // primary/10
-    doc.rect(6, 6, 338, 70, 'F');
+    // --- Header ---
+    doc.setFillColor(255, 248, 237); // Corresponds to primary/10
+    doc.rect(6, 6, 388, 70, 'F');
     
-    // --- Header Content ---
     if(logoDataUrl) {
-        doc.addImage(logoDataUrl, 'PNG', 20, 18, 40, 40);
+        doc.addImage(logoDataUrl, 'PNG', 20, 20, 40, 40);
     }
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(primaryColor);
     doc.setFontSize(14);
-    doc.text('TeleFun Mobile', 70, 32);
+    doc.text('TeleFun Mobile', 70, 35);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(mutedColor);
     doc.setFontSize(10);
-    doc.text('Independence Day Ride 2025', 70, 48);
+    doc.text('Independence Day Ride 2025', 70, 50);
 
-    // --- Status Badges ---
-    const statusText = status.toUpperCase();
-    const statusBadgeWidth = doc.getTextWidth(statusText) + 15;
-    doc.setFillColor(status === 'approved' ? primaryColor : '#E53E3E');
-    doc.roundedRect(335 - statusBadgeWidth, 20, statusBadgeWidth, 16, 8, 8, 'F');
+    const statusBadge = {
+        text: status.toUpperCase(),
+        color: status === 'approved' ? '#4CAF50' : '#E53E3E',
+        textColor: '#FFFFFF',
+    };
+    const statusTextWidth = doc.getTextWidth(statusBadge.text) + 12;
+    doc.setFillColor(statusBadge.color);
+    doc.roundedRect(380 - statusTextWidth, 20, statusTextWidth, 16, 8, 8, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(statusBadge.textColor);
     doc.setFontSize(8);
-    doc.text(statusText, 335 - statusBadgeWidth / 2, 30, { align: 'center' });
+    doc.text(statusBadge.text, 380 - statusTextWidth / 2, 30, { align: 'center' });
 
-    const checkedInText = isCheckedIn ? 'CHECKED-IN' : 'NOT CHECKED-IN';
-    const checkedInBadgeWidth = doc.getTextWidth(checkedInText) + 15;
-    doc.setFillColor(isCheckedIn ? '#C6F6D5' : '#E2E8F0');
-    doc.roundedRect(335 - checkedInBadgeWidth, 42, checkedInBadgeWidth, 16, 8, 8, 'F');
-    doc.setTextColor(isCheckedIn ? '#22543D' : '#4A5568');
-    doc.text(checkedInText, 335 - checkedInBadgeWidth / 2, 52, { align: 'center' });
+    if(isCheckedIn) {
+        const checkedInBadge = { text: 'CHECKED-IN', color: '#C6F6D5', textColor: '#22543D' };
+        const checkedInWidth = doc.getTextWidth(checkedInBadge.text) + 12;
+        doc.setFillColor(checkedInBadge.color);
+        doc.roundedRect(380 - checkedInWidth, 42, checkedInWidth, 16, 8, 8, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(checkedInBadge.textColor);
+        doc.setFontSize(8);
+        doc.text(checkedInBadge.text, 380 - checkedInWidth / 2, 52, { align: 'center' });
+    }
 
-    
     // --- Main Content ---
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(textColor);
     doc.setFontSize(22);
-    doc.text(`Your Ride Ticket ${isDuo ? `(Rider ${riderNumber})` : ''}`, 20, 105);
+    doc.text(`Your Ride Ticket ${isDuo ? `(Rider ${riderNumber})` : ''}`, 20, 110);
     doc.setFontSize(11);
     doc.setTextColor(mutedColor);
-    doc.text('Present this ticket at the check-in counter.', 20, 120);
+    doc.text('Present this ticket at the check-in counter.', 20, 125);
 
-    // --- Rider Details with circular photo ---
+    // --- Rider Details ---
+    const avatarX = 20, avatarY = 150, avatarSize = 64;
     doc.saveGraphicsState();
-    doc.circle(55, 175, 30);
+    doc.circle(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2);
     doc.clip();
     if (photoDataUrl) {
-      doc.addImage(photoDataUrl, 'JPEG', 25, 145, 60, 60);
+      doc.addImage(photoDataUrl, 'JPEG', avatarX, avatarY, avatarSize, avatarSize);
     } else {
-        doc.setFillColor(226, 232, 240); // muted color
-        doc.circle(55, 175, 30, 'F');
+        doc.setFillColor(230, 230, 230); // Placeholder color
+        doc.circle(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 'F');
     }
     doc.restoreGraphicsState();
     
-    const textStartX = 110;
-    doc.setFontSize(16);
+    const textStartX = avatarX + avatarSize + 15;
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(textColor);
     doc.text(riderName, textStartX, 165);
     doc.setFontSize(12);
-    doc.setTextColor(mutedColor);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${riderAge} years`, textStartX, 180);
-    doc.text(riderPhone || '', textStartX, 195);
-    
-    // --- QR Code ---
-    doc.addImage(qrCodeDataUrl, 'PNG', 205, 220, 120, 120);
+    doc.setTextColor(mutedColor);
+    doc.text(`${riderAge} years`, textStartX, 185);
+    doc.text(riderPhone || '', textStartX, 200);
 
-    // --- Reg Type & ID ---
+    // --- QR Code & Reg Info ---
+    doc.addImage(qrCodeDataUrl, 'PNG', 260, 230, 120, 120);
+
     const regIdYPos = 250;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(mutedColor);
-    doc.text('Reg. Type', 20, regIdYPos);
-    doc.setFontSize(16);
+    doc.text('Reg. Type', 30, regIdYPos);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(textColor);
-    doc.text(registrationType.charAt(0).toUpperCase() + registrationType.slice(1), 20, regIdYPos + 20);
+    doc.text(registrationType.charAt(0).toUpperCase() + registrationType.slice(1), 30, regIdYPos + 25);
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(mutedColor);
-    doc.text('Reg. ID', 20, regIdYPos + 50);
+    doc.text('Reg. ID', 30, regIdYPos + 60);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.setTextColor(textColor);
-    doc.text(registrationId.substring(0, 10).toUpperCase(), 20, regIdYPos + 70);
-    
+    doc.text(registrationId.substring(0, 10).toUpperCase(), 30, regIdYPos + 85);
+
     // --- Separator ---
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(1);
-    doc.line(20, 360, 330, 360);
+    doc.line(20, 380, 380, 380);
 
     // --- Footer Details ---
-    const footerY = 380;
+    const footerY = 410;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(textColor);
-    doc.text('Date', 20, footerY);
+    doc.text('Date', 30, footerY);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(mutedColor);
-    doc.text('August 15, 2025', 20, footerY + 18);
+    doc.text('August 15, 2025', 30, footerY + 20);
 
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(textColor);
-    doc.text('Assembly Time', 180, footerY);
+    doc.text('Assembly Time', 220, footerY);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(mutedColor);
-    doc.text('6:00 AM', 180, footerY + 18);
-
-    const footerY2 = footerY + 50;
+    doc.text('6:00 AM', 220, footerY + 20);
+    
+    const footerY2 = footerY + 60;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(textColor);
-    doc.text('Starting Point', 20, footerY2);
+    doc.text('Starting Point', 30, footerY2);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(mutedColor);
-    doc.text('Telefun Mobiles: Mahadevpet, Madikeri', 20, footerY2 + 18);
+    doc.text('Telefun Mobiles: Mahadevpet, Madikeri', 30, footerY2 + 20);
     
     // Return the PDF
     const pdfOutput = doc.output('arraybuffer');
@@ -224,3 +234,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to generate PDF.' }, { status: 500 });
   }
 }
+
+    
