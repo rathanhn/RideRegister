@@ -163,6 +163,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         const riderAge = riderNumber === 1 ? registration.age : registration.age2;
         const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
         const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
+        const photoUrl = riderNumber === 1 ? registration.photoURL : registration.photoURL2;
 
         const qrData = JSON.stringify({
             registrationId: registration.id,
@@ -172,6 +173,14 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         // Pre-fetch images
         const logoDataUrl = Logo.src; 
         const qrCodeDataUrl = await toDataURL(generateQrCodeUrl(qrData));
+        let riderPhotoDataUrl = '';
+        if (photoUrl) {
+            try {
+                riderPhotoDataUrl = await toDataURL(photoUrl);
+            } catch (e) {
+                console.error("Could not fetch rider photo for PDF, will skip.", e);
+            }
+        }
 
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: [350, 500] });
 
@@ -233,17 +242,20 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         doc.text('Present this ticket at the check-in counter.', 20, 98);
 
         // --- Rider Details ---
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Rider Details', 20, 130);
+        if (riderPhotoDataUrl) {
+            doc.addImage(riderPhotoDataUrl, 'JPEG', 20, 115, 50, 50);
+        }
+        
+        const textStartX = riderPhotoDataUrl ? 80 : 20;
+        
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(textColor);
-        doc.text(`${riderName}, ${riderAge} years`, 20, 148);
+        doc.text(`${riderName}, ${riderAge} years`, textStartX, 130);
         doc.setFontSize(10);
         doc.setTextColor(mutedColor);
-        doc.text(riderPhone || '', 20, 162);
-
+        doc.text(riderPhone || '', textStartX, 144);
+        
         // --- Reg Type & ID ---
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
