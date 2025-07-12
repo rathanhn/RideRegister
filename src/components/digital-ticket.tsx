@@ -154,15 +154,13 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             throw new Error("Could not find ticket element to download.");
         }
         
-        // Use html2canvas to render the element
         const canvas = await html2canvas(ticketElement, {
-            useCORS: true, // This is important for fetching cross-origin images
-            scale: 2, // Increase scale for better quality
+            useCORS: true,
+            scale: 2,
         });
         
         const imgData = canvas.toDataURL('image/png');
         
-        // Create PDF
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'px',
@@ -183,10 +181,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   };
 
   const handleDebugCanvas = async () => {
-    setIsDownloading(true); // Use the same loading state for simplicity
-    setShowCanvas(false); // Hide previous canvas
+    setIsDownloading(true);
+    setShowCanvas(false);
     if (canvasContainerRef.current) {
-      canvasContainerRef.current.innerHTML = ''; // Clear previous canvas
+      canvasContainerRef.current.innerHTML = '';
     }
 
     try {
@@ -214,7 +212,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   };
 
   const handleShare = async () => {
-    const shareUrl = window.location.href; // URL to the dashboard
+    const shareUrl = window.location.href;
     const shareText = "Check out my ride ticket for the Independence Day Freedom Ride! You can register here: https://rideregister.web.app";
 
     if (navigator.share) {
