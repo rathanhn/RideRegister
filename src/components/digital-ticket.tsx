@@ -1,6 +1,6 @@
 
 import type { User } from 'firebase/auth';
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -148,10 +148,20 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         if (!ticketElement) {
             throw new Error("Could not find ticket element to download.");
         }
-        
-        // Fetch the CSS content
-        const cssResponse = await fetch('/src/app/globals.css');
-        const cssText = await cssResponse.text();
+
+        // Capture all CSS rules from the document's stylesheets
+        const cssText = Array.from(document.styleSheets)
+            .map(sheet => {
+                try {
+                    return Array.from(sheet.cssRules)
+                        .map(rule => rule.cssText)
+                        .join('');
+                } catch (e) {
+                    console.warn("Could not read stylesheet rules:", e);
+                    return '';
+                }
+            })
+            .join('');
 
         const response = await fetch('/api/generate-pdf', {
             method: 'POST',
