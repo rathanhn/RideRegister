@@ -64,10 +64,10 @@ export function SingleTicket({ registration, riderNumber, userEmail }: SingleTic
             
             <div>
                 <h4 className="font-bold text-2xl">{riderName}</h4>
-                <p className="text-sm text-muted-foreground">{userEmail}</p>
+                <p className="text-sm text-muted-foreground">{riderPhone}</p>
             </div>
             
-            <div className="w-full flex justify-around items-center pt-2">
+             <div className="grid grid-cols-2 gap-x-8 pt-2">
                  <div className="text-center">
                     <p className="font-semibold text-muted-foreground text-xs">Reg. Type</p>
                     <div className="flex items-center gap-1 mt-1 justify-center">
@@ -126,19 +126,43 @@ export function SingleTicket({ registration, riderNumber, userEmail }: SingleTic
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [isShareSupported, setIsShareSupported] = useState(false);
 
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/ticket/${registration.id}`;
-    
+  useEffect(() => {
+    if (navigator.share) {
+      setIsShareSupported(true);
+    }
+  }, []);
+
+  const shareUrl = `${window.location.origin}/ticket/${registration.id}`;
+
+  const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast({ 
         title: 'Link Copied!', 
-        description: 'A shareable link to your ticket has been copied to your clipboard.',
+        description: 'A shareable link to your ticket has been copied.',
         action: <LinkIcon className="text-primary" />,
       });
     } catch (error) {
-       toast({ variant: 'destructive', title: 'Copy Failed', description: 'Could not copy the link to your clipboard.' });
+       toast({ variant: 'destructive', title: 'Copy Failed', description: 'Could not copy the link.' });
+    }
+  };
+
+  const handleWebShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `TeleFun Ride Ticket: ${registration.fullName}`,
+          text: 'Check out my ticket for the TeleFun Independence Day Ride!',
+          url: shareUrl,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        // Toast for share error is optional as user might cancel intentionally
+      }
+    } else {
+        toast({ variant: 'destructive', title: 'Not Supported', description: 'Your browser does not support this share feature.' });
     }
   };
 
@@ -167,10 +191,18 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     <div className="space-y-4">
       {ticketContainer}
       <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
-        <Button onClick={handleShare} variant="outline" className="w-full">
-            <Share2 className="mr-2 h-4 w-4" />
-            Copy Sharable Link
-        </Button>
+        <div className="w-full flex flex-col sm:flex-row gap-2">
+            {isShareSupported && (
+                <Button onClick={handleWebShare} className="w-full">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share Ticket
+                </Button>
+            )}
+            <Button onClick={handleCopyLink} variant="outline" className="w-full">
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Copy Sharable Link
+            </Button>
+        </div>
         
         <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg w-full">
             <div className="flex items-center justify-center">
