@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Phone, Loader2 } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Phone, Loader2, Sparkles } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -226,23 +226,32 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {ticketContainer}
-      <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
-        <div className="w-full flex flex-col sm:flex-row gap-2">
-            {isShareSupported && (
-                <Button onClick={handleWebShare} className="w-full" disabled={isSharing}>
-                    {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4" />}
-                    {isSharing ? 'Preparing...' : 'Share Ticket'}
+      <div className="max-w-xl mx-auto space-y-4">
+         <div className="w-full text-center p-4 border-2 border-dashed border-primary/50 rounded-lg bg-secondary/30 space-y-3">
+             <h4 className="font-bold text-lg flex items-center justify-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Share Your Excitement!
+             </h4>
+             <p className="text-sm text-muted-foreground">
+                Post your ticket on social media and tag <strong className="text-primary">@telefun_</strong> to be featured!
+             </p>
+             <div className="w-full flex flex-col sm:flex-row gap-2 pt-2">
+                {isShareSupported && (
+                    <Button onClick={handleWebShare} className="w-full" disabled={isSharing}>
+                        {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4" />}
+                        {isSharing ? 'Preparing...' : 'Share Ticket Image'}
+                    </Button>
+                )}
+                <Button onClick={handleCopyLink} variant="outline" className="w-full" disabled={isSharing}>
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    Copy Sharable Link
                 </Button>
-            )}
-            <Button onClick={handleCopyLink} variant="outline" className="w-full" disabled={isSharing}>
-                <LinkIcon className="mr-2 h-4 w-4" />
-                Copy Sharable Link
-            </Button>
+            </div>
         </div>
         
-        <div className="text-center text-sm text-muted-foreground mt-2 p-4 border border-dashed rounded-lg w-full">
+        <div className="text-center text-sm text-muted-foreground p-3 border rounded-lg">
             <div className="flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 <p>
