@@ -11,7 +11,8 @@ const rideRules = [
     "Maintain a safe distance from other riders.",
     "No racing or dangerous stunts are allowed.",
     "Follow instructions from event organizers at all times.",
-    "Ensure your bicycle is in good working condition."
+    "Ensure your bicycle is in good working condition.",
+    "Riders are recommended to wear necessary gear like a jacket, shoes, and suitable pants."
 ];
 
 export function RideInfoCard() {
