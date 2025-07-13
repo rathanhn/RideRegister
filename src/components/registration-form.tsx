@@ -226,17 +226,11 @@ export function RegistrationForm() {
 
         if (userCredential) {
             // If the user was existing, we need to create the registration document now with their UID.
-             if (result.existingUser) {
+             if (result.existingUser && result.dataForExistingUser) {
                 const uid = userCredential.user.uid;
-                const { rule1, rule2, rule3, rule4, rule5, rule6, password, confirmPassword, ...dataToSave } = submissionData;
                 const registrationRef = doc(db, "registrations", uid);
-                await setDoc(registrationRef, {
-                    ...dataToSave,
-                    uid: uid,
-                    status: "pending" as const,
-                    createdAt: serverTimestamp(),
-                    consent: true,
-                });
+                // Use the sanitized data returned from the server action
+                await setDoc(registrationRef, { ...result.dataForExistingUser, uid });
                 console.log(`[Client] Registration document created for existing user UID: ${uid}`);
             }
             router.push('/dashboard');

@@ -103,6 +103,25 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
     }
 
     const { email, password, confirmPassword, ...registrationData } = parsed.data;
+    
+    // This is the data we want to save, excluding rules and password info
+    const { rule1, rule2, rule3, rule4, rule5, rule6, ...coreData } = registrationData;
+        
+    const dataToSave: any = {
+      ...coreData,
+      email: email,
+      status: "pending" as const,
+      createdAt: serverTimestamp(),
+      consent: true,
+    };
+    
+    // Remove any keys with undefined values to prevent Firestore errors
+    Object.keys(dataToSave).forEach(key => {
+        if (dataToSave[key] === undefined) {
+            delete dataToSave[key];
+        }
+    });
+
 
     try {
         // Step 1: Create Firebase Auth user
@@ -124,27 +143,9 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
         });
         console.log(`[Server Action] User document created for new user UID: ${uid}`);
         
-        // Step 3: Create registration document in Firestore, ensuring no undefined fields
+        // Step 3: Create registration document in Firestore
         const registrationRef = doc(db, "registrations", uid);
-        const { rule1, rule2, rule3, rule4, rule5, rule6, ...coreData } = registrationData;
-        
-        const dataToSave: any = {
-          ...coreData,
-          email: email,
-          uid: uid,
-          status: "pending" as const,
-          createdAt: serverTimestamp(),
-          consent: true,
-        };
-        
-        // Remove any keys with undefined values
-        Object.keys(dataToSave).forEach(key => {
-            if (dataToSave[key] === undefined) {
-                delete dataToSave[key];
-            }
-        });
-
-        await setDoc(registrationRef, dataToSave);
+        await setDoc(registrationRef, { ...dataToSave, uid });
         console.log(`[Server Action] Registration document created for UID: ${uid}`);
         
         revalidatePath('/dashboard');
@@ -153,11 +154,14 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
             console.warn(`[Server Action] Email ${email} is already in use. Proceeding to create registration for existing user.`);
+            // No new user is created, but we flag it for the client to handle sign-in.
+            // The registration data will be created client-side after sign-in.
             return { 
                 success: true, 
                 message: "Account already exists. We've linked this registration to your account. Logging you in...",
-                uid: null, // No new UID was created, client will need to log in to get it.
-                existingUser: true
+                uid: null, // No new UID was created
+                existingUser: true,
+                dataForExistingUser: dataToSave // Pass the cleaned data back
             };
         }
         
