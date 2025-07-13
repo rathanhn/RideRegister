@@ -23,10 +23,11 @@ import { Loader2, PartyPopper, User, Users, Upload } from "lucide-react";
 import { createAccountAndRegisterRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -107,7 +108,7 @@ const fileToDataUri = (file: File) => {
 export function RegistrationForm() {
   const { toast } = useToast();
   const router = useRouter();
-  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
+  const [signInWithEmailAndPassword, , , signInError] = useSignInWithEmailAndPassword(auth);
   const [sameAsPhone, setSameAsPhone] = useState(false);
   
   const [photoFile1, setPhotoFile1] = useState<File | null>(null);
@@ -191,7 +192,7 @@ export function RegistrationForm() {
             console.log("[Client] Photo 1 uploaded:", finalPhotoUrl1);
         }
 
-        if (photoFile2) {
+        if (registrationType === 'duo' && photoFile2) {
              console.log("[Client] Uploading photo 2...");
             const dataUri = await fileToDataUri(photoFile2);
             const uploadResponse = await fetch('/api/upload', {
@@ -207,28 +208,45 @@ export function RegistrationForm() {
             console.log("[Client] Photo 2 uploaded:", finalPhotoUrl2);
         }
       
-      const submissionData = {
-          ...values,
-          photoURL: finalPhotoUrl1,
-          photoURL2: finalPhotoUrl2,
-      };
+      const submissionData = { ...values, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
 
       console.log("[Client] Calling createAccountAndRegisterRider with data:", submissionData);
       const result = await createAccountAndRegisterRider(submissionData);
       console.log("[Client] Got result from server action:", result);
 
-      if (result.success && result.uid) {
+      if (result.success) {
         toast({
-          title: "Registration Submitted!",
-          description: "We're excited to have you join the ride. Your registration is now pending review.",
+          title: "Success!",
+          description: result.message,
           action: <PartyPopper className="text-primary" />,
         });
-        
-        await signInWithEmailAndPassword(values.email, values.password);
-        router.push('/dashboard');
+
+        // Sign in the user automatically, whether new or existing
+        const userCredential = await signInWithEmailAndPassword(values.email, values.password);
+
+        if (userCredential) {
+            // If the user was existing, we need to create the registration document now with their UID.
+             if (result.existingUser) {
+                const uid = userCredential.user.uid;
+                const { rule1, rule2, rule3, rule4, rule5, rule6, password, confirmPassword, ...dataToSave } = submissionData;
+                const registrationRef = doc(db, "registrations", uid);
+                await setDoc(registrationRef, {
+                    ...dataToSave,
+                    uid: uid,
+                    status: "pending" as const,
+                    createdAt: serverTimestamp(),
+                    consent: true,
+                });
+                console.log(`[Client] Registration document created for existing user UID: ${uid}`);
+            }
+            router.push('/dashboard');
+        } else {
+            // This case might happen if sign-in fails for some reason after registration
+             throw new Error(signInError?.message || "Could not log you in. Please go to the login page.");
+        }
 
       } else {
-        throw new Error(result.message || "An unknown error occurred while saving your registration.");
+        throw new Error(result.message || "An unknown error occurred.");
       }
     } catch (e) {
       console.error("[Client] Error in onSubmit:", e);
@@ -471,3 +489,5 @@ export function RegistrationForm() {
     </Card>
   );
 }
+
+    

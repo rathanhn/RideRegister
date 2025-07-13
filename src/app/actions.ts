@@ -106,13 +106,13 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
 
     try {
         // Step 1: Create Firebase Auth user
-        console.log("[Server Action] Creating Auth user...");
+        console.log("[Server Action] Attempting to create Auth user...");
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         const uid = user.uid;
-        console.log(`[Server Action] Auth user created with UID: ${uid}`);
+        console.log(`[Server Action] New Auth user created with UID: ${uid}`);
 
-        // Step 2: Create user document in Firestore
+        // Step 2: Create user document in Firestore for the new user
         console.log("[Server Action] Creating user document in Firestore...");
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
@@ -122,37 +122,39 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
             photoURL: registrationData.photoURL,
             createdAt: serverTimestamp(),
         });
-        console.log(`[Server Action] User document created for UID: ${uid}`);
-
-        // Step 3: Create registration document in Firestore
-        console.log("[Server Action] Creating registration document in Firestore...");
-        const registrationRef = doc(db, "registrations", uid);
+        console.log(`[Server Action] User document created for new user UID: ${uid}`);
         
+        // Step 3: Create registration document in Firestore
+        const registrationRef = doc(db, "registrations", uid);
         const { rule1, rule2, rule3, rule4, rule5, rule6, ...dataToSave } = registrationData;
-
         await setDoc(registrationRef, {
           ...dataToSave,
           email: email,
           uid: uid,
           status: "pending" as const,
           createdAt: serverTimestamp(),
-          consent: true, // All rules were checked
+          consent: true,
         });
         console.log(`[Server Action] Registration document created for UID: ${uid}`);
         
         revalidatePath('/dashboard');
-
-        console.log("[Server Action] Successfully completed registration process.");
         return { success: true, message: "Registration successful! Your application is pending review.", uid: uid };
 
     } catch (error: any) {
-        console.error("[Server Action] CRITICAL ERROR in registration process: ", error);
-        // We don't have an easy way to roll back auth user creation without admin privileges,
-        // so we just return the error. The user can try logging in and completing registration later if needed.
         if (error.code === 'auth/email-already-in-use') {
-            return { success: false, message: "This email address is already in use. Please log in to register." };
+            console.warn(`[Server Action] Email ${email} is already in use. Proceeding to create registration for existing user.`);
+            // This is not a failure. We will proceed to create the registration for the existing user.
+            // The UID must be determined on the client-side after login.
+            return { 
+                success: true, 
+                message: "Account already exists. We've linked this registration to your account. Logging you in...",
+                uid: null, // No new UID was created, client will need to log in to get it.
+                existingUser: true
+            };
         }
-        return { success: false, message: "Could not create your account or registration. Please try again." };
+        
+        console.error("[Server Action] CRITICAL ERROR in registration process: ", error);
+        return { success: false, message: error.message || "Could not create your account or registration. Please try again." };
     }
 }
 
@@ -568,3 +570,5 @@ export async function sendPasswordResetLink(values: z.infer<typeof forgotPasswor
         return { success: true, message: "If an account exists for this email, a password reset link has been sent." };
     }
 }
+
+    
