@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Registration, AppUser } from '@/lib/types';
@@ -104,16 +104,28 @@ export default function DashboardPage() {
             case 'approved':
                 return <DigitalTicket registration={registrationData} user={user!} />;
             case 'pending':
+                const names = registrationData.registrationType === 'duo' 
+                    ? `${registrationData.fullName} & ${registrationData.fullName2}` 
+                    : registrationData.fullName;
+                const message = `Hi Team Telefun, please review my registration.\n\nName(s): ${names}\nRegistration ID: ${registrationData.id}`;
+                const whatsappUrl = `https://wa.me/916363148287?text=${encodeURIComponent(message)}`;
+
                 return (
                     <Card>
-                        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                            <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center mb-4">
+                        <CardContent className="flex flex-col items-center justify-center p-8 text-center gap-4">
+                            <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center mb-2">
                                 <Clock className="w-12 h-12 text-primary" />
                             </div>
                             <CardTitle className="text-2xl">Registration Pending Review</CardTitle>
                             <CardDescription className="mt-2 max-w-md mx-auto">
                                 Thank you for registering! Your application has been submitted successfully and is now awaiting approval from an event organizer. You will be notified once your status is updated.
                             </CardDescription>
+                            <Button asChild className="mt-4 bg-green-500 hover:bg-green-600 text-white">
+                                <Link href={whatsappUrl} target="_blank">
+                                    <MessageCircle className="mr-2 h-4 w-4" />
+                                    Notify Team Telefun
+                                </Link>
+                            </Button>
                         </CardContent>
                     </Card>
                 );
