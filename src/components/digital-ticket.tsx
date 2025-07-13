@@ -2,14 +2,14 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Sparkles } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Logo from '@/Logo.png';
 
