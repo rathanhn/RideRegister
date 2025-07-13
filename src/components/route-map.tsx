@@ -20,7 +20,7 @@ export function RouteMap() {
             width={1200}
             height={600}
             className="w-full"
-            data-ai-hint="city map"
+            data-ai-hint="route map"
           />
         </div>
       </CardContent>
