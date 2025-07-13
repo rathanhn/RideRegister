@@ -168,7 +168,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     }
 
     try {
-        const canvas = await html2canvas(ticketRef.current, { useCORS: true, backgroundColor: null });
+        const canvas = await html2canvas(ticketRef.current, { 
+            useCORS: true, 
+            backgroundColor: '#09090b', // Explicitly set background color
+        });
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
         
         if (!blob) {
