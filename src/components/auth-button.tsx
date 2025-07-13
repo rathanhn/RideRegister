@@ -105,7 +105,7 @@ export function AuthButton() {
         <Link href="/login">Login</Link>
       </Button>
       <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-        <Link href="/dashboard?view=rider">Register</Link>
+        <Link href="/register">Register</Link>
       </Button>
     </div>
   );

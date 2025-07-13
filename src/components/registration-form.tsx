@@ -19,14 +19,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
-import { Loader2, LogIn, PartyPopper, User, Users, Upload } from "lucide-react";
+import { Loader2, PartyPopper, User, Users, Upload } from "lucide-react";
 import { createAccountAndRegisterRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
 import { auth } from "@/lib/firebase";
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import type { Registration } from "@/lib/types";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -85,10 +85,6 @@ const formSchema = z
   });
 
 
-interface RegistrationFormProps {
-    onSuccess: (registrationData: Registration) => void;
-}
-
 // Helper to convert file to Base64 Data URI
 const fileToDataUri = (file: File) => {
     return new Promise<string>((resolve, reject) => {
@@ -99,9 +95,10 @@ const fileToDataUri = (file: File) => {
     });
 };
 
-export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
+export function RegistrationForm() {
   const { toast } = useToast();
-  const [signInWithEmailAndPassword, , , signInError] = useSignInWithEmailAndPassword(auth);
+  const router = useRouter();
+  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
   const [sameAsPhone, setSameAsPhone] = useState(false);
   
   const [photoFile1, setPhotoFile1] = useState<File | null>(null);
@@ -217,11 +214,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           action: <PartyPopper className="text-primary" />,
         });
         
-        // Automatically log the user in after successful registration
         await signInWithEmailAndPassword(values.email, values.password);
-
-        // No need to call onSuccess, as the dashboard will auto-update on auth change.
-        // Let the redirect handle showing the new state.
+        router.push('/dashboard');
 
       } else {
         throw new Error(result.message || "An unknown error occurred while saving your registration.");

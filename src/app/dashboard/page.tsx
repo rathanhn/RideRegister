@@ -3,16 +3,14 @@
 
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks, Send } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Registration, AppUser } from '@/lib/types';
-import { RegistrationForm } from '@/components/registration-form';
-import { OrganizerAgreementForm } from '@/components/organizer-agreement-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,9 +19,6 @@ import { DashboardProfileCard } from '@/components/dashboard/dashboard-profile-c
 import { RideInfoCard } from '@/components/dashboard/ride-info-card';
 import { DashboardActionsCard } from '@/components/dashboard/dashboard-actions-card';
 import { QnaSection } from '@/components/qna-section';
-
-
-type ViewState = 'rider' | 'organizer' | null;
 
 const DashboardSkeleton = () => (
     <div className="space-y-4">
@@ -43,27 +38,15 @@ const DashboardSkeleton = () => (
 export default function DashboardPage() {
     const [user, loading, error] = useAuthState(auth);
     const router = useRouter();
-    const searchParams = useSearchParams();
     const [registrationData, setRegistrationData] = useState<Registration | null>(null);
     const [userData, setUserData] = useState<AppUser | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
-    const [view, setView] = useState<ViewState>(null);
-    
-    useEffect(() => {
-        const initialView = searchParams.get('view') as ViewState;
-        if (initialView) {
-            setView(initialView);
-        }
-    }, [searchParams]);
 
     useEffect(() => {
         if (loading) return;
         if (!user) {
-            const currentParams = new URLSearchParams(Array.from(searchParams.entries()));
-            const redirectUrl = `/login?${currentParams.toString()}`;
-            console.log(`[Dashboard] User not logged in. Redirecting to: ${redirectUrl}`);
-            router.push(redirectUrl);
+            router.push('/login');
             return;
         }
 
@@ -105,24 +88,10 @@ export default function DashboardPage() {
             unsubscribes.forEach(unsub => unsub());
         };
 
-    }, [user, loading, router, searchParams]);
+    }, [user, loading, router]);
 
-
-    const handleRegistrationSuccess = (newData: Registration) => {
-        setRegistrationData(newData);
-        setView(null);
-    }
-    
-    const handleOrganizerRequestSuccess = (newUserData: AppUser) => {
-        setUserData(newUserData);
-        setView(null);
-    }
-    
     const getRegistrationStatusContent = () => {
         if (!registrationData) return null;
-
-        const notifyText = `Hi Telefun, I have registered for the ride. My details are:\nName: ${registrationData.fullName}\nRegistration ID: ${registrationData.id}`;
-        const whatsappUrl = `https://wa.me/916363148287?text=${encodeURIComponent(notifyText)}`;
 
         switch (registrationData.status) {
             case 'approved':
@@ -135,17 +104,9 @@ export default function DashboardPage() {
                                 <Clock className="text-primary"/> Registration Pending
                             </CardTitle>
                             <CardDescription>
-                                Your registration is being reviewed. For faster approval, you can notify us.
+                                Your registration is under review. You will be notified upon approval.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                             <Button asChild>
-                                <Link href={whatsappUrl} target="_blank">
-                                    <Send className="w-4 h-4 mr-2" />
-                                    Notify Telefun via WhatsApp
-                                </Link>
-                            </Button>
-                        </CardContent>
                     </Card>
                 );
             case 'rejected':
@@ -192,33 +153,23 @@ export default function DashboardPage() {
         }
     }
 
-
     const renderContent = () => {
-        // If user is not registered and wants to register, show the form
-        if (!registrationData && view === 'rider') return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
-
-        if (view === 'organizer') return <OrganizerAgreementForm onSuccess={handleOrganizerRequestSuccess} />;
-
         if (!registrationData) {
              return (
                 <Card>
                     <CardHeader>
                         <CardTitle>Welcome to the Ride!</CardTitle>
                         <CardDescription>
-                            How would you like to participate? Register as a rider or volunteer as an organizer.
+                            You're logged in, but you haven't registered for the ride yet.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <button onClick={() => setView('rider')} className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group flex flex-col items-center justify-center h-full text-center">
-                            <Ticket className="h-8 w-8 text-primary mb-4" />
-                            <h3 className="font-semibold">Register as a Rider</h3>
-                            <p className="text-sm text-muted-foreground mt-1">Join the ride and get your digital ticket.</p>
-                        </button>
-                         <button onClick={() => setView('organizer')} className="relative rounded-lg border bg-background p-6 hover:bg-accent hover:text-accent-foreground group flex flex-col items-center justify-center h-full text-center">
-                            <Shield className="h-8 w-8 text-primary mb-4" />
-                            <h3 className="font-semibold">Request Organizer Access</h3>
-                            <p className="text-sm text-muted-foreground mt-1">Help manage the event as a volunteer.</p>
-                        </button>
+                    <CardContent>
+                         <Button asChild>
+                            <Link href="/register">
+                                <Ticket className="h-4 w-4 mr-2" />
+                                Register as a Rider
+                            </Link>
+                        </Button>
                     </CardContent>
                 </Card>
             );

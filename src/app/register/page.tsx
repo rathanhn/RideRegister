@@ -1,0 +1,16 @@
+import { RegistrationForm } from '@/components/registration-form';
+import { Header } from '@/components/header';
+import Link from 'next/link';
+
+export default function RegisterPage() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
+      <div className="flex-grow flex items-center justify-center p-4">
+         <div className="w-full max-w-2xl mx-auto py-8">
+            <RegistrationForm />
+         </div>
+      </div>
+    </div>
+  );
+}

@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { auth, db } from '@/lib/firebase';
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getRedirectResult, GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
 
@@ -41,7 +41,6 @@ const GoogleIcon = () => (
 export function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [
     signInWithEmailAndPassword,
     user,
@@ -52,8 +51,6 @@ export function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
   
-  const intendedView = searchParams.get('view');
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -65,9 +62,7 @@ export function LoginForm() {
   const isSubmitting = loading || googleLoading || isProcessingRedirect;
 
   const redirectToDashboard = () => {
-      const redirectUrl = intendedView ? `/dashboard?view=${intendedView}` : '/dashboard';
-      console.log(`[Login] Successful login. Redirecting to: ${redirectUrl}`);
-      router.push(redirectUrl);
+      router.push('/dashboard');
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -78,7 +73,7 @@ export function LoginForm() {
     if (user) {
       redirectToDashboard();
     }
-  }, [user, router, intendedView]);
+  }, [user]);
   
   useEffect(() => {
     const processRedirectResult = async () => {
@@ -98,7 +93,6 @@ export function LoginForm() {
                   createdAt: serverTimestamp(),
               });
           }
-          // Redirect handled by the `user` state change useEffect
         }
       } catch (error: any) {
         console.error("Error processing redirect result:", error);
@@ -112,7 +106,7 @@ export function LoginForm() {
       }
     };
     processRedirectResult();
-  }, [router, toast]);
+  }, []);
   
   useEffect(() => {
     if (error) {

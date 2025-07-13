@@ -19,7 +19,7 @@ export default function LoginPage() {
                 <Separator className="my-4" />
                 <p>
                     Don&apos;t have an account?{' '}
-                    <Link href="/dashboard?view=rider" className="font-semibold text-primary hover:underline">
+                    <Link href="/register" className="font-semibold text-primary hover:underline">
                         Create an account & Register
                     </Link>
                 </p>
