@@ -208,12 +208,19 @@ export async function deleteRegistration(values: z.infer<typeof deleteRegistrati
       return { success: false, message: "Invalid data provided." };
     }
 
+    const { registrationId } = parsed.data;
+    
+    // Note: Deleting the Firebase Auth user requires Admin SDK,
+    // which should be done in a secure backend environment (e.g., Cloud Function).
+    // Here, we'll delete the associated Firestore data.
     try {
-      await deleteDoc(doc(db, "registrations", values.registrationId));
-      return { success: true, message: "Registration has been deleted." };
+      await deleteDoc(doc(db, "registrations", registrationId));
+      await deleteDoc(doc(db, "users", registrationId));
+      // You would typically trigger a function here to delete the auth user.
+      return { success: true, message: "Registration and user data have been deleted." };
     } catch (error) {
       console.error("Error deleting registration:", error);
-      return { success: false, message: "Failed to delete registration." };
+      return { success: false, message: "Failed to delete registration data." };
     }
 }
 

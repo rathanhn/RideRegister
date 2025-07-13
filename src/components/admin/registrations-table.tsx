@@ -98,7 +98,7 @@ export function RegistrationsTable() {
         // Approve cancellation -> delete registration
         const result = await deleteRegistration({ registrationId: id, adminId: user.uid });
         if (result.success) {
-            toast({ title: "Cancellation Approved", description: "The registration has been deleted." });
+            toast({ title: "Cancellation Approved", description: "The registration and user data have been deleted." });
         } else {
             toast({ variant: "destructive", title: "Error", description: result.message });
         }
@@ -223,16 +223,34 @@ export function RegistrationsTable() {
                                     </div>
                                 ) : (
                                     <div className="flex justify-end gap-2">
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="h-8 bg-green-50 hover:bg-green-100 text-green-700"
-                                            onClick={() => handleCancellation(reg.id, true)}
-                                            disabled={isUpdating === reg.id}
-                                        >
-                                            {isUpdating === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
-                                            Approve
-                                        </Button>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                           <Button 
+                                              variant="outline" 
+                                              size="sm" 
+                                              className="h-8 bg-green-50 hover:bg-green-100 text-green-700"
+                                              disabled={isUpdating === reg.id}
+                                          >
+                                              {isUpdating === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
+                                              Approve
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Approve Cancellation?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will permanently delete the registration and user data. This action cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleCancellation(reg.id, true)} className="bg-destructive hover:bg-destructive/90">
+                                                    Yes, Delete Registration
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                        
                                         <Button 
                                             variant="outline" 
                                             size="sm" 
