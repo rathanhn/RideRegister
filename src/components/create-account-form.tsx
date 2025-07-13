@@ -83,7 +83,7 @@ export function CreateAccountForm() {
               createdAt: serverTimestamp(),
             });
           }
-          router.push('/dashboard');
+          router.push('/dashboard?view=rider');
         }
       } catch (error: any) {
         console.error("Error processing redirect result:", error);
@@ -116,7 +116,7 @@ export function CreateAccountForm() {
         
         await signInWithEmailAndPassword(values.email, values.password);
         form.reset();
-        router.push('/dashboard');
+        router.push('/dashboard?view=rider');
       } else {
         throw new Error(result.message || "An unknown error occurred.");
       }

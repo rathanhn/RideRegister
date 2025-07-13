@@ -3,7 +3,7 @@
 
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { Header } from '@/components/header';
@@ -43,11 +43,19 @@ const DashboardSkeleton = () => (
 export default function DashboardPage() {
     const [user, loading, error] = useAuthState(auth);
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [registrationData, setRegistrationData] = useState<Registration | null>(null);
     const [userData, setUserData] = useState<AppUser | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [view, setView] = useState<ViewState>(null);
+    
+    useEffect(() => {
+        const initialView = searchParams.get('view') as ViewState;
+        if (initialView) {
+            setView(initialView);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (loading) return;

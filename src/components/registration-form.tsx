@@ -32,6 +32,15 @@ const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
 );
 
+const rideRules = [
+    { id: 'rule1', text: "A helmet is compulsory for all riders." },
+    { id: 'rule2', text: "Obey all traffic laws and signals." },
+    { id: 'rule3', text: "Maintain a safe distance from other riders." },
+    { id: 'rule4', text: "No racing or dangerous stunts are allowed." },
+    { id: 'rule5', text: "Follow instructions from event organizers at all times." },
+    { id: 'rule6', text: "Ensure your bicycle is in good working condition." }
+];
+
 const formSchema = z
   .object({
     registrationType: z.enum(["solo", "duo"], {
@@ -48,10 +57,15 @@ const formSchema = z
     age2: z.coerce.number().optional(),
     phoneNumber2: z.string().optional(),
     photoURL2: z.string().url().optional(),
+    
+    // Individual rule consents
+    rule1: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule2: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule3: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule4: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule5: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule6: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
 
-    consent: z.boolean().refine((val) => val === true, {
-      message: "You must agree to the rules.",
-    }),
   })
   .superRefine((data, ctx) => {
     if (data.registrationType === "duo") {
@@ -67,14 +81,6 @@ const formSchema = z
     }
   });
 
-const rideRules = [
-    "A helmet is compulsory for all riders.",
-    "Obey all traffic laws and signals.",
-    "Maintain a safe distance from other riders.",
-    "No racing or dangerous stunts are allowed.",
-    "Follow instructions from event organizers at all times.",
-    "Ensure your bicycle is in good working condition."
-];
 
 interface RegistrationFormProps {
     onSuccess: (registrationData: Registration) => void;
@@ -115,7 +121,12 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       age: 18,
       phoneNumber: "",
       whatsappNumber: "",
-      consent: false,
+      rule1: false,
+      rule2: false,
+      rule3: false,
+      rule4: false,
+      rule5: false,
+      rule6: false,
     },
   });
 
@@ -199,12 +210,15 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             console.log("[Client] Photo 2 uploaded:", finalPhotoUrl2);
         }
       
+      const { rule1, rule2, rule3, rule4, rule5, rule6, ...restOfValues } = values;
+
       const submissionData = {
-          ...values,
+          ...restOfValues,
           uid: user.uid,
           email: user.email || 'no-email@provided.com',
           photoURL: finalPhotoUrl1,
           photoURL2: finalPhotoUrl2,
+          consent: true, // Legacy consent for backend compatibility if needed
       };
 
       console.log("[Client] Calling registerRider with data:", submissionData);
@@ -220,9 +234,16 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         
         const newRegistrationData: Registration = {
             id: user.uid,
-            ...values,
+            registrationType: submissionData.registrationType,
+            fullName: submissionData.fullName,
+            age: submissionData.age,
+            phoneNumber: submissionData.phoneNumber,
+            whatsappNumber: submissionData.whatsappNumber,
             photoURL: finalPhotoUrl1,
             photoURL2: finalPhotoUrl2,
+            fullName2: submissionData.fullName2,
+            age2: submissionData.age2,
+            phoneNumber2: submissionData.phoneNumber2,
             status: 'pending',
             createdAt: new Date(), 
             rider1CheckedIn: false,
@@ -396,24 +417,32 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
 
             <div className="space-y-4">
                 <div className="space-y-2 rounded-md border p-4">
-                    <h4 className="font-medium text-base">General Ride Rules</h4>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                        {rideRules.map(rule => <li key={rule}>{rule}</li>)}
-                    </ul>
+                    <h4 className="font-medium text-base">General Ride Rules & Consent</h4>
+                     <p className="text-sm text-muted-foreground">Please read and agree to all rules to continue.</p>
+                     <div className="space-y-4 pt-2">
+                        {rideRules.map((rule) => (
+                             <FormField
+                                key={rule.id}
+                                control={form.control}
+                                name={rule.id as 'rule1'}
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                        <FormLabel className="font-normal">{rule.text}</FormLabel>
+                                        <FormMessage />
+                                    </div>
+                                    </FormItem>
+                                )}
+                                />
+                        ))}
+                    </div>
                 </div>
-                 <FormField
-                  control={form.control}
-                  name="consent"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
-                      <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>I agree to abide by the ride rules and safety measures.</FormLabel>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isProcessing}>
               {(isSubmitting || isProcessing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
