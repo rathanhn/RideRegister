@@ -19,12 +19,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
-import { Loader2, PartyPopper, User, Users, Upload, X } from "lucide-react";
-import { registerRider } from "@/app/actions";
+import { Loader2, LogIn, PartyPopper, User, Users, Upload } from "lucide-react";
+import { createAccountAndRegisterRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
 import { auth } from "@/lib/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import type { Registration } from "@/lib/types";
 import Image from "next/image";
 
@@ -43,6 +43,9 @@ const rideRules = [
 
 const formSchema = z
   .object({
+    email: z.string().email("A valid email is required."),
+    password: z.string().min(6, "Password must be at least 6 characters."),
+    
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
     }),
@@ -98,7 +101,7 @@ const fileToDataUri = (file: File) => {
 
 export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const { toast } = useToast();
-  const [user, loading] = useAuthState(auth);
+  const [signInWithEmailAndPassword, , , signInError] = useSignInWithEmailAndPassword(auth);
   const [sameAsPhone, setSameAsPhone] = useState(false);
   
   const [photoFile1, setPhotoFile1] = useState<File | null>(null);
@@ -117,6 +120,8 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     mode: "onChange",
     defaultValues: {
       registrationType: "solo",
+      email: "",
+      password: "",
       fullName: "",
       age: 18,
       phoneNumber: "",
@@ -139,16 +144,6 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       form.setValue("whatsappNumber", phoneNumber, { shouldValidate: true });
     }
   }, [sameAsPhone, phoneNumber, form]);
-
-  useEffect(() => {
-    if (user) {
-        form.setValue("fullName", user.displayName || "");
-        if (user.photoURL) {
-            form.setValue("photoURL", user.photoURL);
-            setPhotoPreview1(user.photoURL);
-        }
-    }
-  }, [user, form]);
   
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
     const file = event.target.files?.[0];
@@ -166,16 +161,11 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("[Client] Form submitted. Values:", values);
-    if (!user) {
-        toast({ variant: "destructive", title: "Error", description: "You must be logged in to register."});
-        console.error("[Client] User not logged in during submission.");
-        return;
-    }
     
     setIsProcessing(true);
 
     try {
-        let finalPhotoUrl1 = user.photoURL;
+        let finalPhotoUrl1 = undefined;
         let finalPhotoUrl2 = undefined;
 
         if (photoFile1) {
@@ -210,48 +200,29 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             console.log("[Client] Photo 2 uploaded:", finalPhotoUrl2);
         }
       
-      const { rule1, rule2, rule3, rule4, rule5, rule6, ...restOfValues } = values;
-
       const submissionData = {
-          ...restOfValues,
-          uid: user.uid,
-          email: user.email || 'no-email@provided.com',
+          ...values,
           photoURL: finalPhotoUrl1,
           photoURL2: finalPhotoUrl2,
-          consent: true, // Legacy consent for backend compatibility if needed
       };
 
-      console.log("[Client] Calling registerRider with data:", submissionData);
-      const result = await registerRider(submissionData);
+      console.log("[Client] Calling createAccountAndRegisterRider with data:", submissionData);
+      const result = await createAccountAndRegisterRider(submissionData);
       console.log("[Client] Got result from server action:", result);
 
-      if (result.success) {
+      if (result.success && result.uid) {
         toast({
           title: "Registration Submitted!",
           description: "We're excited to have you join the ride. Your registration is now pending review.",
           action: <PartyPopper className="text-primary" />,
         });
         
-        const newRegistrationData: Registration = {
-            id: user.uid,
-            registrationType: submissionData.registrationType,
-            fullName: submissionData.fullName,
-            age: submissionData.age,
-            phoneNumber: submissionData.phoneNumber,
-            whatsappNumber: submissionData.whatsappNumber,
-            photoURL: finalPhotoUrl1,
-            photoURL2: finalPhotoUrl2,
-            fullName2: submissionData.fullName2,
-            age2: submissionData.age2,
-            phoneNumber2: submissionData.phoneNumber2,
-            status: 'pending',
-            createdAt: new Date(), 
-            rider1CheckedIn: false,
-            rider2CheckedIn: false,
-            rider1Finished: false,
-            rider2Finished: false,
-        }
-        onSuccess(newRegistrationData);
+        // Automatically log the user in after successful registration
+        await signInWithEmailAndPassword(values.email, values.password);
+
+        // No need to call onSuccess, as the dashboard will auto-update on auth change.
+        // Let the redirect handle showing the new state.
+
       } else {
         throw new Error(result.message || "An unknown error occurred while saving your registration.");
       }
@@ -267,23 +238,50 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     }
   }
 
-  if (loading) {
-    return (
-        <div className="flex justify-center items-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    )
-  }
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="font-headline text-3xl">Ride Application Form</CardTitle>
-        <CardDescription>Fill in your details below to join the ride. Event Date: 15th August.</CardDescription>
+        <CardTitle className="font-headline text-3xl">Create Account & Register</CardTitle>
+        <CardDescription>Fill in your details below to join the ride. Already have an account? <a href="/login" className="text-primary hover:underline">Login here</a>.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            
+            <h3 className="text-lg font-medium text-primary">Account Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                        <Input placeholder="you@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                        <Input type="password" placeholder="Min. 6 characters" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+            
+            <Separator />
+            <h3 className="text-lg font-medium text-primary">Ride & Rider Details</h3>
+            
             <FormField
               control={form.control}
               name="registrationType"
@@ -312,7 +310,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             />
             
             <Separator />
-            <h3 className="text-lg font-medium text-primary">Rider 1 Information</h3>
+            <h3 className="text-lg font-medium">Rider 1 Information</h3>
             
             <FormItem>
               <FormLabel>Profile Photo (Rider 1)</FormLabel>
@@ -337,7 +335,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                       />
                   </div>
               </FormControl>
-              <FormDescription>Upload a clear photo. If not provided, your Gmail photo will be used.</FormDescription>
+              <FormDescription>Upload a clear photo. This will be on your ticket.</FormDescription>
               <FormMessage />
             </FormItem>
 
@@ -380,7 +378,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             {registrationType === "duo" && (
                 <>
                     <Separator />
-                    <h3 className="text-lg font-medium text-primary">Rider 2 Information</h3>
+                    <h3 className="text-lg font-medium">Rider 2 Information</h3>
                      <FormItem>
                         <FormLabel>Profile Photo (Rider 2)</FormLabel>
                         <FormControl>
@@ -446,7 +444,7 @@ export function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isProcessing}>
               {(isSubmitting || isProcessing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isProcessing ? "Submitting..." : "Submit Application"}
+              {isProcessing ? "Submitting..." : "Create Account & Register"}
             </Button>
           </form>
         </Form>

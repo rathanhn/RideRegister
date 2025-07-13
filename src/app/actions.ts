@@ -8,6 +8,8 @@ import type { UserRole } from "./lib/types";
 import { auth } from "@/lib/firebase";
 import { headers } from "next/headers";
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { revalidatePath } from "next/cache";
+
 
 // Helper to get a user's role
 async function getUserRole(uid: string): Promise<UserRole> {
@@ -21,59 +23,14 @@ const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
 );
 
-// Schema for the account creation
-const createAccountSchema = z.object({
-  email: z.string().email("Invalid email address."),
-  password: z.string().min(6, "Password must be at least 6 characters."),
-  confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"]
-});
-
-
-// Server action to create a user. This will be called from the new CreateAccountForm
-export async function createUser(values: z.infer<typeof createAccountSchema>) {
-    const parsed = createAccountSchema.safeParse(values);
-    if (!parsed.success) {
-        return { success: false, message: "Invalid data provided." };
-    }
-    
-    try {
-        const userCredential = await createUserWithEmailAndPassword(auth, parsed.data.email, parsed.data.password);
-        const user = userCredential.user;
-
-        // Create user document in Firestore
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
-
-        if (!userDoc.exists()) {
-             await setDoc(userRef, {
-                email: user.email,
-                displayName: user.displayName || user.email?.split('@')[0] || "New User",
-                role: 'user', 
-                photoURL: user.photoURL,
-                createdAt: serverTimestamp(),
-            });
-        }
-
-        return { success: true, message: "Account created successfully!", uid: user.uid };
-    } catch (error: any) {
-        console.error("Error creating user:", error);
-        if (error.code === 'auth/email-already-in-use') {
-            return { success: false, message: "This email address is already in use." };
-        }
-        return { success: false, message: "Could not create account. Please try again." };
-    }
-}
-
 
 // The schema for the ride registration form
 // It now includes uid and email which are passed from the client
 const registrationFormSchema = z
   .object({
-    uid: z.string().min(1, "User ID is required."),
     email: z.string().email("A valid email is required."),
+    password: z.string().min(6, "Password must be at least 6 characters."),
+
     // Rider 1
     fullName: z.string().min(2, "Full name must be at least 2 characters."),
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
@@ -87,9 +44,14 @@ const registrationFormSchema = z
     phoneNumber2: z.string().optional(),
     photoURL2: z.string().url().optional(),
     
-    consent: z.boolean().refine((val) => val === true, {
-      message: "You must agree to the rules.",
-    }),
+    // Individual rule consents
+    rule1: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule2: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule3: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule4: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule5: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule6: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
     }),
@@ -122,61 +84,67 @@ const registrationFormSchema = z
 
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
-export async function registerRider(values: RegistrationInput) {
-    console.log("[Server Action] registerRider invoked.");
-    
-    try {
-        console.log("[Server Action] Validating data...");
-        const parsed = registrationFormSchema.safeParse(values);
-        
-        if (!parsed.success) {
-            console.error("[Server Action] Validation Errors:", parsed.error.flatten());
-            return { success: false, message: "Invalid data provided." };
-        }
-      
-        const { uid, email, ...registrationData } = parsed.data;
-        console.log(`[Server Action] Registering for UID: ${uid}`);
-        
-        const registrationRef = doc(db, "registrations", uid);
-        const userRef = doc(db, "users", uid);
+export async function createAccountAndRegisterRider(values: RegistrationInput) {
+    console.log("[Server Action] createAccountAndRegisterRider invoked.");
 
-        const dataToSave = {
-          ...registrationData,
+    const parsed = registrationFormSchema.safeParse(values);
+    if (!parsed.success) {
+        console.error("[Server Action] Validation Errors:", parsed.error.flatten());
+        return { success: false, message: "Invalid data provided." };
+    }
+
+    const { email, password, ...registrationData } = parsed.data;
+
+    try {
+        // Step 1: Create Firebase Auth user
+        console.log("[Server Action] Creating Auth user...");
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const uid = user.uid;
+        console.log(`[Server Action] Auth user created with UID: ${uid}`);
+
+        // Step 2: Create user document in Firestore
+        console.log("[Server Action] Creating user document in Firestore...");
+        const userRef = doc(db, "users", uid);
+        await setDoc(userRef, {
+            email: user.email,
+            displayName: registrationData.fullName,
+            role: 'user', 
+            photoURL: registrationData.photoURL,
+            createdAt: serverTimestamp(),
+        });
+        console.log(`[Server Action] User document created for UID: ${uid}`);
+
+        // Step 3: Create registration document in Firestore
+        console.log("[Server Action] Creating registration document in Firestore...");
+        const registrationRef = doc(db, "registrations", uid);
+        
+        const { rule1, rule2, rule3, rule4, rule5, rule6, ...dataToSave } = registrationData;
+
+        await setDoc(registrationRef, {
+          ...dataToSave,
           email: email,
           uid: uid,
           status: "pending" as const,
           createdAt: serverTimestamp(),
-        };
-        
-        console.log("[Server Action] Saving registration document to Firestore...");
-        await setDoc(registrationRef, dataToSave);
-        console.log(`[Server Action] Registration document created for UID: ${uid}`);
-
-        // This is a non-critical update. If it fails, the registration is still saved.
-        await updateDoc(userRef, { 
-            displayName: registrationData.fullName,
-            photoURL: registrationData.photoURL
-        }).catch(err => {
-            console.error(`[Server Action] Non-critical error updating user profile for UID ${uid}:`, err);
+          consent: true, // All rules were checked
         });
-        console.log(`[Server Action] User display name and photo updated for UID: ${uid}`);
+        console.log(`[Server Action] Registration document created for UID: ${uid}`);
+        
+        revalidatePath('/dashboard');
 
         console.log("[Server Action] Successfully completed registration process.");
-        return { success: true, message: "Registration successful! Your application is pending review." };
+        return { success: true, message: "Registration successful! Your application is pending review.", uid: uid };
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("[Server Action] CRITICAL ERROR in registration process: ", error);
-        return { success: false, message: "Could not save your registration. Please try again." };
+        // We don't have an easy way to roll back auth user creation without admin privileges,
+        // so we just return the error. The user can try logging in and completing registration later if needed.
+        if (error.code === 'auth/email-already-in-use') {
+            return { success: false, message: "This email address is already in use. Please log in to register." };
+        }
+        return { success: false, message: "Could not create your account or registration. Please try again." };
     }
-}
-
-
-// This action is now only used for one-off photo uploads if needed elsewhere,
-// but not directly in the main registration flow.
-export async function uploadPhoto(formData: FormData) {
-  // This function is no longer the primary path for registration uploads.
-  // It can be kept for other potential uses or removed if not needed.
-  return { success: false, message: 'This upload method is deprecated.' };
 }
 
 

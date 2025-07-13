@@ -29,7 +29,7 @@ export function Hero() {
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button asChild size="lg">
-                        <Link href="/register">Register Now</Link>
+                        <Link href="/dashboard?view=rider">Register Now</Link>
                     </Button>
                     <Button asChild variant="outline" size="lg">
                         <Link href="/login">Check Status / Login</Link>

@@ -60,7 +60,12 @@ export default function DashboardPage() {
     useEffect(() => {
         if (loading) return;
         if (!user) {
-            router.push('/login');
+            // If user wants to register, redirect to login but keep the view intent
+            if (searchParams.get('view') === 'rider') {
+                 router.push('/login');
+            } else {
+                 router.push('/login');
+            }
             return;
         }
 
@@ -101,7 +106,7 @@ export default function DashboardPage() {
             unsubscribes.forEach(unsub => unsub());
         };
 
-    }, [user, loading, router]);
+    }, [user, loading, router, searchParams]);
 
 
     const handleRegistrationSuccess = (newData: Registration) => {
@@ -177,7 +182,9 @@ export default function DashboardPage() {
 
 
     const renderContent = () => {
-        if (view === 'rider') return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
+        // If user is not registered and wants to register, show the form
+        if (!registrationData && view === 'rider') return <RegistrationForm onSuccess={handleRegistrationSuccess} />;
+
         if (view === 'organizer') return <OrganizerAgreementForm onSuccess={handleOrganizerRequestSuccess} />;
 
         if (!registrationData) {
