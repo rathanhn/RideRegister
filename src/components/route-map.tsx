@@ -12,7 +12,7 @@ export function RouteMap() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground mb-4">The approximate route for the Independence Day ride. The final route will be confirmed on the event day.</p>
+        <p className="text-muted-foreground mb-4">The ride will start from Telefun Mobiles in Madikeri and go to Nisargadhama in Kushalnagar. The final route will be confirmed on the event day.</p>
         <div className="overflow-hidden rounded-lg border">
           <Image
             src="https://placehold.co/1200x600.png"
