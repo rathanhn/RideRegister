@@ -11,6 +11,7 @@ import { Hero } from "@/components/hero";
 import { Faq } from "@/components/faq";
 import { QnaSection } from "@/components/qna-section";
 import { RegisteredRiders } from "@/components/registered-riders";
+import Link from "next/link";
 
 export default function Home() {
   const rideDate = new Date("2025-08-15T06:00:00");
@@ -49,6 +50,7 @@ export default function Home() {
       </main>
       <footer className="text-center p-4 text-muted-foreground text-sm">
         <p>&copy; {new Date().getFullYear()} TeleFun Mobile. All Rights Reserved.</p>
+         <p>Follow us on <Link href="https://www.instagram.com/telefun_" target="_blank" className="text-primary hover:underline">Instagram</Link></p>
       </footer>
     </div>
   );

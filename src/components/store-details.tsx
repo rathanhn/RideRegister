@@ -8,8 +8,28 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Instagram } from "lucide-react";
 import Logo from "@/Logo.png";
+
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        {...props}
+    >
+        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+    </svg>
+)
+
 
 export function StoreDetails() {
   return (
@@ -34,11 +54,18 @@ export function StoreDetails() {
         <CardDescription className="text-sm">
             Your One-Stop Mobile Shop for Apple products, smartphones, repairs, smartwatches & accessories.
         </CardDescription>
-        <Button asChild className="w-full bg-green-500 hover:bg-green-600">
-            <Link href="https://wa.me/916363148287" target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="mr-2 h-4 w-4" /> Connect on WhatsApp
-            </Link>
-        </Button>
+        <div className="w-full space-y-2">
+            <Button asChild className="w-full bg-green-500 hover:bg-green-600">
+                <Link href="https://wa.me/916363148287" target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="mr-2 h-4 w-4" /> Connect on WhatsApp
+                </Link>
+            </Button>
+             <Button asChild variant="outline" className="w-full">
+                <Link href="https://www.instagram.com/telefun_" target="_blank" rel="noopener noreferrer">
+                    <InstagramIcon className="mr-2 h-4 w-4" /> Follow us on Instagram
+                </Link>
+            </Button>
+        </div>
       </CardContent>
     </Card>
   );
