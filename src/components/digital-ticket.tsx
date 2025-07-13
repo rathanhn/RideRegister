@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -91,32 +91,6 @@ export function SingleTicket({ registration, riderNumber, userEmail }: SingleTic
              <div className="mt-1 flex flex-col items-center gap-1">
                 <p className="text-xs text-muted-foreground">Reg. ID</p>
                 <p className="font-mono text-sm font-bold tracking-tighter">{registration.id.substring(0, 10).toUpperCase()}</p>
-            </div>
-        </div>
-
-        <div className="bg-muted/10 p-4 border-t border-white/10 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3 p-3 bg-secondary/10 rounded-lg">
-                    <Calendar className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                        <p className="font-semibold">Date</p>
-                        <p className="text-sm text-muted-foreground">August 15, 2025</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-secondary/10 rounded-lg">
-                    <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                        <p className="font-semibold">Time</p>
-                        <p className="text-sm text-muted-foreground">6:00 AM Assembly</p>
-                    </div>
-                </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-secondary/10 rounded-lg">
-                <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                <div>
-                    <p className="font-semibold">Location</p>
-                    <p className="text-sm text-muted-foreground">Telefun Mobiles, Mahadevpet, Madikeri</p>
-                </div>
             </div>
         </div>
       </div>
