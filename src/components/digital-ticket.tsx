@@ -67,6 +67,21 @@ export function SingleTicket({ registration, riderNumber, userEmail }: SingleTic
                 <h4 className="font-bold text-2xl">{riderName}</h4>
                 <p className="text-sm text-muted-foreground">{riderPhone}</p>
             </div>
+
+             <div className="w-full grid grid-cols-3 gap-2 text-center text-xs py-2 border-y border-white/10">
+                <div className="flex flex-col items-center gap-1">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <span className="font-semibold">Aug 15, 2025</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span className="font-semibold">6:00 AM</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    <span className="font-semibold">Madikeri</span>
+                </div>
+            </div>
             
              <div className="grid grid-cols-2 gap-x-8 pt-2">
                  <div className="text-center">
