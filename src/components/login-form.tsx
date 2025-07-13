@@ -65,11 +65,9 @@ export function LoginForm() {
   const isSubmitting = loading || googleLoading || isProcessingRedirect;
 
   const redirectToDashboard = () => {
-      if (intendedView === 'rider') {
-          router.push('/dashboard?view=rider');
-      } else {
-          router.push('/dashboard');
-      }
+      const redirectUrl = intendedView ? `/dashboard?view=${intendedView}` : '/dashboard';
+      console.log(`[Login] Successful login. Redirecting to: ${redirectUrl}`);
+      router.push(redirectUrl);
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {

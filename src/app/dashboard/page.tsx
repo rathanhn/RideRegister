@@ -61,10 +61,13 @@ export default function DashboardPage() {
         if (loading) return;
         if (!user) {
             const currentParams = new URLSearchParams(Array.from(searchParams.entries()));
-            router.push(`/login?${currentParams.toString()}`);
+            const redirectUrl = `/login?${currentParams.toString()}`;
+            console.log(`[Dashboard] User not logged in. Redirecting to: ${redirectUrl}`);
+            router.push(redirectUrl);
             return;
         }
 
+        console.log("[Dashboard] User is logged in. Fetching data...");
         const unsubscribes: (() => void)[] = [];
 
         const fetchData = async () => {
