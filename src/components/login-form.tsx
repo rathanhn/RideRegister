@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { auth, db } from '@/lib/firebase';
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getRedirectResult, GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
 
@@ -41,6 +41,7 @@ const GoogleIcon = () => (
 export function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [
     signInWithEmailAndPassword,
     user,
@@ -50,6 +51,8 @@ export function LoginForm() {
   
   const [googleLoading, setGoogleLoading] = useState(false);
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  
+  const intendedView = searchParams.get('view');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,15 +64,23 @@ export function LoginForm() {
 
   const isSubmitting = loading || googleLoading || isProcessingRedirect;
 
+  const redirectToDashboard = () => {
+      if (intendedView === 'rider') {
+          router.push('/dashboard?view=rider');
+      } else {
+          router.push('/dashboard');
+      }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     await signInWithEmailAndPassword(values.email, values.password);
   }
 
   useEffect(() => {
     if (user) {
-      router.push('/dashboard');
+      redirectToDashboard();
     }
-  }, [user, router]);
+  }, [user, router, intendedView]);
   
   useEffect(() => {
     const processRedirectResult = async () => {
@@ -89,7 +100,7 @@ export function LoginForm() {
                   createdAt: serverTimestamp(),
               });
           }
-          router.push('/dashboard');
+          // Redirect handled by the `user` state change useEffect
         }
       } catch (error: any) {
         console.error("Error processing redirect result:", error);

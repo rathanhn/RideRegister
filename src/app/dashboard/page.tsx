@@ -60,13 +60,10 @@ export default function DashboardPage() {
     useEffect(() => {
         if (loading) return;
         if (!user) {
-            // If user wants to register, redirect to login but keep the view intent
-            const intendedView = searchParams.get('view');
-            if (intendedView === 'rider') {
-                 router.push('/login');
-            } else {
-                 router.push('/login');
-            }
+            // Redirect to login, preserving the 'view' query param in the URL
+            // for the login page to handle.
+            const currentParams = new URLSearchParams(Array.from(searchParams.entries()));
+            router.push(`/login?${currentParams.toString()}`);
             return;
         }
 
