@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks, MessageCircle } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks, MessageCircle, Instagram } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Registration, AppUser } from '@/lib/types';
@@ -223,6 +223,9 @@ export default function DashboardPage() {
                             </Button>
                              <Button asChild className="w-full" variant="outline">
                                 <Link href="https://wa.me/916363148287" target="_blank">Contact Organizers on WhatsApp</Link>
+                            </Button>
+                            <Button asChild className="w-full" variant="outline">
+                                <Link href="https://www.instagram.com/telefun_" target="_blank"><Instagram className="mr-2 h-4 w-4" />Follow on Instagram</Link>
                             </Button>
                         </CardContent>
                     </Card>
