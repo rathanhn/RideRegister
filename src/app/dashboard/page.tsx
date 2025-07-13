@@ -60,8 +60,6 @@ export default function DashboardPage() {
     useEffect(() => {
         if (loading) return;
         if (!user) {
-            // Redirect to login, preserving the 'view' query param in the URL
-            // for the login page to handle.
             const currentParams = new URLSearchParams(Array.from(searchParams.entries()));
             router.push(`/login?${currentParams.toString()}`);
             return;
