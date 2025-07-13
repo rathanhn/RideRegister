@@ -47,7 +47,8 @@ export default function DashboardPage() {
         if (loading) return;
         if (!user) {
             console.log("[Dashboard] User not logged in. Redirecting to login.");
-            router.push('/login');
+            const currentParams = new URLSearchParams(window.location.search);
+            router.push(`/login?${currentParams.toString()}`);
             return;
         }
 
@@ -104,15 +105,16 @@ export default function DashboardPage() {
                 return <DigitalTicket registration={registrationData} user={user!} />;
             case 'pending':
                 return (
-                    <Card className="text-center">
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-center gap-2">
-                                <Clock className="text-primary"/> Registration Pending
-                            </CardTitle>
-                            <CardDescription>
-                                Your registration is under review. You will be notified upon approval.
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                            <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center mb-4">
+                                <Clock className="w-12 h-12 text-primary" />
+                            </div>
+                            <CardTitle className="text-2xl">Registration Pending Review</CardTitle>
+                            <CardDescription className="mt-2 max-w-md mx-auto">
+                                Thank you for registering! Your application has been submitted successfully and is now awaiting approval from an event organizer. You will be notified once your status is updated.
                             </CardDescription>
-                        </CardHeader>
+                        </CardContent>
                     </Card>
                 );
             case 'rejected':
