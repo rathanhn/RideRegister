@@ -42,7 +42,13 @@ export function ForgotPasswordForm() {
       if (result.success) {
         toast({
           title: "Check your email",
-          description: result.message,
+          description: (
+            <>
+              {result.message}
+              <br /><br />
+              <strong className="text-destructive">Please check your spam folder if you don't see it.</strong>
+            </>
+          ),
           action: <MailCheck className="text-primary" />,
         });
         form.reset();
