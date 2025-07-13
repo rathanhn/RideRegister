@@ -119,22 +119,32 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
             email: user.email,
             displayName: registrationData.fullName,
             role: 'user', 
-            photoURL: registrationData.photoURL,
+            photoURL: registrationData.photoURL || null,
             createdAt: serverTimestamp(),
         });
         console.log(`[Server Action] User document created for new user UID: ${uid}`);
         
-        // Step 3: Create registration document in Firestore
+        // Step 3: Create registration document in Firestore, ensuring no undefined fields
         const registrationRef = doc(db, "registrations", uid);
-        const { rule1, rule2, rule3, rule4, rule5, rule6, ...dataToSave } = registrationData;
-        await setDoc(registrationRef, {
-          ...dataToSave,
+        const { rule1, rule2, rule3, rule4, rule5, rule6, ...coreData } = registrationData;
+        
+        const dataToSave: any = {
+          ...coreData,
           email: email,
           uid: uid,
           status: "pending" as const,
           createdAt: serverTimestamp(),
           consent: true,
+        };
+        
+        // Remove any keys with undefined values
+        Object.keys(dataToSave).forEach(key => {
+            if (dataToSave[key] === undefined) {
+                delete dataToSave[key];
+            }
         });
+
+        await setDoc(registrationRef, dataToSave);
         console.log(`[Server Action] Registration document created for UID: ${uid}`);
         
         revalidatePath('/dashboard');
@@ -143,8 +153,6 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
             console.warn(`[Server Action] Email ${email} is already in use. Proceeding to create registration for existing user.`);
-            // This is not a failure. We will proceed to create the registration for the existing user.
-            // The UID must be determined on the client-side after login.
             return { 
                 success: true, 
                 message: "Account already exists. We've linked this registration to your account. Logging you in...",
