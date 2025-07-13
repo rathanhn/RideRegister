@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Phone } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, Share2, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Phone, Loader2 } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Logo from '@/Logo.png';
+import html2canvas from 'html2canvas';
 
 
 interface DigitalTicketProps {
@@ -23,13 +24,14 @@ interface SingleTicketProps {
   registration: Registration;
   riderNumber: 1 | 2;
   userEmail?: string | null;
+  ticketRef: React.RefObject<HTMLDivElement>;
 }
 
 const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
-export function SingleTicket({ registration, riderNumber, userEmail }: SingleTicketProps) {
+export function SingleTicket({ registration, riderNumber, userEmail, ticketRef }: SingleTicketProps) {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
   const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
@@ -42,7 +44,7 @@ export function SingleTicket({ registration, riderNumber, userEmail }: SingleTic
   });
 
   return (
-    <div className="bg-[#09090b] text-white rounded-lg shadow-2xl border border-primary/20 overflow-hidden font-body">
+    <div ref={ticketRef} className="bg-[#09090b] text-white rounded-lg shadow-2xl border border-primary/20 overflow-hidden font-body">
         <div className="p-4 bg-muted/10 relative">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -127,9 +129,12 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [isShareSupported, setIsShareSupported] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const ticketRef1 = useRef<HTMLDivElement>(null);
+  const ticketRef2 = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (navigator.share) {
+    if (navigator.share && navigator.canShare) {
       setIsShareSupported(true);
     }
   }, []);
@@ -150,28 +155,52 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   };
 
   const handleWebShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `TeleFun Ride Ticket: ${registration.fullName}`,
-          text: 'Check out my ticket for the TeleFun Independence Day Ride!',
-          url: shareUrl,
-        });
-      } catch (error: any) {
-        // AbortError is thrown when the user cancels the share dialog.
-        // We can safely ignore this.
+    setIsSharing(true);
+    // Determine which ticket to share based on carousel position
+    const currentSlide = carouselApi?.selectedScrollSnap() ?? 0;
+    const ticketRef = currentSlide === 0 ? ticketRef1 : ticketRef2;
+    const riderName = currentSlide === 0 ? registration.fullName : registration.fullName2;
+
+    if (!ticketRef.current) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find the ticket to share.' });
+        setIsSharing(false);
+        return;
+    }
+
+    try {
+        const canvas = await html2canvas(ticketRef.current, { useCORS: true, backgroundColor: null });
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+        
+        if (!blob) {
+            throw new Error("Could not create image from ticket.");
+        }
+
+        const file = new File([blob], `telefun-ride-ticket-${riderName}.png`, { type: 'image/png' });
+        const shareData = {
+            files: [file],
+            title: `TeleFun Ride Ticket: ${riderName}`,
+            text: `I've registered for the TeleFun Mobiles Independence Day Ride! See you there! @telefun_ #RideRegister`,
+        };
+
+        if (navigator.canShare && navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+        } else {
+             throw new Error("Your browser cannot share this file type.");
+        }
+    } catch (error: any) {
+         // AbortError is thrown when the user cancels the share dialog, which is not an actual error.
         if (error.name === 'AbortError') {
           console.log('Share was cancelled by the user.');
-          return;
+        } else {
+            console.error("Share error:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Share Failed',
+                description: 'An error occurred while trying to share. Try copying the link instead.'
+            });
         }
-        toast({
-          variant: 'destructive',
-          title: 'Share Failed',
-          description: 'An unexpected error occurred while trying to share.'
-        });
-      }
-    } else {
-        toast({ variant: 'destructive', title: 'Not Supported', description: 'Your browser does not support this share feature.' });
+    } finally {
+        setIsSharing(false);
     }
   };
 
@@ -180,10 +209,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         <Carousel setApi={setCarouselApi} className="w-full max-w-xl mx-auto">
           <CarouselContent>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={1} userEmail={user.email}/>
+              <SingleTicket registration={registration} riderNumber={1} userEmail={user.email} ticketRef={ticketRef1}/>
             </CarouselItem>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={2} userEmail={user.email}/>
+              <SingleTicket registration={registration} riderNumber={2} userEmail={user.email} ticketRef={ticketRef2}/>
             </CarouselItem>
           </CarouselContent>
           <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
@@ -191,7 +220,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         </Carousel>
     ) : (
        <div className="max-w-xl mx-auto">
-          <SingleTicket registration={registration} riderNumber={1} userEmail={user.email} />
+          <SingleTicket registration={registration} riderNumber={1} userEmail={user.email} ticketRef={ticketRef1} />
       </div>
     )
   );
@@ -202,12 +231,12 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       <div className="flex flex-col items-center gap-4 max-w-xl mx-auto">
         <div className="w-full flex flex-col sm:flex-row gap-2">
             {isShareSupported && (
-                <Button onClick={handleWebShare} className="w-full">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share Ticket
+                <Button onClick={handleWebShare} className="w-full" disabled={isSharing}>
+                    {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4" />}
+                    {isSharing ? 'Preparing...' : 'Share Ticket'}
                 </Button>
             )}
-            <Button onClick={handleCopyLink} variant="outline" className="w-full">
+            <Button onClick={handleCopyLink} variant="outline" className="w-full" disabled={isSharing}>
                 <LinkIcon className="mr-2 h-4 w-4" />
                 Copy Sharable Link
             </Button>
