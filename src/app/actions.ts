@@ -52,6 +52,7 @@ const registrationFormSchema = z
     rule4: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
     rule5: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
     rule6: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule7: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
 
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
@@ -105,7 +106,7 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
     const { email, password, confirmPassword, ...registrationData } = parsed.data;
     
     // This is the data we want to save, excluding rules and password info
-    const { rule1, rule2, rule3, rule4, rule5, rule6, ...coreData } = registrationData;
+    const { rule1, rule2, rule3, rule4, rule5, rule6, rule7, ...coreData } = registrationData;
         
     const dataToSave: any = {
       ...coreData,

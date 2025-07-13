@@ -39,7 +39,8 @@ const rideRules = [
     { id: 'rule3', text: "Maintain a safe distance from other riders." },
     { id: 'rule4', text: "No racing or dangerous stunts are allowed." },
     { id: 'rule5', text: "Follow instructions from event organizers at all times." },
-    { id: 'rule6', text: "Ensure your bicycle is in good working condition." }
+    { id: 'rule6', text: "Ensure your bicycle is in good working condition." },
+    { id: 'rule7', text: "Riders are recommended to wear necessary gear like a jacket, shoes, and suitable pants." }
 ];
 
 const formSchema = z
@@ -70,6 +71,7 @@ const formSchema = z
     rule4: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
     rule5: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
     rule6: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
+    rule7: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
 
   })
   .superRefine((data, ctx) => {
@@ -140,6 +142,7 @@ export function RegistrationForm() {
       rule4: false,
       rule5: false,
       rule6: false,
+      rule7: false,
     },
   });
 
