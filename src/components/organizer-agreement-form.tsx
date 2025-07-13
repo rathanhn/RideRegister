@@ -39,7 +39,7 @@ const organizerRules = [
 ];
 
 interface OrganizerAgreementFormProps {
-  onSuccess: (newUserData: AppUser) => void;
+  onSuccess?: (newUserData: AppUser) => void;
 }
 
 export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProps) {
@@ -57,7 +57,7 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
-      toast({ variant: "destructive", title: "Error", description: "You must be logged in." });
+      toast({ variant: "destructive", title: "Error", description: "You must be logged in to submit a request. Please create a Rider account first, then log in and return here." });
       return;
     }
 
@@ -74,9 +74,8 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
           action: <ShieldCheck className="text-primary" />,
         });
         
-        // Fetch the existing user data to pass back, since the role isn't changing.
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
+        if (userDoc.exists() && onSuccess) {
            onSuccess({id: user.uid, ...userDoc.data()} as AppUser);
         }
 
@@ -105,7 +104,7 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
       <CardHeader>
         <CardTitle className="font-headline text-3xl">Organizer Access Request</CardTitle>
         <CardDescription>
-          Please read and agree to the responsibilities below to request access to the event management tools.
+          Please read and agree to the responsibilities below to request access to the event management tools. You must have a registered account first.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -134,10 +133,11 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
                 )}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || !user}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmitting ? "Submitting..." : "Submit Request"}
             </Button>
+            {!user && <p className="text-sm text-destructive text-center">Please log in to submit a request.</p>}
           </form>
         </Form>
       </CardContent>

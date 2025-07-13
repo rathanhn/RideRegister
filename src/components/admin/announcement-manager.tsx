@@ -40,6 +40,7 @@ const AnnouncementSkeleton = () => (
 export function AnnouncementManager() {
   const [user, authLoading] = useAuthState(auth);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [adminDisplayName, setAdminDisplayName] = useState("Admin");
   const { toast } = useToast();
   
   const form = useForm<z.infer<typeof announcementSchema>>({
@@ -49,15 +50,17 @@ export function AnnouncementManager() {
   const { isSubmitting } = form.formState;
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const fetchUserData = async () => {
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          setUserRole(userDoc.data().role as UserRole);
+          const userData = userDoc.data();
+          setUserRole(userData.role as UserRole);
+          setAdminDisplayName(userData.displayName || "Admin");
         }
       }
     };
-    fetchUserRole();
+    fetchUserData();
   }, [user]);
 
   const [announcements, announcementsLoading, error] = useCollection(
@@ -81,7 +84,7 @@ export function AnnouncementManager() {
     };
     const result = await addAnnouncement({ 
         adminId: user.uid,
-        adminName: user.displayName || 'Admin',
+        adminName: adminDisplayName,
         adminRole: userRole,
         message: values.message 
     });

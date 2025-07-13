@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { Registration, AppUser } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ban, Loader2, Send, Shield } from "lucide-react";
+import { Gift, Ban, Loader2, Send } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { cancelRegistration, requestOrganizerAccess } from '@/app/actions';
+import { cancelRegistration } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 interface DashboardActionsCardProps {
@@ -44,18 +44,6 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
         defaultValues: { reason: "" },
     });
     
-    const handleOrganizerRequest = async () => {
-        if (!user) return;
-        setIsSubmitting(true);
-        const result = await requestOrganizerAccess({ userId: user.id });
-         if (result.success) {
-            toast({ title: "Success", description: result.message });
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.message });
-        }
-        setIsSubmitting(false);
-    }
-
     const handleCancellation = async (values: z.infer<typeof cancelSchema>) => {
         if (!registration) return;
         setIsSubmitting(true);
@@ -74,7 +62,6 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
     }
     
     const canCancel = registration && (registration.status === 'approved' || registration.status === 'pending');
-    const hasRequestedAccess = user?.accessRequest?.status === 'pending_review';
 
     return (
         <Card>
@@ -83,21 +70,6 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
                 <CardDescription>Other event-related actions are available here.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="p-4 border rounded-md flex items-center justify-between">
-                    <div>
-                        <h4 className="font-semibold flex items-center gap-2"><Shield className="text-primary"/> Become an Organizer</h4>
-                        <p className="text-sm text-muted-foreground">Request access to help manage the event.</p>
-                    </div>
-                     <Button 
-                        onClick={handleOrganizerRequest} 
-                        disabled={isSubmitting || hasRequestedAccess}
-                        variant="outline"
-                    >
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {hasRequestedAccess ? 'Request Pending' : 'Request Access'}
-                    </Button>
-                </div>
-
                 <div className="p-4 border rounded-md flex items-center justify-between">
                      <div>
                         <h4 className="font-semibold flex items-center gap-2"><Ban className="text-destructive"/> Cancel Registration</h4>

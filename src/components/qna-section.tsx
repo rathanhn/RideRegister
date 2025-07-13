@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, getDoc, doc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,8 @@ const QnaItemSkeleton = () => (
 export function QnaSection() {
   const [user, authLoading] = useAuthState(auth);
   const { toast } = useToast();
+  const [userDisplayName, setUserDisplayName] = useState("Rider");
+
   const form = useForm<z.infer<typeof questionFormSchema>>({
     resolver: zodResolver(questionFormSchema),
     defaultValues: {
@@ -48,6 +50,18 @@ export function QnaSection() {
     },
   });
   const { isSubmitting } = form.formState;
+
+  useEffect(() => {
+    const fetchDisplayName = async () => {
+        if (user) {
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (userDoc.exists()) {
+                setUserDisplayName(userDoc.data().displayName || "Rider");
+            }
+        }
+    };
+    fetchDisplayName();
+  }, [user]);
 
   const [questions, questionsLoading, questionsError] = useCollection(
     query(collection(db, 'qna'), orderBy('isPinned', 'desc'))
@@ -66,7 +80,7 @@ export function QnaSection() {
     const result = await addQuestion({
       ...values,
       userId: user.uid,
-      userName: user.displayName || "Rider",
+      userName: userDisplayName,
       userPhotoURL: user.photoURL,
     });
 

@@ -301,8 +301,11 @@ export async function addQuestion(values: z.infer<typeof addQuestionSchema>) {
     }
     
     try {
+        const userDoc = await getDoc(doc(db, "users", values.userId));
+        const displayName = userDoc.data()?.displayName;
         await addDoc(collection(db, "qna"), {
             ...parsed.data,
+            userName: displayName || values.userName,
             isPinned: false,
             createdAt: serverTimestamp(),
         });
@@ -330,12 +333,15 @@ export async function addReply(values: z.infer<typeof addReplySchema>) {
         return { success: false, message: "Invalid data provided." };
     }
     const userRole = await getUserRole(values.userId);
+    const userDoc = await getDoc(doc(db, "users", values.userId));
+    const displayName = userDoc.data()?.displayName;
 
     try {
         const { questionId, ...replyData } = parsed.data;
         const replyCollectionRef = collection(db, "qna", questionId, "replies");
         await addDoc(replyCollectionRef, {
             ...replyData,
+            userName: displayName || values.userName,
             isAdmin: userRole === 'admin' || userRole === 'superadmin',
             createdAt: serverTimestamp(),
         });
@@ -429,6 +435,7 @@ export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
 // Schema for requesting organizer access
 const requestOrganizerAccessSchema = z.object({
   userId: z.string().min(1, "User ID is required."),
+  consent: z.boolean().refine(val => val, { message: "Consent is required."}),
 });
 
 export async function requestOrganizerAccess(values: z.infer<typeof requestOrganizerAccessSchema>) {
@@ -474,8 +481,12 @@ export async function addAnnouncement(values: z.infer<typeof addAnnouncementSche
         return { success: false, message: "Invalid data provided." };
     }
     try {
+        const userDoc = await getDoc(doc(db, "users", values.adminId));
+        const displayName = userDoc.data()?.displayName;
+        
         await addDoc(collection(db, "announcements"), {
             ...parsed.data,
+            adminName: displayName || values.adminName,
             createdAt: serverTimestamp(),
         });
         return { success: true, message: "Announcement posted successfully!" };

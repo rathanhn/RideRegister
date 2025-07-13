@@ -2,10 +2,10 @@
 "use client";
 
 import type { QnaQuestion, QnaReply } from "@/lib/types";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { formatDistanceToNow } from 'date-fns';
@@ -33,11 +33,25 @@ export function QnaItem({ question }: QnaItemProps) {
   const [user] = useAuthState(auth);
   const [isReplying, setIsReplying] = useState(false);
   const { toast } = useToast();
+  const [userDisplayName, setUserDisplayName] = useState("Rider");
+
   const form = useForm<z.infer<typeof replyFormSchema>>({
     resolver: zodResolver(replyFormSchema),
     defaultValues: { text: "" },
   });
   const { isSubmitting } = form.formState;
+
+  useEffect(() => {
+    const fetchDisplayName = async () => {
+        if (user) {
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (userDoc.exists()) {
+                setUserDisplayName(userDoc.data().displayName || "Rider");
+            }
+        }
+    };
+    fetchDisplayName();
+  }, [user]);
 
   const [replies, repliesLoading] = useCollection(
     query(collection(db, 'qna', question.id, 'replies'), orderBy('createdAt', 'asc'))
@@ -50,7 +64,7 @@ export function QnaItem({ question }: QnaItemProps) {
       ...values,
       questionId: question.id,
       userId: user.uid,
-      userName: user.displayName || "Anonymous",
+      userName: userDisplayName,
       userPhotoURL: user.photoURL,
     });
 

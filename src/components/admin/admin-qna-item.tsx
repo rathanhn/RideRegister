@@ -51,18 +51,21 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
 
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [adminDisplayName, setAdminDisplayName] = useState("Admin");
 
 
    useEffect(() => {
-    const fetchUserRole = async () => {
+    const fetchUserData = async () => {
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          setUserRole(userDoc.data().role);
+          const userData = userDoc.data();
+          setUserRole(userData.role);
+          setAdminDisplayName(userData.displayName || "Admin");
         }
       }
     };
-    fetchUserRole();
+    fetchUserData();
   }, [user]);
 
   const canModerate = userRole === 'admin' || userRole === 'superadmin';
@@ -85,7 +88,7 @@ export function AdminQnaItem({ question }: AdminQnaItemProps) {
       ...values,
       questionId: question.id,
       userId: user.uid,
-      userName: user.displayName || "Admin",
+      userName: adminDisplayName,
       userPhotoURL: user.photoURL,
     });
 
