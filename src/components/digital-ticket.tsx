@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Sparkles } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Link as LinkIcon, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Logo from '@/Logo.png';
+import Link from 'next/link';
 
 
 interface DigitalTicketProps {
@@ -134,7 +135,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
       toast({ 
         title: 'Link Copied!', 
         description: 'A shareable link to your ticket has been copied.',
-        action: <LinkIcon className="text-primary" />,
+        action: <Clipboard className="text-primary" />,
       });
     } catch (error) {
        toast({ variant: 'destructive', title: 'Copy Failed', description: 'Could not copy the link.' });
@@ -172,12 +173,18 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                 Share Your Excitement!
              </h4>
              <p className="text-sm text-muted-foreground">
-                Post your ticket on social media and tag <strong className="text-primary">@telefun_</strong> to be featured!
+                Take a screenshot of your ticket and post it on social media. Don&apos;t forget to tag <strong className="text-primary">@telefun_</strong>!
              </p>
              <div className="w-full flex flex-col sm:flex-row gap-2 pt-2">
+                <Button asChild variant="outline" className="w-full">
+                    <Link href={shareUrl} target="_blank">
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Ticket
+                    </Link>
+                </Button>
                 <Button onClick={handleCopyLink} variant="outline" className="w-full">
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    Copy Sharable Link
+                    <Clipboard className="mr-2 h-4 w-4" />
+                    Copy Link
                 </Button>
             </div>
         </div>
