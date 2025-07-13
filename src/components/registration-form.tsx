@@ -45,6 +45,7 @@ const formSchema = z
   .object({
     email: z.string().email("A valid email is required."),
     password: z.string().min(6, "Password must be at least 6 characters."),
+    confirmPassword: z.string().min(6, "Password must be at least 6 characters."),
     
     registrationType: z.enum(["solo", "duo"], {
       required_error: "You need to select a registration type.",
@@ -71,6 +72,14 @@ const formSchema = z
 
   })
   .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Passwords do not match.",
+        path: ["confirmPassword"],
+      });
+    }
+
     if (data.registrationType === "duo") {
       if (!data.fullName2 || data.fullName2.length < 2) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Full name must be at least 2 characters.", path: ["fullName2"] });
@@ -119,6 +128,7 @@ export function RegistrationForm() {
       registrationType: "solo",
       email: "",
       password: "",
+      confirmPassword: "",
       fullName: "",
       age: 18,
       phoneNumber: "",
@@ -258,6 +268,8 @@ export function RegistrationForm() {
                     </FormItem>
                     )}
                 />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
                     control={form.control}
                     name="password"
@@ -266,6 +278,19 @@ export function RegistrationForm() {
                         <FormLabel>Password</FormLabel>
                         <FormControl>
                         <Input type="password" placeholder="Min. 6 characters" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                        <Input type="password" placeholder="Re-enter your password" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>

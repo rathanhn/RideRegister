@@ -2,10 +2,10 @@
 "use client";
 
 import { useState } from 'react';
-import type { Registration } from "@/lib/types";
+import type { Registration, AppUser } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ban, Loader2, Send } from "lucide-react";
+import { Gift, Ban, Loader2, Send, Shield } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,18 +22,19 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { cancelRegistration } from '@/app/actions';
+import { cancelRegistration, requestOrganizerAccess } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 interface DashboardActionsCardProps {
     registration: Registration | null;
+    user: AppUser | null;
 }
 
 const cancelSchema = z.object({
     reason: z.string().min(10, "Please provide a reason (min 10 characters).").max(500),
 });
 
-export function DashboardActionsCard({ registration }: DashboardActionsCardProps) {
+export function DashboardActionsCard({ registration, user }: DashboardActionsCardProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -42,6 +43,18 @@ export function DashboardActionsCard({ registration }: DashboardActionsCardProps
         resolver: zodResolver(cancelSchema),
         defaultValues: { reason: "" },
     });
+    
+    const handleOrganizerRequest = async () => {
+        if (!user) return;
+        setIsSubmitting(true);
+        const result = await requestOrganizerAccess({ userId: user.id });
+         if (result.success) {
+            toast({ title: "Success", description: result.message });
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
+        setIsSubmitting(false);
+    }
 
     const handleCancellation = async (values: z.infer<typeof cancelSchema>) => {
         if (!registration) return;
@@ -61,6 +74,7 @@ export function DashboardActionsCard({ registration }: DashboardActionsCardProps
     }
     
     const canCancel = registration && (registration.status === 'approved' || registration.status === 'pending');
+    const hasRequestedAccess = user?.accessRequest?.status === 'pending_review';
 
     return (
         <Card>
@@ -69,12 +83,19 @@ export function DashboardActionsCard({ registration }: DashboardActionsCardProps
                 <CardDescription>Other event-related actions are available here.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="p-4 border rounded-md flex items-center justify-between bg-secondary/50">
+                <div className="p-4 border rounded-md flex items-center justify-between">
                     <div>
-                        <h4 className="font-semibold flex items-center gap-2"><Gift className="text-primary"/> Special Giveaway</h4>
-                        <p className="text-sm text-muted-foreground">Participate for a chance to win exciting prizes!</p>
+                        <h4 className="font-semibold flex items-center gap-2"><Shield className="text-primary"/> Become an Organizer</h4>
+                        <p className="text-sm text-muted-foreground">Request access to help manage the event.</p>
                     </div>
-                    <Button disabled>Coming Soon</Button>
+                     <Button 
+                        onClick={handleOrganizerRequest} 
+                        disabled={isSubmitting || hasRequestedAccess}
+                        variant="outline"
+                    >
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {hasRequestedAccess ? 'Request Pending' : 'Request Access'}
+                    </Button>
                 </div>
 
                 <div className="p-4 border rounded-md flex items-center justify-between">
@@ -125,6 +146,14 @@ export function DashboardActionsCard({ registration }: DashboardActionsCardProps
                             </Form>
                         </AlertDialogContent>
                     </AlertDialog>
+                </div>
+
+                <div className="p-4 border rounded-md flex items-center justify-between bg-secondary/50">
+                    <div>
+                        <h4 className="font-semibold flex items-center gap-2"><Gift className="text-primary"/> Special Giveaway</h4>
+                        <p className="text-sm text-muted-foreground">Participate for a chance to win exciting prizes!</p>
+                    </div>
+                    <Button disabled>Coming Soon</Button>
                 </div>
             </CardContent>
         </Card>

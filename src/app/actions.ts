@@ -30,6 +30,7 @@ const registrationFormSchema = z
   .object({
     email: z.string().email("A valid email is required."),
     password: z.string().min(6, "Password must be at least 6 characters."),
+    confirmPassword: z.string().min(6, "Password must be at least 6 characters."),
 
     // Rider 1
     fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -57,6 +58,14 @@ const registrationFormSchema = z
     }),
   })
   .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Passwords do not match.",
+        path: ["confirmPassword"],
+      });
+    }
+
     if (data.registrationType === "duo") {
       if (!data.fullName2 || data.fullName2.length < 2) {
         ctx.addIssue({
@@ -93,7 +102,7 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
         return { success: false, message: "Invalid data provided." };
     }
 
-    const { email, password, ...registrationData } = parsed.data;
+    const { email, password, confirmPassword, ...registrationData } = parsed.data;
 
     try {
         // Step 1: Create Firebase Auth user
@@ -420,9 +429,6 @@ export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
 // Schema for requesting organizer access
 const requestOrganizerAccessSchema = z.object({
   userId: z.string().min(1, "User ID is required."),
-  consent: z.boolean().refine(val => val === true, {
-    message: "You must agree to the terms."
-  }),
 });
 
 export async function requestOrganizerAccess(values: z.infer<typeof requestOrganizerAccessSchema>) {

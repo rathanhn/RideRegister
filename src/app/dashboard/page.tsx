@@ -46,6 +46,7 @@ export default function DashboardPage() {
     useEffect(() => {
         if (loading) return;
         if (!user) {
+            console.log("[Dashboard] User not logged in. Redirecting to login.");
             router.push('/login');
             return;
         }
@@ -60,6 +61,11 @@ export default function DashboardPage() {
                 const unsubUser = onSnapshot(userDocRef, (doc) => {
                     if (doc.exists()) {
                         setUserData({ id: doc.id, ...doc.data() } as AppUser);
+                    } else {
+                        // This case can happen if a user is authenticated but their user doc is not yet created.
+                        // We can either log them out or wait. For now, we'll just not set user data.
+                        console.warn(`User document not found for UID: ${user.uid}`);
+                        setUserData(null);
                     }
                 });
                 unsubscribes.push(unsubUser);
@@ -209,7 +215,7 @@ export default function DashboardPage() {
                     <QnaSection />
                 </TabsContent>
                 <TabsContent value="actions">
-                    <DashboardActionsCard registration={registrationData} />
+                    <DashboardActionsCard registration={registrationData} user={userData}/>
                 </TabsContent>
             </Tabs>
         )
