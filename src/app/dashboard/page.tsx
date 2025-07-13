@@ -61,7 +61,8 @@ export default function DashboardPage() {
         if (loading) return;
         if (!user) {
             // If user wants to register, redirect to login but keep the view intent
-            if (searchParams.get('view') === 'rider') {
+            const intendedView = searchParams.get('view');
+            if (intendedView === 'rider') {
                  router.push('/login');
             } else {
                  router.push('/login');
@@ -171,6 +172,19 @@ export default function DashboardPage() {
                             </CardTitle>
                             <CardDescription>
                                 Your request to cancel your registration has been submitted and is pending review by an admin.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                );
+            case 'cancelled':
+                 return (
+                    <Card className="text-center">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
+                                <Ban /> Registration Cancelled
+                            </CardTitle>
+                            <CardDescription>
+                               Your registration for this event has been cancelled as per your request.
                             </CardDescription>
                         </CardHeader>
                     </Card>
