@@ -153,9 +153,14 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
 
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
-            console.warn(`[Server Action] Email ${email} is already in use. Proceeding to create registration for existing user.`);
+            console.warn(`[Server Action] Email ${email} is already in use.`);
             // No new user is created, but we flag it for the client to handle sign-in.
             // The registration data will be created client-side after sign-in.
+             Object.keys(dataToSave).forEach(key => {
+                if (dataToSave[key] === undefined) {
+                    delete dataToSave[key];
+                }
+            });
             return { 
                 success: true, 
                 message: "Account already exists. We've linked this registration to your account. Logging you in...",
@@ -213,7 +218,7 @@ const deleteRegistrationSchema = z.object({
 
 export async function deleteRegistration(values: z.infer<typeof deleteRegistrationSchema>) {
     const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    if (adminRole !== 'superadmin' && adminRole !== 'admin') {
       return { success: false, message: "Permission denied." };
     }
 
@@ -455,30 +460,47 @@ export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
 
 // Schema for requesting organizer access
 const requestOrganizerAccessSchema = z.object({
-  userId: z.string().min(1, "User ID is required."),
+  email: z.string().email("A valid email is required."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
   consent: z.boolean().refine(val => val, { message: "Consent is required."}),
 });
 
-export async function requestOrganizerAccess(values: z.infer<typeof requestOrganizerAccessSchema>) {
+export async function createAndRequestOrganizerAccess(values: z.infer<typeof requestOrganizerAccessSchema>) {
   const parsed = requestOrganizerAccessSchema.safeParse(values);
   if (!parsed.success) {
     return { success: false, message: "Invalid data provided." };
   }
 
+  const { email, password } = parsed.data;
+
   try {
-    const userRef = doc(db, "users", values.userId);
-    // This action now only flags the user's document for an admin to review.
-    // It does NOT change their role.
-    await updateDoc(userRef, {
-      accessRequest: {
-        requestedAt: serverTimestamp(),
-        status: 'pending_review',
-      }
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Create user document with access request
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(userRef, {
+        email: user.email,
+        displayName: user.email?.split('@')[0], // Default display name
+        role: 'user', // Start as a user
+        photoURL: null,
+        createdAt: serverTimestamp(),
+        accessRequest: {
+          requestedAt: serverTimestamp(),
+          status: 'pending_review',
+        }
     });
-    return { success: true, message: "Your request has been submitted. An admin will review it shortly." };
-  } catch (error) {
-    console.error("Error requesting organizer access:", error);
-    return { success: false, message: "Failed to submit your request." };
+
+    return { success: true, message: "Your account has been created and your request has been submitted. An admin will review it shortly.", uid: user.uid };
+  } catch (error: any) {
+    if (error.code === 'auth/email-already-in-use') {
+        return { 
+            success: false, 
+            message: "An account with this email already exists. Please log in and request access from your dashboard.",
+        };
+    }
+    console.error("Error creating account for organizer request:", error);
+    return { success: false, message: "Failed to create account or submit your request." };
   }
 }
 
@@ -582,5 +604,3 @@ export async function sendPasswordResetLink(values: z.infer<typeof forgotPasswor
         return { success: true, message: "If an account exists for this email, a password reset link has been sent." };
     }
 }
-
-    

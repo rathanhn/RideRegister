@@ -13,20 +13,32 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck } from "lucide-react";
-import { requestOrganizerAccess } from "@/app/actions";
-import { auth, db } from "@/lib/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
-import type { AppUser } from "@/lib/types";
-import { doc, getDoc } from "firebase/firestore";
+import { Loader2, ShieldCheck, UserCheck } from "lucide-react";
+import { createAndRequestOrganizerAccess } from "@/app/actions";
+import { auth } from "@/lib/firebase";
+import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
+import { useRouter } from "next/navigation";
+import { Separator } from "./ui/separator";
 
 const formSchema = z.object({
+  email: z.string().email("A valid email is required."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters."),
   consent: z.boolean().refine((val) => val === true, {
     message: "You must agree to the terms to proceed.",
   }),
+}).superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Passwords do not match.",
+        path: ["confirmPassword"],
+      });
+    }
 });
 
 const organizerRules = [
@@ -38,17 +50,17 @@ const organizerRules = [
   "Uphold a positive and helpful attitude at all times."
 ];
 
-interface OrganizerAgreementFormProps {
-  onSuccess?: (newUserData: AppUser) => void;
-}
-
-export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProps) {
+export function OrganizerAgreementForm() {
   const { toast } = useToast();
-  const [user, loading] = useAuthState(auth);
+  const router = useRouter();
+  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
       consent: false,
     },
   });
@@ -56,27 +68,20 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
   const { isSubmitting } = form.formState;
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user) {
-      toast({ variant: "destructive", title: "Error", description: "You must be logged in to submit a request. Please create a Rider account first, then log in and return here." });
-      return;
-    }
-
     try {
-      const result = await requestOrganizerAccess({
-        userId: user.uid,
-        consent: values.consent,
-      });
+      const result = await createAndRequestOrganizerAccess(values);
 
       if (result.success) {
         toast({
           title: "Request Submitted!",
-          description: "An admin will review your request. You will be able to access the admin panel once approved.",
+          description: result.message,
           action: <ShieldCheck className="text-primary" />,
         });
         
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists() && onSuccess) {
-           onSuccess({id: user.uid, ...userDoc.data()} as AppUser);
+        // Log the new user in and redirect to dashboard
+        const userCredential = await signInWithEmailAndPassword(values.email, values.password);
+        if (userCredential) {
+            router.push('/dashboard');
         }
 
       } else {
@@ -91,25 +96,65 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
     }
   }
   
-  if (loading) {
-    return (
-        <div className="flex justify-center items-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    )
-  }
-
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="font-headline text-3xl">Organizer Access Request</CardTitle>
         <CardDescription>
-          Please read and agree to the responsibilities below to request access to the event management tools. You must have a registered account first.
+          Create an account and request access to event management tools. Your request will be reviewed by an admin.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+             <h3 className="text-lg font-medium text-primary flex items-center gap-2"><UserCheck /> Account Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                        <Input placeholder="you@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                        <Input type="password" placeholder="Min. 6 characters" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                        <Input type="password" placeholder="Re-enter your password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+
+            <Separator />
+            
             <div className="space-y-4">
               <div className="space-y-2 rounded-md border p-4">
                 <h4 className="font-medium text-base">Organizer Responsibilities</h4>
@@ -133,11 +178,10 @@ export function OrganizerAgreementForm({ onSuccess }: OrganizerAgreementFormProp
                 )}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || !user}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Submitting..." : "Submit Request"}
+              {isSubmitting ? "Submitting..." : "Create Account & Submit Request"}
             </Button>
-            {!user && <p className="text-sm text-destructive text-center">Please log in to submit a request.</p>}
           </form>
         </Form>
       </CardContent>
