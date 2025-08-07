@@ -1,3 +1,6 @@
+
+"use client";
+
 import {
     Card,
     CardContent,
@@ -5,54 +8,49 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import type { ScheduleEvent } from "@/lib/types";
-import { Flag, Coffee, Medal, Users, Cake, Map, CheckCircle } from "lucide-react";
+import { Flag, Coffee, Medal, Users, Cake, Map, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from "./ui/skeleton";
 
-const schedule: ScheduleEvent[] = [
-    {
-        id: 1,
-        time: "6:00 AM",
-        title: "Assembly & Check-in",
-        description: "Gather at Telefun Mobiles. Verify your registration and get your rider number.",
-        icon: Users,
-    },
-    {
-        id: 2,
-        time: "6:30 AM",
-        title: "Flag Off",
-        description: "The ride officially begins! Follow the lead rider and enjoy the journey.",
-        icon: Flag,
-    },
-    {
-        id: 3,
-        time: "7:30 AM",
-        title: "Mid-point Break",
-        description: "A short break for refreshments and water. Let's stay hydrated!",
-        icon: Coffee,
-    },
-     {
-        id: 4,
-        time: "8:30 AM",
-        title: "Ride Conclusion",
-        description: "Return to the starting point at Telefun Mobiles.",
-        icon: CheckCircle,
-    },
-    {
-        id: 5,
-        time: "8:45 AM",
-        title: "Certificate & Refreshments",
-        description: "Collect your participation certificate and enjoy some post-ride snacks.",
-        icon: Medal,
-    },
-    {
-        id: 6,
-        time: "9:00 AM",
-        title: "Independence Day Celebration",
-        description: "Join us for a small celebration to mark the occasion.",
-        icon: Cake,
-    },
-];
+const iconMap: { [key: string]: React.ElementType } = {
+    Users,
+    Flag,
+    Coffee,
+    CheckCircle,
+    Medal,
+    Cake,
+    Map,
+    Default: Map,
+};
+
+const ScheduleSkeleton = () => (
+    <div className="relative pl-6">
+        <div className="absolute left-6 top-0 h-full w-0.5 bg-border -translate-x-1/2"></div>
+        {[...Array(3)].map((_, i) => (
+            <div key={i} className="relative mb-8 pl-8">
+                 <div className="absolute -left-0.5 top-1 h-5 w-5 rounded-full bg-muted ring-4 ring-background flex items-center justify-center">
+                    <Skeleton className="h-3 w-3 rounded-full" />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-48" />
+                </div>
+            </div>
+        ))}
+    </div>
+)
+
 
 export function EventSchedule() {
+    const [schedule, loading, error] = useCollection(
+        query(collection(db, 'schedule'), orderBy('createdAt', 'asc'))
+    );
+
+    const scheduleEvents = schedule?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ScheduleEvent)) || [];
+
     return (
         <Card>
             <CardHeader>
@@ -62,21 +60,28 @@ export function EventSchedule() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="relative pl-6">
-                    <div className="absolute left-6 top-0 h-full w-0.5 bg-border -translate-x-1/2"></div>
-                    {schedule.map((item, index) => (
-                        <div key={item.id} className="relative mb-8 pl-8">
-                            <div className="absolute -left-0.5 top-1 h-5 w-5 rounded-full bg-primary ring-4 ring-background flex items-center justify-center">
-                                <item.icon className="h-3 w-3 text-primary-foreground" />
-                            </div>
-                            <div className="flex flex-col">
-                                <p className="font-semibold text-primary">{item.time}</p>
-                                <h4 className="font-bold">{item.title}</h4>
-                                <p className="text-sm text-muted-foreground">{item.description}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                 {loading && <ScheduleSkeleton />}
+                {error && <p className="text-destructive flex items-center gap-2"><AlertTriangle /> Error loading schedule.</p>}
+                {!loading && !error && (
+                    <div className="relative pl-6">
+                        <div className="absolute left-6 top-0 h-full w-0.5 bg-border -translate-x-1/2"></div>
+                        {scheduleEvents.map((item, index) => {
+                            const Icon = iconMap[item.icon] || iconMap.Default;
+                            return (
+                                <div key={item.id} className="relative mb-8 pl-8">
+                                    <div className="absolute -left-0.5 top-1 h-5 w-5 rounded-full bg-primary ring-4 ring-background flex items-center justify-center">
+                                        <Icon className="h-3 w-3 text-primary-foreground" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="font-semibold text-primary">{item.time}</p>
+                                        <h4 className="font-bold">{item.title}</h4>
+                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

@@ -11,7 +11,7 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck, Flag } from 'lucide-react';
+import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck, Flag, Blocks } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import { RidersListTable } from '@/components/admin/riders-list-table';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
 import { CheckedInListTable } from '@/components/admin/checked-in-list-table';
 import { FinishersListTable } from '@/components/admin/finishers-list-table';
+import ContentManagement from './content/page';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -53,6 +54,17 @@ export default function AdminPage() {
         <StatsOverview />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+             <div className="lg:col-span-2">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Blocks className="h-6 w-6 text-primary"/> Content Management</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ContentManagement />
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="lg:col-span-2 space-y-8">
                  <Card>
                     <CardHeader>

@@ -605,3 +605,147 @@ export async function sendPasswordResetLink(values: z.infer<typeof forgotPasswor
         return { success: true, message: "If an account exists for this email, a password reset link has been sent." };
     }
 }
+
+// === CONTENT MANAGEMENT ACTIONS ===
+
+// Schedule Actions
+const scheduleSchema = z.object({
+  time: z.string().min(1, "Time is required."),
+  title: z.string().min(3, "Title is required."),
+  description: z.string().min(10, "Description is required."),
+  icon: z.string().min(1, "Icon is required."),
+});
+
+export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { adminId: string; scheduleId?: string }) {
+  const { adminId, scheduleId, ...data } = values;
+  const adminRole = await getUserRole(adminId);
+  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = scheduleSchema.safeParse(data);
+  if (!parsed.success) return { success: false, message: "Invalid data." };
+
+  try {
+    if (scheduleId) {
+      await updateDoc(doc(db, "schedule", scheduleId), parsed.data);
+      revalidatePath('/');
+      return { success: true, message: "Schedule item updated." };
+    } else {
+      await addDoc(collection(db, "schedule"), { ...parsed.data, createdAt: serverTimestamp() });
+      revalidatePath('/');
+      return { success: true, message: "Schedule item added." };
+    }
+  } catch (error) {
+    return { success: false, message: "Failed to manage schedule item." };
+  }
+}
+
+export async function deleteScheduleItem(id: string, adminId: string) {
+  const adminRole = await getUserRole(adminId);
+  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    return { success: false, message: "Permission denied." };
+  }
+  try {
+    await deleteDoc(doc(db, "schedule", id));
+    revalidatePath('/');
+    return { success: true, message: "Schedule item deleted." };
+  } catch (error) {
+    return { success: false, message: "Failed to delete schedule item." };
+  }
+}
+
+// Organizer Actions
+const organizerSchema = z.object({
+  name: z.string().min(3, "Name is required."),
+  role: z.string().min(3, "Role is required."),
+  imageUrl: z.string().url("A valid photo URL is required."),
+  imageHint: z.string().min(2, "Image hint is required"),
+  contactNumber: z.string().optional(),
+});
+
+export async function manageOrganizer(values: z.infer<typeof organizerSchema> & { adminId: string; organizerId?: string }) {
+  const { adminId, organizerId, ...data } = values;
+  const adminRole = await getUserRole(adminId);
+  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = organizerSchema.safeParse(data);
+  if (!parsed.success) return { success: false, message: "Invalid data." };
+
+  try {
+    if (organizerId) {
+      await updateDoc(doc(db, "organizers", organizerId), parsed.data);
+      revalidatePath('/');
+      return { success: true, message: "Organizer updated." };
+    } else {
+      await addDoc(collection(db, "organizers"), { ...parsed.data, createdAt: serverTimestamp() });
+      revalidatePath('/');
+      return { success: true, message: "Organizer added." };
+    }
+  } catch (error) {
+    return { success: false, message: "Failed to manage organizer." };
+  }
+}
+
+export async function deleteOrganizer(id: string, adminId: string) {
+  const adminRole = await getUserRole(adminId);
+  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    return { success: false, message: "Permission denied." };
+  }
+  try {
+    await deleteDoc(doc(db, "organizers", id));
+    revalidatePath('/');
+    return { success: true, message: "Organizer deleted." };
+  } catch (error) {
+    return { success: false, message: "Failed to delete organizer." };
+  }
+}
+
+// Promotion Actions
+const promotionSchema = z.object({
+  title: z.string().min(3, "Title is required."),
+  description: z.string().min(10, "Description is required."),
+  validity: z.string().min(3, "Validity is required."),
+  imageUrl: z.string().url("A valid photo URL is required."),
+  imageHint: z.string().min(2, "Image hint is required"),
+  actualPrice: z.coerce.number().optional(),
+  offerPrice: z.coerce.number().optional(),
+});
+
+export async function managePromotion(values: z.infer<typeof promotionSchema> & { adminId: string; promotionId?: string }) {
+  const { adminId, promotionId, ...data } = values;
+  const adminRole = await getUserRole(adminId);
+  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = promotionSchema.safeParse(data);
+  if (!parsed.success) return { success: false, message: "Invalid data." };
+
+  try {
+    if (promotionId) {
+      await updateDoc(doc(db, "promotions", promotionId), parsed.data);
+      revalidatePath('/');
+      return { success: true, message: "Promotion updated." };
+    } else {
+      await addDoc(collection(db, "promotions"), { ...parsed.data, createdAt: serverTimestamp() });
+      revalidatePath('/');
+      return { success: true, message: "Promotion added." };
+    }
+  } catch (error) {
+    return { success: false, message: "Failed to manage promotion." };
+  }
+}
+
+export async function deletePromotion(id: string, adminId: string) {
+  const adminRole = await getUserRole(adminId);
+  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    return { success: false, message: "Permission denied." };
+  }
+  try {
+    await deleteDoc(doc(db, "promotions", id));
+    revalidatePath('/');
+    return { success: true, message: "Promotion deleted." };
+  } catch (error) {
+    return { success: false, message: "Failed to delete promotion." };
+  }
+}

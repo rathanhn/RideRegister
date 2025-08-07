@@ -10,28 +10,34 @@ export interface Announcement {
 }
 
 export interface Offer {
-  id: number;
+  id: string;
   title: string;
   description: string;
   validity: string;
   imageUrl: string;
   imageHint: string;
+  actualPrice?: number;
+  offerPrice?: number;
+  createdAt: any; // Firestore timestamp
 }
 
 export interface Organizer {
-  id:number;
+  id:string;
   name: string;
   role: string;
   imageUrl: string;
   imageHint: string;
+  contactNumber?: string;
+  createdAt: any; // Firestore timestamp
 }
 
 export interface ScheduleEvent {
-    id: number;
+    id: string;
     time: string;
     title: string;
     description: string;
-    icon: React.ElementType;
+    icon: string;
+    createdAt: any; // Firestore timestamp
 }
 
 export interface Registration {
