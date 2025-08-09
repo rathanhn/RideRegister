@@ -1,4 +1,6 @@
 
+"use client";
+
 import { Header } from "@/components/header";
 import { Announcements } from "@/components/announcements";
 import { Offers } from "@/components/offers";
@@ -13,9 +15,42 @@ import { Faq } from "@/components/faq";
 import { QnaSection } from "@/components/qna-section";
 import { RegisteredRiders } from "@/components/registered-riders";
 import Link from "next/link";
+import { useCollection } from "react-firebase-hooks/firestore";
+import { collection, query, orderBy, limit } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useMemo } from "react";
+import type { ScheduleEvent } from "@/lib/types";
+
 
 export default function Home() {
-  const rideDate = new Date("2025-08-15T06:00:00");
+  const [schedule, loading, error] = useCollection(
+    query(collection(db, 'schedule'), orderBy('createdAt', 'asc'), limit(1))
+  );
+
+  const targetDate = useMemo(() => {
+    if (loading || error || !schedule || schedule.docs.length === 0) {
+      // Return a default or past date if not loaded, to avoid showing a wrong countdown
+      return new Date("2025-08-15T06:00:00");
+    }
+    const firstEvent = schedule.docs[0].data() as ScheduleEvent;
+    // Attempt to parse the time string from the schedule.
+    // Example: "6:00 AM" becomes part of "YYYY-MM-DDTHH:MM:SS"
+    // We assume the date is August 15, 2025 for this example.
+    const [time, period] = firstEvent.time.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+
+    if (period?.toLowerCase() === 'pm' && hours < 12) {
+      hours += 12;
+    }
+    if (period?.toLowerCase() === 'am' && hours === 12) {
+      hours = 0; // Midnight case
+    }
+    
+    const eventDate = new Date("2025-08-15T00:00:00");
+    eventDate.setHours(hours, minutes, 0);
+
+    return eventDate;
+  }, [schedule, loading, error]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -28,21 +63,21 @@ export default function Home() {
           </p>
         </div>
       </div>
-      <CountdownTimer targetDate={rideDate} />
+      <CountdownTimer targetDate={targetDate} />
       <main className="flex-grow container mx-auto p-4 md:p-8 space-y-8">
         <Hero />
         <RegisteredRiders />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <EventSchedule />
             <RouteMap />
         </div>
         
         <Offers />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <Announcements />
-            <QnaSection />
+             <QnaSection />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

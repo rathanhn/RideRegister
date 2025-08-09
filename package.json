@@ -44,6 +44,7 @@
     "embla-carousel-react": "^8.6.0",
     "file-type": "^19.0.0",
     "firebase": "^11.9.1",
+    "framer-motion": "^11.5.7",
     "genkit": "^1.13.0",
     "html2canvas": "^1.4.1",
     "jsqr": "^1.4.0",
@@ -74,5 +75,3 @@
     "typescript": "^5"
   }
 }
-
-    
