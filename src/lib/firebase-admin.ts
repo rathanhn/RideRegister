@@ -1,7 +1,7 @@
+
 // src/lib/firebase-admin.ts
 import * as admin from 'firebase-admin';
 import type { ServiceAccount } from 'firebase-admin';
-import dotenv from 'dotenv';
 
 // Since process.env isn't working reliably, we will define the key directly.
 // This is NOT recommended for production but will work here.
@@ -16,7 +16,7 @@ if (!admin.apps.length) {
     const serviceAccount: ServiceAccount = JSON.parse(serviceAccountKeyString);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+      databaseURL: `https://rideregister.firebaseio.com`,
     });
   } catch (error) {
     console.error('Error parsing or initializing Firebase Admin SDK:', error);
