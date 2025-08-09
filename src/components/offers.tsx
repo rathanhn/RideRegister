@@ -46,39 +46,49 @@ export function Offers() {
           Shop Promotions
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {loading && <OfferSkeleton />}
+      <CardContent>
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <OfferSkeleton />
+            <OfferSkeleton />
+          </div>
+        )}
         {error && <p className="text-sm text-destructive flex items-center gap-2"><AlertTriangle className="h-4 w-4"/> Error loading promotions.</p>}
         {!loading && offers.length === 0 && <p className="text-sm text-center text-muted-foreground">No active promotions.</p>}
-        {offers.map((offer) => (
-          <Card key={offer.id} className="overflow-hidden">
-             <Image
-                alt={offer.title}
-                className="w-full h-auto object-cover aspect-[3/2]"
-                height="200"
-                src={offer.imageUrl}
-                width="400"
-                data-ai-hint={offer.imageHint}
-              />
-            <CardHeader>
-              <CardTitle>{offer.title}</CardTitle>
-              <CardDescription>
-                <p className="whitespace-pre-wrap">{offer.description}</p>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-baseline gap-2">
-                {offer.offerPrice && (
-                    <>
-                        <p className="text-2xl font-bold">₹{offer.offerPrice}</p>
-                        {offer.actualPrice && <p className="text-md text-muted-foreground line-through">₹{offer.actualPrice}</p>}
-                    </>
-                )}
-            </CardContent>
-            <CardFooter>
-              <Badge variant="outline">{offer.validity}</Badge>
-            </CardFooter>
-          </Card>
-        ))}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {offers.map((offer) => (
+            <Card key={offer.id} className="overflow-hidden flex flex-col">
+              <Image
+                  alt={offer.title}
+                  className="w-full h-auto object-cover aspect-[3/2]"
+                  height="200"
+                  src={offer.imageUrl}
+                  width="400"
+                  data-ai-hint={offer.imageHint}
+                />
+              <div className="flex-grow flex flex-col">
+                <CardHeader>
+                  <CardTitle>{offer.title}</CardTitle>
+                  <CardDescription>
+                    <p className="whitespace-pre-wrap">{offer.description}</p>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex items-baseline gap-2">
+                    {offer.offerPrice && (
+                        <>
+                            <p className="text-2xl font-bold">₹{offer.offerPrice}</p>
+                            {offer.actualPrice && <p className="text-md text-muted-foreground line-through">₹{offer.actualPrice}</p>}
+                        </>
+                    )}
+                </CardContent>
+                <CardFooter>
+                  <Badge variant="outline">{offer.validity}</Badge>
+                </CardFooter>
+              </div>
+            </Card>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
