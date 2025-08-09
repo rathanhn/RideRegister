@@ -2,21 +2,36 @@
 "use server";
 
 import { z } from "zod";
-import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc, getDoc, runTransaction, deleteDoc, query, orderBy, getDocs } from "firebase/firestore";
-import type { UserRole } from "./lib/types";
+import { db, auth as adminAuth, admin } from "@/lib/firebase-admin";
 import { auth } from "@/lib/firebase";
-import { headers } from "next/headers";
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { revalidatePath } from "next/cache";
 
 
 // Helper to get a user's role
-async function getUserRole(uid: string): Promise<UserRole> {
-    if (!uid) return 'user';
-    const userDoc = await getDoc(doc(db, "users", uid));
-    if (!userDoc.exists()) return 'user';
-    return userDoc.data()?.role || 'user';
+async function checkAdminPermissions(adminId: string): Promise<boolean> {
+  console.log(`[AdminCheck] Checking permissions for adminId: ${adminId}`);
+  if (!adminId) {
+    console.log('[AdminCheck] No adminId provided.');
+    return false;
+  }
+  try {
+    const userDocRef = db.collection('users').doc(adminId);
+    const userDoc = await userDocRef.get();
+
+    if (!userDoc.exists) {
+      console.log(`[AdminCheck] User document not found for adminId: ${adminId}`);
+      return false;
+    }
+    const userRole = userDoc.data()?.role;
+    console.log(`[AdminCheck] Found role: ${userRole}`);
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+    console.log(`[AdminCheck] Is admin? ${isAdmin}`);
+    return isAdmin;
+  } catch (error) {
+    console.error('[AdminCheck] Error checking permissions:', error);
+    return false;
+  }
 }
 
 const phoneRegex = new RegExp(
@@ -112,7 +127,7 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
       ...coreData,
       email: email,
       status: "pending" as const,
-      createdAt: serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
       consent: true,
     };
     
@@ -134,19 +149,19 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
 
         // Step 2: Create user document in Firestore for the new user
         console.log("[Server Action] Creating user document in Firestore...");
-        const userRef = doc(db, "users", uid);
-        await setDoc(userRef, {
+        const userRef = db.collection("users").doc(uid);
+        await userRef.set({
             email: user.email,
             displayName: registrationData.fullName,
             role: 'user', 
             photoURL: registrationData.photoURL || null,
-            createdAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         console.log(`[Server Action] User document created for new user UID: ${uid}`);
         
         // Step 3: Create registration document in Firestore
-        const registrationRef = doc(db, "registrations", uid);
-        await setDoc(registrationRef, { ...dataToSave, uid });
+        const registrationRef = db.collection("registrations").doc(uid);
+        await registrationRef.set({ ...dataToSave, uid });
         console.log(`[Server Action] Registration document created for UID: ${uid}`);
         
         revalidatePath('/dashboard');
@@ -185,8 +200,8 @@ const updateStatusSchema = z.object({
 });
 
 export async function updateRegistrationStatus(values: z.infer<typeof updateStatusSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
       return { success: false, message: "Permission denied." };
     }
 
@@ -198,10 +213,10 @@ export async function updateRegistrationStatus(values: z.infer<typeof updateStat
 
     try {
         const { registrationId, status, adminId } = parsed.data;
-        const registrationRef = doc(db, "registrations", registrationId);
-        await updateDoc(registrationRef, { 
+        const registrationRef = db.collection("registrations").doc(registrationId);
+        await registrationRef.update({ 
           status,
-          statusLastUpdatedAt: serverTimestamp(),
+          statusLastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
           statusLastUpdatedBy: adminId, // Record which admin made the change
         });
         return { success: true, message: `Registration status updated to ${status}.` };
@@ -218,8 +233,8 @@ const deleteRegistrationSchema = z.object({
 });
 
 export async function deleteRegistration(values: z.infer<typeof deleteRegistrationSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'superadmin' && adminRole !== 'admin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
       return { success: false, message: "Permission denied." };
     }
 
@@ -230,13 +245,11 @@ export async function deleteRegistration(values: z.infer<typeof deleteRegistrati
 
     const { registrationId } = parsed.data;
     
-    // Note: Deleting the Firebase Auth user requires Admin SDK,
-    // which should be done in a secure backend environment (e.g., Cloud Function).
-    // Here, we'll delete the associated Firestore data.
     try {
-      await deleteDoc(doc(db, "registrations", registrationId));
-      await deleteDoc(doc(db, "users", registrationId));
-      // You would typically trigger a function here to delete the auth user.
+      await db.collection("registrations").doc(registrationId).delete();
+      await db.collection("users").doc(registrationId).delete();
+      await adminAuth.deleteUser(registrationId);
+      
       return { success: true, message: "Registration and user data have been deleted." };
     } catch (error) {
       console.error("Error deleting registration:", error);
@@ -253,8 +266,8 @@ const checkInSchema = z.object({
 });
 
 export async function checkInRider(values: z.infer<typeof checkInSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
       return { success: false, message: "Permission denied." };
     }
 
@@ -266,11 +279,11 @@ export async function checkInRider(values: z.infer<typeof checkInSchema>) {
 
     try {
         const { registrationId, riderNumber } = parsed.data;
-        const registrationRef = doc(db, "registrations", registrationId);
+        const registrationRef = db.collection("registrations").doc(registrationId);
         
         const fieldToUpdate = riderNumber === 1 ? 'rider1CheckedIn' : 'rider2CheckedIn';
 
-        await updateDoc(registrationRef, { [fieldToUpdate]: true });
+        await registrationRef.update({ [fieldToUpdate]: true });
         return { success: true, message: `Rider ${riderNumber} checked in successfully.` };
     } catch (error) {
         console.error("Error checking in rider: ", error);
@@ -286,8 +299,8 @@ const finishRiderSchema = z.object({
 });
 
 export async function finishRider(values: z.infer<typeof finishRiderSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
       return { success: false, message: "Permission denied." };
     }
 
@@ -299,11 +312,11 @@ export async function finishRider(values: z.infer<typeof finishRiderSchema>) {
 
     try {
         const { registrationId, riderNumber } = parsed.data;
-        const registrationRef = doc(db, "registrations", registrationId);
+        const registrationRef = db.collection("registrations").doc(registrationId);
         
         const fieldToUpdate = riderNumber === 1 ? 'rider1Finished' : 'rider2Finished';
 
-        await updateDoc(registrationRef, { [fieldToUpdate]: true });
+        await registrationRef.update({ [fieldToUpdate]: true });
         return { success: true, message: `Rider ${riderNumber} marked as finished!` };
     } catch (error) {
         console.error("Error marking rider as finished: ", error);
@@ -328,13 +341,13 @@ export async function addQuestion(values: z.infer<typeof addQuestionSchema>) {
     }
     
     try {
-        const userDoc = await getDoc(doc(db, "users", values.userId));
+        const userDoc = await db.collection("users").doc(values.userId).get();
         const displayName = userDoc.data()?.displayName;
-        await addDoc(collection(db, "qna"), {
+        await db.collection("qna").add({
             ...parsed.data,
             userName: displayName || values.userName,
             isPinned: false,
-            createdAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return { success: true, message: "Question posted successfully!" };
     } catch (error) {
@@ -359,18 +372,19 @@ export async function addReply(values: z.infer<typeof addReplySchema>) {
     if (!parsed.success) {
         return { success: false, message: "Invalid data provided." };
     }
-    const userRole = await getUserRole(values.userId);
-    const userDoc = await getDoc(doc(db, "users", values.userId));
+    const userDocRef = db.collection('users').doc(values.userId);
+    const userDoc = await userDocRef.get();
+    const userRole = userDoc.data()?.role;
     const displayName = userDoc.data()?.displayName;
 
     try {
         const { questionId, ...replyData } = parsed.data;
-        const replyCollectionRef = collection(db, "qna", questionId, "replies");
-        await addDoc(replyCollectionRef, {
+        const replyCollectionRef = db.collection("qna").doc(questionId).collection("replies");
+        await replyCollectionRef.add({
             ...replyData,
             userName: displayName || values.userName,
             isAdmin: userRole === 'admin' || userRole === 'superadmin',
-            createdAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return { success: true, message: "Reply posted successfully!" };
     } catch (error) {
@@ -387,7 +401,9 @@ const updateUserRoleSchema = z.object({
 });
 
 export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema>) {
-  const adminRole = await getUserRole(values.adminId);
+  const adminDoc = await db.collection('users').doc(values.adminId).get();
+  const adminRole = adminDoc.data()?.role;
+
   if (adminRole !== 'superadmin' && values.newRole === 'superadmin') {
     return { success: false, message: "Only superadmins can assign the superadmin role." };
   }
@@ -407,8 +423,8 @@ export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema
   }
 
   try {
-    const userRef = doc(db, "users", targetUserId);
-    await updateDoc(userRef, { role: newRole });
+    const userRef = db.collection("users").doc(targetUserId);
+    await userRef.update({ role: newRole });
     return { success: true, message: `User role updated to ${newRole}.`};
   } catch (error) {
     console.error("Error updating user role:", error);
@@ -424,12 +440,12 @@ const qnaModSchema = z.object({
 
 // Action to delete a question
 export async function deleteQuestion(values: z.infer<typeof qnaModSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
       return { success: false, message: "Permission denied." };
     }
     try {
-        await deleteDoc(doc(db, "qna", values.questionId));
+        await db.collection("qna").doc(values.questionId).delete();
         return { success: true, message: "Question deleted." };
     } catch (error) {
         console.error("Error deleting question:", error);
@@ -439,18 +455,18 @@ export async function deleteQuestion(values: z.infer<typeof qnaModSchema>) {
 
 // Action to toggle pin status of a question
 export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
         return { success: false, message: "Permission denied." };
     }
     try {
-        const questionRef = doc(db, "qna", values.questionId);
-        const questionSnap = await getDoc(questionRef);
-        if (!questionSnap.exists()) {
+        const questionRef = db.collection("qna").doc(values.questionId);
+        const questionSnap = await questionRef.get();
+        if (!questionSnap.exists) {
             return { success: false, message: "Question not found." };
         }
-        const currentPinStatus = questionSnap.data().isPinned || false;
-        await updateDoc(questionRef, { isPinned: !currentPinStatus });
+        const currentPinStatus = questionSnap.data()?.isPinned || false;
+        await questionRef.update({ isPinned: !currentPinStatus });
         return { success: true, message: `Question ${!currentPinStatus ? 'pinned' : 'unpinned'}.` };
     } catch (error) {
         console.error("Error pinning question:", error);
@@ -479,15 +495,15 @@ export async function createAndRequestOrganizerAccess(values: z.infer<typeof req
     const user = userCredential.user;
     
     // Create user document with access request
-    const userRef = doc(db, "users", user.uid);
-    await setDoc(userRef, {
+    const userRef = db.collection("users").doc(user.uid);
+    await userRef.set({
         email: user.email,
         displayName: user.email?.split('@')[0], // Default display name
         role: 'user', // Start as a user
         photoURL: null,
-        createdAt: serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         accessRequest: {
-          requestedAt: serverTimestamp(),
+          requestedAt: admin.firestore.FieldValue.serverTimestamp(),
           status: 'pending_review',
         }
     });
@@ -513,11 +529,11 @@ const addAnnouncementSchema = z.object({
   message: z.string().min(5, "Announcement must be at least 5 characters.").max(280, "Announcement cannot be longer than 280 characters."),
   adminId: z.string().min(1, "Admin ID is required."),
   adminName: z.string().min(1, "Admin name is required."),
-  adminRole: z.enum(['superadmin', 'admin', 'viewer', 'user']),
 });
 
 export async function addAnnouncement(values: z.infer<typeof addAnnouncementSchema>) {
-    if (values.adminRole !== 'admin' && values.adminRole !== 'superadmin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
       return { success: false, message: "Permission denied." };
     }
     const parsed = addAnnouncementSchema.safeParse(values);
@@ -525,13 +541,14 @@ export async function addAnnouncement(values: z.infer<typeof addAnnouncementSche
         return { success: false, message: "Invalid data provided." };
     }
     try {
-        const userDoc = await getDoc(doc(db, "users", values.adminId));
-        const displayName = userDoc.data()?.displayName;
+        const userDoc = await db.collection("users").doc(values.adminId).get();
+        const userData = userDoc.data();
         
-        await addDoc(collection(db, "announcements"), {
+        await db.collection("announcements").add({
             ...parsed.data,
-            adminName: displayName || values.adminName,
-            createdAt: serverTimestamp(),
+            adminName: userData?.displayName || values.adminName,
+            adminRole: userData?.role || 'admin',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return { success: true, message: "Announcement posted successfully!" };
     } catch (error) {
@@ -547,12 +564,12 @@ const deleteAnnouncementSchema = z.object({
 });
 
 export async function deleteAnnouncement(values: z.infer<typeof deleteAnnouncementSchema>) {
-    const adminRole = await getUserRole(values.adminId);
-    if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
       return { success: false, message: "Permission denied." };
     }
     try {
-        await deleteDoc(doc(db, "announcements", values.announcementId));
+        await db.collection("announcements").doc(values.announcementId).delete();
         return { success: true, message: "Announcement deleted." };
     } catch (error) {
         console.error("Error deleting announcement:", error);
@@ -572,8 +589,8 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
         return { success: false, message: "Invalid data provided." };
     }
     try {
-        const registrationRef = doc(db, "registrations", values.registrationId);
-        await updateDoc(registrationRef, {
+        const registrationRef = db.collection("registrations").doc(values.registrationId);
+        await registrationRef.update({
             status: 'cancellation_requested',
             cancellationReason: values.reason,
         });
@@ -618,8 +635,8 @@ const scheduleSchema = z.object({
 
 export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { adminId: string; scheduleId?: string }) {
   const { adminId, scheduleId, ...data } = values;
-  const adminRole = await getUserRole(adminId);
-  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = scheduleSchema.safeParse(data);
@@ -627,11 +644,11 @@ export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { 
 
   try {
     if (scheduleId) {
-      await updateDoc(doc(db, "schedule", scheduleId), parsed.data);
+      await db.collection("schedule").doc(scheduleId).update(parsed.data);
       revalidatePath('/');
       return { success: true, message: "Schedule item updated." };
     } else {
-      await addDoc(collection(db, "schedule"), { ...parsed.data, createdAt: serverTimestamp() });
+      await db.collection("schedule").add({ ...parsed.data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
       revalidatePath('/');
       return { success: true, message: "Schedule item added." };
     }
@@ -641,12 +658,12 @@ export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { 
 }
 
 export async function deleteScheduleItem(id: string, adminId: string) {
-  const adminRole = await getUserRole(adminId);
-  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   try {
-    await deleteDoc(doc(db, "schedule", id));
+    await db.collection("schedule").doc(id).delete();
     revalidatePath('/');
     return { success: true, message: "Schedule item deleted." };
   } catch (error) {
@@ -665,8 +682,8 @@ const organizerSchema = z.object({
 
 export async function manageOrganizer(values: z.infer<typeof organizerSchema> & { adminId: string; organizerId?: string }) {
   const { adminId, organizerId, ...data } = values;
-  const adminRole = await getUserRole(adminId);
-  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = organizerSchema.safeParse(data);
@@ -674,11 +691,11 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
 
   try {
     if (organizerId) {
-      await updateDoc(doc(db, "organizers", organizerId), parsed.data);
+      await db.collection("organizers").doc(organizerId).update(parsed.data);
       revalidatePath('/');
       return { success: true, message: "Organizer updated." };
     } else {
-      await addDoc(collection(db, "organizers"), { ...parsed.data, createdAt: serverTimestamp() });
+      await db.collection("organizers").add({ ...parsed.data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
       revalidatePath('/');
       return { success: true, message: "Organizer added." };
     }
@@ -688,12 +705,12 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
 }
 
 export async function deleteOrganizer(id: string, adminId: string) {
-  const adminRole = await getUserRole(adminId);
-  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   try {
-    await deleteDoc(doc(db, "organizers", id));
+    await db.collection("organizers").doc(id).delete();
     revalidatePath('/');
     return { success: true, message: "Organizer deleted." };
   } catch (error) {
@@ -714,8 +731,8 @@ const promotionSchema = z.object({
 
 export async function managePromotion(values: z.infer<typeof promotionSchema> & { adminId: string; promotionId?: string }) {
   const { adminId, promotionId, ...data } = values;
-  const adminRole = await getUserRole(adminId);
-  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = promotionSchema.safeParse(data);
@@ -723,11 +740,11 @@ export async function managePromotion(values: z.infer<typeof promotionSchema> & 
 
   try {
     if (promotionId) {
-      await updateDoc(doc(db, "promotions", promotionId), parsed.data);
+      await db.collection("promotions").doc(promotionId).update(parsed.data);
       revalidatePath('/');
       return { success: true, message: "Promotion updated." };
     } else {
-      await addDoc(collection(db, "promotions"), { ...parsed.data, createdAt: serverTimestamp() });
+      await db.collection("promotions").add({ ...parsed.data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
       revalidatePath('/');
       return { success: true, message: "Promotion added." };
     }
@@ -737,12 +754,12 @@ export async function managePromotion(values: z.infer<typeof promotionSchema> & 
 }
 
 export async function deletePromotion(id: string, adminId: string) {
-  const adminRole = await getUserRole(adminId);
-  if (adminRole !== 'admin' && adminRole !== 'superadmin') {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   try {
-    await deleteDoc(doc(db, "promotions", id));
+    await db.collection("promotions").doc(id).delete();
     revalidatePath('/');
     return { success: true, message: "Promotion deleted." };
   } catch (error) {

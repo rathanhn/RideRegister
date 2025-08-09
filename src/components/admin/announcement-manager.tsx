@@ -85,7 +85,6 @@ export function AnnouncementManager() {
     const result = await addAnnouncement({ 
         adminId: user.uid,
         adminName: adminDisplayName,
-        adminRole: userRole,
         message: values.message 
     });
     if (result.success) {
