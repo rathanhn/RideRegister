@@ -47,17 +47,21 @@ export function UserRolesManager() {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [isRoleLoading, setIsRoleLoading] = useState(true);
 
-  
-  // Query for users who have a role that is NOT 'user'
-  const usersQuery = useMemo(() => {
-    // This query now fetches users who have requested access or have an elevated role.
-    return query(
+  // Query for users with elevated roles
+  const [adminUsers, adminUsersLoading, adminUsersError] = useCollection(
+    query(
       collection(db, 'users'), 
       where('role', 'in', ['superadmin', 'admin', 'viewer'])
-    );
-  }, []);
+    )
+  );
 
-  const [users, usersLoading, usersError] = useCollection(usersQuery);
+  // Query for users who have requested access
+  const [requestingUsers, requestingUsersLoading, requestingUsersError] = useCollection(
+    query(
+      collection(db, 'users'),
+      where('accessRequest.status', '==', 'pending_review')
+    )
+  );
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -73,7 +77,24 @@ export function UserRolesManager() {
     fetchUserRole();
   }, [loggedInUser]);
 
-  const allUsers = users?.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AppUser[] || [];
+  const allUsers = useMemo(() => {
+    const usersMap = new Map<string, AppUser>();
+
+    adminUsers?.docs.forEach(doc => {
+        const user = { id: doc.id, ...doc.data() } as AppUser;
+        usersMap.set(user.id, user);
+    });
+
+    requestingUsers?.docs.forEach(doc => {
+        const user = { id: doc.id, ...doc.data() } as AppUser;
+        if (!usersMap.has(user.id)) {
+            usersMap.set(user.id, user);
+        }
+    });
+
+    return Array.from(usersMap.values());
+  }, [adminUsers, requestingUsers]);
+
 
   const handleRoleChange = async (targetUserId: string, newRole: UserRole) => {
     if (!loggedInUser) return;
@@ -93,23 +114,24 @@ export function UserRolesManager() {
     setIsUpdating(null);
   };
 
-  const isLoading = authLoading || isRoleLoading || usersLoading;
+  const isLoading = authLoading || isRoleLoading || adminUsersLoading || requestingUsersLoading;
+  const queryError = adminUsersError || requestingUsersError;
 
   // Only superadmins and admins can view this component
-  if (!isLoading && currentUserRole !== 'superadmin') {
+  if (!isLoading && currentUserRole !== 'superadmin' && currentUserRole !== 'admin') {
     return (
       <div className="text-muted-foreground flex items-center justify-center gap-2 p-4 bg-secondary rounded-md">
         <ShieldAlert className="h-5 w-5" />
-        <p>You do not have permission to manage user roles. Only Super Admins can.</p>
+        <p>You do not have permission to manage user roles.</p>
       </div>
     );
   }
 
-  if (usersError) {
+  if (queryError) {
     return (
       <div className="text-destructive flex items-center gap-2 p-4">
         <AlertTriangle />
-        <p>Error loading users: {usersError.message}</p>
+        <p>Error loading users: {queryError.message}</p>
       </div>
     );
   }
@@ -134,13 +156,17 @@ export function UserRolesManager() {
                 <TableCell className="font-medium">{user.displayName || 'N/A'}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  <Badge 
-                    variant={user.role === 'superadmin' ? 'default' : user.role === 'admin' ? 'secondary' : 'outline'} 
-                    className="capitalize"
-                  >
-                    {user.role}
-                    {user.accessRequest?.status === 'pending_review' && ' (Requested)'}
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge 
+                      variant={user.role === 'superadmin' ? 'default' : user.role === 'admin' ? 'secondary' : 'outline'} 
+                      className="capitalize"
+                    >
+                      {user.role}
+                    </Badge>
+                     {user.accessRequest?.status === 'pending_review' && (
+                        <Badge variant="destructive">Requested</Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   {isUpdating === user.id ? (
@@ -149,7 +175,10 @@ export function UserRolesManager() {
                     <Select
                       defaultValue={user.role}
                       onValueChange={(newRole) => handleRoleChange(user.id, newRole as UserRole)}
-                      disabled={user.id === loggedInUser?.uid || currentUserRole !== 'superadmin'}
+                      disabled={
+                        user.id === loggedInUser?.uid || 
+                        (currentUserRole !== 'superadmin' && currentUserRole !== 'admin')
+                      }
                     >
                       <SelectTrigger className="w-[180px] ml-auto">
                         <SelectValue placeholder="Select a role" />
