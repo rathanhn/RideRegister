@@ -253,15 +253,17 @@ export function RidersListTable() {
                 <TableHead className="text-right">Expand</TableHead>
             </TableRow>
             </TableHeader>
-            <TableBody>
+
             {(loading || authLoading) ? (
-                <TableSkeleton />
+                <TableBody>
+                  <TableSkeleton />
+                </TableBody>
             ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => {
                      const ticketUrl = `${origin}/ticket/${reg.id}`;
                     return (
-                        <Collapsible asChild key={reg.id}>
-                            <React.Fragment>
+                        <Collapsible asChild key={reg.id} as="tbody" className="w-full">
+                           <>
                                 <TableRow>
                                     <TableCell className="font-medium">
                                         {reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}
@@ -321,20 +323,23 @@ export function RidersListTable() {
                                         </TableCell>
                                     </TableRow>
                                 </CollapsibleContent>
-                            </React.Fragment>
+                            </>
                         </Collapsible>
                     )
                 })
             ) : (
-                <TableRow>
-                <TableCell colSpan={2} className="text-center h-24">
-                    {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
-                </TableCell>
-                </TableRow>
+                <TableBody>
+                  <TableRow>
+                      <TableCell colSpan={2} className="text-center h-24">
+                          {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
+                      </TableCell>
+                  </TableRow>
+                </TableBody>
             )}
-            </TableBody>
         </Table>
         </div>
     </div>
   );
 }
+
+    

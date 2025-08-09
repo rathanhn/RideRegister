@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 
 cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dfk9licqv',
-  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || '547273686289121',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'n_rTx_EgUrZqaIOQAf-0lLXPqE0',
+  cloud_name: 'dfk9licqv',
+  api_key: '547273686289121',
+  api_secret: 'n_rTx_EgUrZqaIOQAf-0lLXPqE0',
 });
 
 export async function POST(request: Request) {
@@ -26,3 +26,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Could not upload photo: ${errorMessage}` }, { status: 500 });
   }
 }
+
+    
