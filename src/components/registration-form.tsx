@@ -350,9 +350,9 @@ export function RegistrationForm() {
               <FormLabel>Profile Photo (Rider 1)</FormLabel>
               <FormControl>
                   <div className="flex items-center gap-4">
-                      <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
+                      <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center bg-muted overflow-hidden">
                         {photoPreview1 ? (
-                            <Image src={photoPreview1} alt="Profile preview" fill className="rounded-full object-cover" />
+                            <img src={photoPreview1} alt="Profile preview" className="w-full h-full object-cover" />
                         ) : (
                             <User className="w-10 h-10 text-muted-foreground" />
                         )}
@@ -417,9 +417,9 @@ export function RegistrationForm() {
                         <FormLabel>Profile Photo (Rider 2)</FormLabel>
                         <FormControl>
                             <div className="flex items-center gap-4">
-                                <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center">
+                                <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center bg-muted overflow-hidden">
                                     {photoPreview2 ? (
-                                        <Image src={photoPreview2} alt="Rider 2 preview" fill className="rounded-full object-cover" />
+                                        <img src={photoPreview2} alt="Rider 2 preview" className="w-full h-full object-cover" />
                                     ) : (
                                         <User className="w-10 h-10 text-muted-foreground" />
                                     )}
@@ -486,5 +486,3 @@ export function RegistrationForm() {
     </Card>
   );
 }
-
-    
