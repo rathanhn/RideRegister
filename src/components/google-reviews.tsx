@@ -8,6 +8,7 @@ import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
+import { ScrollArea } from './ui/scroll-area';
 
 interface Review {
   author_name: string;
@@ -114,26 +115,28 @@ export function GoogleReviews() {
             </div>
         )}
         {data && data.reviews && data.reviews.length > 0 && (
-          <div className="space-y-4">
-            {data.reviews.slice(0, 3).map((review) => (
-              <div key={review.time} className="flex items-start gap-4 p-4 border rounded-lg bg-secondary/50">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={review.profile_photo_url} alt={review.author_name} />
-                  <AvatarFallback><User /></AvatarFallback>
-                </Avatar>
-                <div className="w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <a href={review.author_url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{review.author_name}</a>
-                    <p className="text-xs text-muted-foreground mt-1 sm:mt-0">{review.relative_time_description}</p>
+          <ScrollArea className="h-80 pr-4">
+            <div className="space-y-4">
+              {data.reviews.map((review) => (
+                <div key={review.time} className="flex items-start gap-4 p-4 border rounded-lg bg-secondary/50">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={review.profile_photo_url} alt={review.author_name} />
+                    <AvatarFallback><User /></AvatarFallback>
+                  </Avatar>
+                  <div className="w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <a href={review.author_url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{review.author_name}</a>
+                      <p className="text-xs text-muted-foreground mt-1 sm:mt-0">{review.relative_time_description}</p>
+                    </div>
+                    <div className="my-1">
+                      <StarRating rating={review.rating} />
+                    </div>
+                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">{review.text}</div>
                   </div>
-                  <div className="my-1">
-                    <StarRating rating={review.rating} />
-                  </div>
-                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">{review.text}</div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         )}
          {data && (!data.reviews || data.reviews.length === 0) && (
             <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground bg-secondary/50 rounded-lg">
