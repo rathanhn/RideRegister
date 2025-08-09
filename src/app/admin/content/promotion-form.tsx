@@ -12,8 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import { managePromotion, deletePromotion } from "@/app/actions";
 import type { Offer } from "@/lib/types";
 import type { User } from 'firebase/auth';
-import { Loader2, Trash2 } from "lucide-react";
-import { useEffect } from "react";
+import { Loader2, Trash2, Upload } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +31,7 @@ const formSchema = z.object({
   title: z.string().min(3, "Title is required."),
   description: z.string().min(10, "Description is required."),
   validity: z.string().min(3, "Validity is required."),
-  imageUrl: z.string().url("A valid photo URL is required."),
+  imageUrl: z.string().url("A valid promotion photo is required."),
   imageHint: z.string().min(2, "Image hint is required"),
   actualPrice: z.coerce.number().optional(),
   offerPrice: z.coerce.number().optional(),
@@ -43,6 +44,15 @@ interface PromotionFormProps {
   user: User | null | undefined;
 }
 
+const fileToDataUri = (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
 export function PromotionForm({ isOpen, setIsOpen, promotion, user }: PromotionFormProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,15 +60,50 @@ export function PromotionForm({ isOpen, setIsOpen, promotion, user }: PromotionF
     defaultValues: { title: "", description: "", validity: "", imageUrl: "", imageHint: "", actualPrice: undefined, offerPrice: undefined },
   });
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   useEffect(() => {
-    if (promotion) {
-      form.reset(promotion);
-    } else {
-      form.reset({ title: "", description: "", validity: "", imageUrl: "", imageHint: "", actualPrice: undefined, offerPrice: undefined });
+     if (isOpen) {
+        if (promotion) {
+          form.reset(promotion);
+          setPhotoPreview(promotion.imageUrl);
+        } else {
+          form.reset({ title: "", description: "", validity: "", imageUrl: "", imageHint: "", actualPrice: undefined, offerPrice: undefined });
+          setPhotoPreview(null);
+        }
     }
   }, [promotion, form, isOpen]);
 
   const { isSubmitting } = form.formState;
+
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setIsUploading(true);
+      setPhotoPreview(URL.createObjectURL(file));
+      try {
+        const dataUri = await fileToDataUri(file);
+        const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: JSON.stringify({ file: dataUri }),
+            headers: { 'Content-Type': 'application/json' },
+        });
+        const { url, error } = await uploadResponse.json();
+        if (error || !url) {
+            throw new Error(error || 'Failed to upload photo.');
+        }
+        form.setValue('imageUrl', url, { shouldValidate: true });
+        setPhotoPreview(url);
+      } catch (e) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: (e as Error).message });
+        setPhotoPreview(promotion?.imageUrl || null);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) return;
@@ -100,9 +145,33 @@ export function PromotionForm({ isOpen, setIsOpen, promotion, user }: PromotionF
              <FormField name="validity" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Validity</FormLabel><FormControl><Input {...field} placeholder="e.g., Valid until August 15th" /></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField name="imageUrl" control={form.control} render={({ field }) => (
-              <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} placeholder="https://placehold.co/600x400.png" /></FormControl><FormMessage /></FormItem>
-            )} />
+            
+            <FormItem>
+              <FormLabel>Promotion Photo</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                    <div className="relative w-full aspect-video rounded-md border-2 border-dashed flex items-center justify-center bg-muted overflow-hidden">
+                    {photoPreview ? (
+                        <Image src={photoPreview} alt="Promotion preview" fill className="object-cover" />
+                    ) : null}
+                     {isUploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}
+                    </div>
+                    <Button type="button" variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()} disabled={isUploading}>
+                        <Upload className="mr-2 h-4 w-4" /> {photoPreview ? 'Change Photo' : 'Upload Photo'}
+                    </Button>
+                    <Input
+                    type="file"
+                    className="hidden"
+                    ref={photoInputRef}
+                    onChange={handlePhotoChange}
+                    accept="image/png, image/jpeg"
+                    disabled={isUploading}
+                    />
+                </div>
+              </FormControl>
+               <FormMessage>{form.formState.errors.imageUrl?.message}</FormMessage>
+            </FormItem>
+
              <FormField name="imageHint" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} placeholder="riding gloves" /></FormControl><FormMessage /></FormItem>
             )} />
@@ -128,8 +197,8 @@ export function PromotionForm({ isOpen, setIsOpen, promotion, user }: PromotionF
                         </AlertDialogContent>
                     </AlertDialog>
                 ) : <div />}
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting || isUploading}>
+                {(isSubmitting || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {promotion ? "Save Changes" : "Create Promotion"}
               </Button>
             </DialogFooter>
