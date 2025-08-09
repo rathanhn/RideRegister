@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 const PLACE_ID = 'ChIJ1531aM2EpzsRB3g6xgYqay0'; // Place ID for Telefun Mobiles, Madikeri
 
 export async function GET() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
   if (!apiKey) {
     console.error('Google Places API key is missing.');

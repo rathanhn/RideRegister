@@ -68,7 +68,8 @@ export function GoogleReviews() {
       try {
         const response = await fetch('/api/reviews');
         if (!response.ok) {
-          throw new Error('Failed to fetch reviews.');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch reviews.');
         }
         const result = await response.json();
         setData(result);
@@ -109,7 +110,7 @@ export function GoogleReviews() {
             <div className="flex flex-col items-center justify-center h-40 text-center text-destructive bg-destructive/10 rounded-lg">
                 <AlertTriangle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Failed to Load Reviews</p>
-                <p className="text-sm">Please check the server configuration.</p>
+                <p className="text-sm">{error}</p>
             </div>
         )}
         {data && data.reviews && data.reviews.length > 0 && (
