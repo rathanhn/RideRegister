@@ -1,0 +1,145 @@
+
+"use client";
+
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { manageEventTime } from "@/app/actions";
+import type { EventSettings } from "@/lib/types";
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { useDocument } from 'react-firebase-hooks/firestore';
+import { doc, Timestamp } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { Loader2, AlertTriangle, Save, Calendar as CalendarIcon } from "lucide-react";
+import { useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
+const formSchema = z.object({
+  eventDate: z.date({
+    required_error: "A date for the event is required.",
+  }),
+});
+
+export function EventTimeManager() {
+  const [user, authLoading] = useAuthState(auth);
+  const { toast } = useToast();
+  
+  const [eventSettings, loading, error] = useDocument(doc(db, 'settings', 'event'));
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { eventDate: new Date() },
+  });
+
+  useEffect(() => {
+    if (eventSettings?.exists()) {
+      const data = eventSettings.data() as EventSettings;
+      if (data.startTime instanceof Timestamp) {
+        form.reset({ eventDate: data.startTime.toDate() });
+      }
+    }
+  }, [eventSettings, form]);
+
+  const { isSubmitting } = form.formState;
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user) return;
+    const result = await manageEventTime({ ...values, adminId: user.uid });
+    if (result.success) {
+      toast({ title: "Success", description: result.message });
+    } else {
+      toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+  };
+
+  const isLoading = loading || authLoading;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Manage Event Start Time</CardTitle>
+        <CardDescription>Set the official start date and time for the countdown clock.</CardDescription>
+      </CardHeader>
+      <CardContent>
+         {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        ) : error ? (
+            <div className="text-destructive flex items-center gap-2">
+                <AlertTriangle/> Error loading event time data.
+            </div>
+        ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  name="eventDate"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Event Date & Time</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-[240px] pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP p")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                          />
+                          <div className="p-2 border-t border-border">
+                            <input
+                                type="time"
+                                className="w-full border-input bg-background p-2 rounded-md"
+                                value={format(field.value, 'HH:mm')}
+                                onChange={(e) => {
+                                    const [hours, minutes] = e.target.value.split(':').map(Number);
+                                    const newDate = new Date(field.value);
+                                    newDate.setHours(hours, minutes);
+                                    field.onChange(newDate);
+                                }}
+                            />
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Save className="mr-2 h-4 w-4"/>
+                  Save Event Time
+                </Button>
+              </form>
+            </Form>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

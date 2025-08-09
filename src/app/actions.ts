@@ -749,3 +749,27 @@ export async function manageLocation(values: z.infer<typeof locationSchema> & { 
     return { success: false, message: "Failed to update location." };
   }
 }
+
+const eventTimeSchema = z.object({
+  eventDate: z.date(),
+});
+
+export async function manageEventTime(values: z.infer<typeof eventTimeSchema> & { adminId: string }) {
+  const { adminId, ...data } = values;
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = eventTimeSchema.safeParse(data);
+  if (!parsed.success) return { success: false, message: "Invalid data." };
+
+  try {
+    await setDoc(doc(db, "settings", "event"), {
+      startTime: parsed.data.eventDate,
+    });
+    revalidatePath('/');
+    return { success: true, message: "Event time updated successfully." };
+  } catch (error) {
+    return { success: false, message: "Failed to update event time." };
+  }
+}

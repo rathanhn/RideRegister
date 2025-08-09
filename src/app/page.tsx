@@ -15,42 +15,28 @@ import { Faq } from "@/components/faq";
 import { QnaSection } from "@/components/qna-section";
 import { RegisteredRiders } from "@/components/registered-riders";
 import Link from "next/link";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useDocument } from "react-firebase-hooks/firestore";
+import { doc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useMemo } from "react";
-import type { ScheduleEvent } from "@/lib/types";
+import type { EventSettings } from "@/lib/types";
 
 
 export default function Home() {
-  const [schedule, loading, error] = useCollection(
-    query(collection(db, 'schedule'), orderBy('createdAt', 'asc'), limit(1))
-  );
+  const [eventSettings, loading, error] = useDocument(doc(db, 'settings', 'event'));
 
   const targetDate = useMemo(() => {
-    if (loading || error || !schedule || schedule.docs.length === 0) {
-      // Return a default or past date if not loaded, to avoid showing a wrong countdown
+    if (loading || error || !eventSettings?.exists()) {
+      // Return a default date if not loaded or set
       return new Date("2025-08-15T06:00:00");
     }
-    const firstEvent = schedule.docs[0].data() as ScheduleEvent;
-    // Attempt to parse the time string from the schedule.
-    // Example: "6:00 AM" becomes part of "YYYY-MM-DDTHH:MM:SS"
-    // We assume the date is August 15, 2025 for this example.
-    const [time, period] = firstEvent.time.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
-
-    if (period?.toLowerCase() === 'pm' && hours < 12) {
-      hours += 12;
+    const data = eventSettings.data() as EventSettings;
+    if (data.startTime instanceof Timestamp) {
+      return data.startTime.toDate();
     }
-    if (period?.toLowerCase() === 'am' && hours === 12) {
-      hours = 0; // Midnight case
-    }
-    
-    const eventDate = new Date("2025-08-15T00:00:00");
-    eventDate.setHours(hours, minutes, 0);
-
-    return eventDate;
-  }, [schedule, loading, error]);
+    // Fallback for older data format or just in case
+    return new Date(data.startTime);
+  }, [eventSettings, loading, error]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -75,9 +61,9 @@ export default function Home() {
         
         <Offers />
 
-         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <Announcements />
-             <QnaSection />
+            <QnaSection />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -45,6 +45,10 @@ export interface LocationSettings {
   destination: string;
 }
 
+export interface EventSettings {
+  startTime: any; // Firestore timestamp
+}
+
 export interface Registration {
     id: string;
     registrationType: 'solo' | 'duo';
