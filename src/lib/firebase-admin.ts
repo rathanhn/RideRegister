@@ -4,15 +4,7 @@ import type { ServiceAccount } from 'firebase-admin';
 
 let app: admin.app.App;
 
-function getFirebaseAdmin() {
-  if (app) {
-    return {
-      db: admin.firestore(app),
-      auth: admin.auth(app),
-      admin,
-    };
-  }
-
+if (!admin.apps.length) {
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
   if (!serviceAccountKey) {
@@ -21,27 +13,19 @@ function getFirebaseAdmin() {
 
   try {
     const serviceAccount: ServiceAccount = JSON.parse(serviceAccountKey);
-
-    if (admin.apps.length === 0) {
-      app = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
-      });
-    } else {
-      app = admin.app();
-    }
+    app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+    });
   } catch (error) {
     console.error('Error parsing FIREBASE_SERVICE_ACCOUNT_KEY:', error);
     throw new Error('Firebase Admin SDK initialization failed. The service account key may be malformed.');
   }
-
-  return {
-    db: admin.firestore(app),
-    auth: admin.auth(app),
-    admin,
-  };
+} else {
+  app = admin.app();
 }
 
-const { db, auth, admin } = getFirebaseAdmin();
+const db = admin.firestore(app);
+const auth = admin.auth(app);
 
 export { db, auth, admin };
