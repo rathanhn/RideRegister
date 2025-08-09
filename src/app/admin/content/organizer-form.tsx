@@ -148,7 +148,7 @@ export function OrganizerForm({ isOpen, setIsOpen, organizer, user }: OrganizerF
                   <div className="flex items-center gap-4">
                       <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center bg-muted">
                         {photoPreview ? (
-                            <Image src={photoPreview} alt="Organizer preview" fill className="rounded-full object-cover" />
+                            <Image src={photoPreview} alt="Organizer preview" fill sizes="96px" className="rounded-full object-cover" />
                         ) : null}
                          {isUploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}
                       </div>
