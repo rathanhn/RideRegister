@@ -11,11 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gift, Loader2, AlertTriangle, Tag } from "lucide-react";
+import { Gift, Loader2, AlertTriangle, MessageCircle } from "lucide-react";
 import type { Offer } from "@/lib/types";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { collection, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Button } from "./ui/button";
+import Link from "next/link";
 
 const OfferSkeleton = () => (
     <Card className="overflow-hidden">
@@ -37,6 +39,13 @@ export function Offers() {
   );
 
   const offers = promotions?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Offer)) || [];
+
+  const shopWhatsappNumber = "916363148287";
+
+  const generateWhatsappMessage = (offer: Offer) => {
+    const message = `Hi TeleFun, I'm interested in the "${offer.title}" offer. Could you please provide more details?`;
+    return `https://wa.me/${shopWhatsappNumber}?text=${encodeURIComponent(message)}`;
+  }
 
   return (
     <Card>
@@ -67,14 +76,14 @@ export function Offers() {
                   width="400"
                   data-ai-hint={offer.imageHint}
                 />
-              <div className="flex-grow flex flex-col">
-                <CardHeader>
+              <div className="flex-grow flex flex-col p-6">
+                <CardHeader className="p-0">
                   <CardTitle>{offer.title}</CardTitle>
                   <CardDescription>
                     <p className="whitespace-pre-wrap">{offer.description}</p>
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow flex items-baseline gap-2">
+                <CardContent className="flex-grow flex items-baseline gap-2 p-0 pt-4">
                     {offer.offerPrice && (
                         <>
                             <p className="text-2xl font-bold">₹{offer.offerPrice}</p>
@@ -82,8 +91,13 @@ export function Offers() {
                         </>
                     )}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-0 pt-4 flex-wrap gap-2 justify-between">
                   <Badge variant="outline">{offer.validity}</Badge>
+                   <Button asChild size="sm" className="bg-green-500 hover:bg-green-600">
+                      <Link href={generateWhatsappMessage(offer)} target="_blank">
+                        <MessageCircle className="mr-2 h-4 w-4" /> Enquire on WhatsApp
+                      </Link>
+                    </Button>
                 </CardFooter>
               </div>
             </Card>
