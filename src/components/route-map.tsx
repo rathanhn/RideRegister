@@ -27,7 +27,7 @@ export function RouteMap() {
   const origin = locationData?.origin || "Telefun Mobiles, Mahadevpet, Madikeri";
   const destination = locationData?.destination || "Nisargadhama, Kushalnagar";
   
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
   const mapSrc = `https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
   const viewMapUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
 
