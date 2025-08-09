@@ -261,7 +261,7 @@ export function RidersListTable() {
                      const ticketUrl = `${origin}/ticket/${reg.id}`;
                     return (
                         <Collapsible asChild key={reg.id}>
-                            <>
+                            <React.Fragment>
                                 <TableRow>
                                     <TableCell className="font-medium">
                                         {reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}
@@ -321,7 +321,7 @@ export function RidersListTable() {
                                         </TableCell>
                                     </TableRow>
                                 </CollapsibleContent>
-                            </>
+                            </React.Fragment>
                         </Collapsible>
                     )
                 })
