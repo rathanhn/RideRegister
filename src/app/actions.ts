@@ -583,6 +583,7 @@ export async function sendPasswordResetLink(values: z.infer<typeof forgotPasswor
     }
 }
 
+
 // === CONTENT MANAGEMENT ACTIONS ===
 
 const scheduleSchema = z.object({
@@ -724,4 +725,27 @@ export async function deletePromotion(id: string, adminId: string) {
   }
 }
 
-    
+
+const locationSchema = z.object({
+  origin: z.string().min(5, "Origin is required."),
+  destination: z.string().min(5, "Destination is required."),
+});
+
+export async function manageLocation(values: z.infer<typeof locationSchema> & { adminId: string }) {
+  const { adminId, ...data } = values;
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = locationSchema.safeParse(data);
+  if (!parsed.success) return { success: false, message: "Invalid data." };
+
+  try {
+    // There will be only one document in the 'settings' collection for the route.
+    await setDoc(doc(db, "settings", "route"), parsed.data);
+    revalidatePath('/');
+    return { success: true, message: "Route location updated successfully." };
+  } catch (error) {
+    return { success: false, message: "Failed to update location." };
+  }
+}

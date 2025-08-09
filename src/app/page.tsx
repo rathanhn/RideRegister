@@ -1,3 +1,4 @@
+
 import { Header } from "@/components/header";
 import { Announcements } from "@/components/announcements";
 import { Offers } from "@/components/offers";

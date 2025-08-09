@@ -135,16 +135,14 @@ export default function AdminPage() {
                 </Card>
             </div>
             
-            <div className="lg:col-span-2">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&amp;A</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <AdminQna />
-                    </CardContent>
-                </Card>
-            </div>
+             <Card>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&amp;A</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <AdminQna />
+                </CardContent>
+            </Card>
         </div>
       </main>
     </div>
