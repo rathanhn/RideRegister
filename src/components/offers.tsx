@@ -62,7 +62,9 @@ export function Offers() {
               />
             <CardHeader>
               <CardTitle>{offer.title}</CardTitle>
-              <CardDescription className="whitespace-pre-wrap">{offer.description}</CardDescription>
+              <CardDescription>
+                <p className="whitespace-pre-wrap">{offer.description}</p>
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex items-baseline gap-2">
                 {offer.offerPrice && (
