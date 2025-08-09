@@ -21,8 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, Eye, MoreVertical } from 'lucide-react';
@@ -34,7 +32,6 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { deleteRegistration } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { Card, CardContent } from '../ui/card';
 import { Separator } from '../ui/separator';
 
 // Helper function to format WhatsApp links
@@ -71,13 +68,6 @@ export function RidersListTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [origin, setOrigin] = useState('');
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        setOrigin(window.location.origin);
-    }
-  }, []);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -199,7 +189,7 @@ export function RidersListTable() {
                   <TableSkeleton />
             ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => {
-                    const ticketUrl = `${origin}/ticket/${reg.id}`;
+                    const ticketUrl = `/ticket/${reg.id}`;
                     return (
                         <TableRow key={reg.id}>
                             <TableCell className="font-medium">
