@@ -20,6 +20,7 @@ import { doc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useMemo } from "react";
 import type { EventSettings } from "@/lib/types";
+import Script from "next/script";
 
 
 export default function Home() {
@@ -71,7 +72,11 @@ export default function Home() {
                 <Faq />
             </div>
             <div className="md:col-span-2 lg:col-span-1 flex flex-col gap-8">
-                 <StoreDetails />
+                <div>
+                  <Script src="https://static.elfsight.com/platform/platform.js" data-use-service-core defer />
+                  <div className="elfsight-app-a404f5a5-0aba-467f-8962-c79356114bf0" data-elfsight-app-lazy></div>
+                </div>
+                <StoreDetails />
             </div>
         </div>
         
