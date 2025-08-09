@@ -26,7 +26,6 @@ import { deleteRegistration } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Card, CardContent } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // Helper function to format WhatsApp links
 const formatWhatsAppLink = (phone: string, message?: string) => {
@@ -47,11 +46,11 @@ const getTicketMessage = (name: string, ticketUrl: string) => `Hi ${name}, your 
 const TableSkeleton = () => (
     [...Array(5)].map((_, i) => (
         <TableRow key={i}>
-            <TableCell colSpan={2}><Skeleton className="h-5 w-full" /></TableCell>
+            <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+            <TableCell className="text-right"><Skeleton className="h-9 w-9" /></TableCell>
         </TableRow>
     ))
 );
-
 
 export function RidersListTable() {
   const [registrations, loading, error] = useCollection(
@@ -63,6 +62,7 @@ export function RidersListTable() {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [origin, setOrigin] = useState('');
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -184,57 +184,55 @@ export function RidersListTable() {
                 filteredRegistrations.map((reg) => {
                     const ticketUrl = `${origin}/ticket/${reg.id}`;
                     return (
-                        <Collapsible key={reg.id} asChild>
-                            <Card>
-                                <CollapsibleTrigger className="w-full">
-                                    <CardContent className="p-4 flex justify-between items-center">
-                                        <span className="font-semibold text-left">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</span>
-                                        <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                                    </CardContent>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                    <Separator />
-                                    <div className="p-4 space-y-4">
+                        <Card key={reg.id}>
+                            <div className="p-4 flex justify-between items-center" onClick={() => setExpandedRow(expandedRow === reg.id ? null : reg.id)}>
+                                <span className="font-semibold text-left">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</span>
+                                <ChevronDown className={`h-4 w-4 transition-transform ${expandedRow === reg.id ? 'rotate-180' : ''}`} />
+                            </div>
+                            {expandedRow === reg.id && (
+                                <>
+                                <Separator />
+                                <div className="p-4 space-y-4">
+                                    <div className="space-y-3">
+                                        <p className="font-semibold">{reg.fullName}</p>
+                                        <p className="text-sm text-muted-foreground">{reg.phoneNumber}</p>
+                                        <Badge variant="outline" className={`mt-1 ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>{reg.rider1CheckedIn ? 'Checked-in' : 'Pending Check-in'}</Badge>
+                                        <div className="flex gap-2">
+                                            <Button asChild size="sm" className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, ticketUrl))} target="_blank"><Send /> Send</Link></Button>
+                                            <Button asChild size="sm" className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Chat</Link></Button>
+                                            <Button asChild size="sm" variant="outline" className="flex-1"><Link href={ticketUrl} target="_blank"><Eye /> View</Link></Button>
+                                        </div>
+                                    </div>
+                                    
+                                    {reg.registrationType === 'duo' && reg.fullName2 && (
+                                        <>
+                                        <Separator />
                                         <div className="space-y-3">
-                                            <p className="font-semibold">{reg.fullName}</p>
-                                            <p className="text-sm text-muted-foreground">{reg.phoneNumber}</p>
-                                            <Badge variant="outline" className={`mt-1 ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>{reg.rider1CheckedIn ? 'Checked-in' : 'Pending Check-in'}</Badge>
+                                            <p className="font-semibold">{reg.fullName2}</p>
+                                            <p className="text-sm text-muted-foreground">{reg.phoneNumber2}</p>
+                                            <Badge variant="outline" className={`mt-1 ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>{reg.rider2CheckedIn ? 'Checked-in' : 'Pending Check-in'}</Badge>
                                             <div className="flex gap-2">
-                                                <Button asChild size="sm" className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, ticketUrl))} target="_blank"><Send /> Send</Link></Button>
-                                                <Button asChild size="sm" className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Chat</Link></Button>
-                                                <Button asChild size="sm" variant="outline" className="flex-1"><Link href={ticketUrl} target="_blank"><Eye /> View</Link></Button>
+                                                <Button asChild size="sm" className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"><Link href={formatWhatsAppLink(reg.phoneNumber2 || '', getTicketMessage(reg.fullName2, ticketUrl))} target="_blank"><Send /> Send</Link></Button>
+                                                <Button asChild size="sm" className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"><Link href={formatWhatsAppLink(reg.phoneNumber2 || '')} target="_blank"><MessageCircle /> Chat</Link></Button>
+                                                 <Button asChild size="sm" variant="outline" className="flex-1"><Link href={ticketUrl} target="_blank"><Eye /> View</Link></Button>
                                             </div>
                                         </div>
-                                        
-                                        {reg.registrationType === 'duo' && reg.fullName2 && (
-                                            <>
-                                            <Separator />
-                                            <div className="space-y-3">
-                                                <p className="font-semibold">{reg.fullName2}</p>
-                                                <p className="text-sm text-muted-foreground">{reg.phoneNumber2}</p>
-                                                <Badge variant="outline" className={`mt-1 ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>{reg.rider2CheckedIn ? 'Checked-in' : 'Pending Check-in'}</Badge>
-                                                <div className="flex gap-2">
-                                                    <Button asChild size="sm" className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"><Link href={formatWhatsAppLink(reg.phoneNumber2 || '', getTicketMessage(reg.fullName2, ticketUrl))} target="_blank"><Send /> Send</Link></Button>
-                                                    <Button asChild size="sm" className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"><Link href={formatWhatsAppLink(reg.phoneNumber2 || '')} target="_blank"><MessageCircle /> Chat</Link></Button>
-                                                     <Button asChild size="sm" variant="outline" className="flex-1"><Link href={ticketUrl} target="_blank"><Eye /> View</Link></Button>
-                                                </div>
-                                            </div>
-                                            </>
-                                        )}
+                                        </>
+                                    )}
 
-                                        {canEdit && (
-                                            <>
-                                            <Separator />
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-full" disabled={isDeleting === reg.id}><Trash2 className="mr-2 h-4 w-4" />Delete Registration</Button></AlertDialogTrigger>
-                                                <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">Yes, delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                                            </AlertDialog>
-                                            </>
-                                        )}
-                                    </div>
-                                </CollapsibleContent>
-                            </Card>
-                        </Collapsible>
+                                    {canEdit && (
+                                        <>
+                                        <Separator />
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-full" disabled={isDeleting === reg.id}><Trash2 className="mr-2 h-4 w-4" />Delete Registration</Button></AlertDialogTrigger>
+                                            <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">Yes, delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                                        </AlertDialog>
+                                        </>
+                                    )}
+                                </div>
+                                </>
+                            )}
+                        </Card>
                     )
                 })
             ) : (
@@ -253,93 +251,85 @@ export function RidersListTable() {
                 <TableHead className="text-right">Expand</TableHead>
             </TableRow>
             </TableHeader>
-
+            <TableBody>
             {(loading || authLoading) ? (
-                <TableBody>
                   <TableSkeleton />
-                </TableBody>
             ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => {
                      const ticketUrl = `${origin}/ticket/${reg.id}`;
+                     const isExpanded = expandedRow === reg.id;
                     return (
-                        <Collapsible asChild key={reg.id} as="tbody" className="w-full">
-                           <>
+                        <React.Fragment key={reg.id}>
+                            <TableRow onClick={() => setExpandedRow(isExpanded ? null : reg.id)} className="cursor-pointer">
+                                <TableCell className="font-medium">
+                                    {reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button variant="ghost" size="sm">
+                                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                        <span className="sr-only">Expand</span>
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                            {isExpanded && (
                                 <TableRow>
-                                    <TableCell className="font-medium">
-                                        {reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <CollapsibleTrigger asChild>
-                                            <Button variant="ghost" size="sm">
-                                                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                                                <span className="sr-only">Expand</span>
-                                            </Button>
-                                        </CollapsibleTrigger>
-                                    </TableCell>
-                                </TableRow>
-                                <CollapsibleContent asChild>
-                                    <TableRow>
-                                        <TableCell colSpan={2} className="p-0">
-                                            <div className="p-4 bg-secondary/50 space-y-4">
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                    {/* Rider 1 Details */}
+                                    <TableCell colSpan={2} className="p-0">
+                                        <div className="p-4 bg-secondary/50 space-y-4">
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                {/* Rider 1 Details */}
+                                                <div className="p-3 border rounded-md bg-background space-y-2">
+                                                    <p className="font-semibold">{reg.fullName}</p>
+                                                    <p className="text-sm text-muted-foreground">{reg.phoneNumber}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className={`justify-center ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>P1: {reg.rider1CheckedIn ? 'Checked-in' : 'Pending'}</Badge>
+                                                        <Badge variant="outline" className={`justify-center ${reg.rider1Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P1: {reg.rider1Finished ? 'Finished' : 'Pending'}</Badge>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 pt-2">
+                                                        <Button asChild variant="outline" size="sm" className="text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, ticketUrl))} target="_blank"><Send /> Send Ticket</Link></Button>
+                                                        <Button asChild variant="outline" size="sm" className="text-green-700 border-green-200 bg-green-50 hover:bg-green-100"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Message</Link></Button>
+                                                        <Button asChild variant="outline" size="sm"><Link href={ticketUrl} target="_blank"><Eye /> View Ticket</Link></Button>
+                                                    </div>
+                                                </div>
+                                                {/* Rider 2 Details */}
+                                                {reg.registrationType === 'duo' && reg.phoneNumber2 && (
                                                     <div className="p-3 border rounded-md bg-background space-y-2">
-                                                        <p className="font-semibold">{reg.fullName}</p>
-                                                        <p className="text-sm text-muted-foreground">{reg.phoneNumber}</p>
+                                                        <p className="font-semibold">{reg.fullName2}</p>
+                                                        <p className="text-sm text-muted-foreground">{reg.phoneNumber2}</p>
                                                         <div className="flex items-center gap-2">
-                                                            <Badge variant="outline" className={`justify-center ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>P1: {reg.rider1CheckedIn ? 'Checked-in' : 'Pending'}</Badge>
-                                                            <Badge variant="outline" className={`justify-center ${reg.rider1Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P1: {reg.rider1Finished ? 'Finished' : 'Pending'}</Badge>
+                                                            <Badge variant="outline" className={`justify-center ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>P2: {reg.rider2CheckedIn ? 'Checked-in' : 'Pending'}</Badge>
+                                                            <Badge variant="outline" className={`justify-center ${reg.rider2Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P2: {reg.rider2Finished ? 'Finished' : 'Pending'}</Badge>
                                                         </div>
                                                         <div className="flex items-center gap-2 pt-2">
-                                                            <Button asChild variant="outline" size="sm" className="text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, ticketUrl))} target="_blank"><Send /> Send Ticket</Link></Button>
-                                                            <Button asChild variant="outline" size="sm" className="text-green-700 border-green-200 bg-green-50 hover:bg-green-100"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Message</Link></Button>
+                                                            <Button asChild variant="outline" size="sm" className="text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100"><Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider', ticketUrl))} target="_blank"><Send /> Send Ticket</Link></Button>
+                                                            <Button asChild variant="outline" size="sm" className="text-green-700 border-green-200 bg-green-50 hover:bg-green-100"><Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank"><MessageCircle /> Message</Link></Button>
                                                             <Button asChild variant="outline" size="sm"><Link href={ticketUrl} target="_blank"><Eye /> View Ticket</Link></Button>
                                                         </div>
                                                     </div>
-                                                    {/* Rider 2 Details */}
-                                                    {reg.registrationType === 'duo' && reg.phoneNumber2 && (
-                                                        <div className="p-3 border rounded-md bg-background space-y-2">
-                                                            <p className="font-semibold">{reg.fullName2}</p>
-                                                            <p className="text-sm text-muted-foreground">{reg.phoneNumber2}</p>
-                                                            <div className="flex items-center gap-2">
-                                                                <Badge variant="outline" className={`justify-center ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>P2: {reg.rider2CheckedIn ? 'Checked-in' : 'Pending'}</Badge>
-                                                                <Badge variant="outline" className={`justify-center ${reg.rider2Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P2: {reg.rider2Finished ? 'Finished' : 'Pending'}</Badge>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 pt-2">
-                                                                <Button asChild variant="outline" size="sm" className="text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100"><Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider', ticketUrl))} target="_blank"><Send /> Send Ticket</Link></Button>
-                                                                <Button asChild variant="outline" size="sm" className="text-green-700 border-green-200 bg-green-50 hover:bg-green-100"><Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank"><MessageCircle /> Message</Link></Button>
-                                                                <Button asChild variant="outline" size="sm"><Link href={ticketUrl} target="_blank"><Eye /> View Ticket</Link></Button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                {canEdit && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-full mt-2" disabled={isDeleting === reg.id}><Trash2 className="mr-2 h-4 w-4" />Delete</Button></AlertDialogTrigger>
-                                                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">Yes, delete registration</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                                                    </AlertDialog>
                                                 )}
                                             </div>
-                                        </TableCell>
-                                    </TableRow>
-                                </CollapsibleContent>
-                            </>
-                        </Collapsible>
+                                            {canEdit && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-full mt-2" disabled={isDeleting === reg.id}><Trash2 className="mr-2 h-4 w-4" />Delete</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">Yes, delete registration</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </React.Fragment>
                     )
                 })
             ) : (
-                <TableBody>
                   <TableRow>
                       <TableCell colSpan={2} className="text-center h-24">
                           {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
                       </TableCell>
                   </TableRow>
-                </TableBody>
             )}
+            </TableBody>
         </Table>
         </div>
     </div>
   );
 }
-
-    
