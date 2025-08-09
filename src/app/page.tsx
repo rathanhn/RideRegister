@@ -36,11 +36,11 @@ export default function Home() {
              <EventSchedule />
              <RouteMap />
              <Faq />
-             <QnaSection />
           </div>
           <div className="flex flex-col gap-8">
             <Announcements />
             <Offers />
+            <QnaSection />
             <StoreDetails />
           </div>
         </div>
