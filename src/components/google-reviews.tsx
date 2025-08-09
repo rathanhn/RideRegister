@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { AlertTriangle, ExternalLink, Loader2, Star, User } from 'lucide-react';
 import { Button } from './ui/button';
-import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
@@ -23,7 +22,7 @@ interface Review {
 interface PlaceDetails {
   name: string;
   rating: number;
-  reviews: Review[];
+  reviews?: Review[];
   user_ratings_total: number;
   url: string;
 }
@@ -113,9 +112,9 @@ export function GoogleReviews() {
                 <p className="text-sm">Please check the server configuration.</p>
             </div>
         )}
-        {data && (
+        {data && data.reviews && data.reviews.length > 0 && (
           <div className="space-y-4">
-            {data.reviews?.slice(0, 3).map((review) => (
+            {data.reviews.slice(0, 3).map((review) => (
               <div key={review.time} className="flex items-start gap-4 p-4 border rounded-lg bg-secondary/50">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={review.profile_photo_url} alt={review.author_name} />
@@ -123,20 +122,24 @@ export function GoogleReviews() {
                 </Avatar>
                 <div className="w-full">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <a href={review.author_url} target="_blank" className="font-semibold hover:underline">{review.author_name}</a>
+                    <a href={review.author_url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{review.author_name}</a>
                     <p className="text-xs text-muted-foreground mt-1 sm:mt-0">{review.relative_time_description}</p>
                   </div>
                   <div className="my-1">
                     <StarRating rating={review.rating} />
                   </div>
-                  <p className="text-sm text-muted-foreground">{review.text}</p>
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">{review.text}</div>
                 </div>
               </div>
             ))}
           </div>
         )}
+         {data && (!data.reviews || data.reviews.length === 0) && (
+            <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground bg-secondary/50 rounded-lg">
+                <p>No reviews available to display at the moment.</p>
+            </div>
+        )}
       </CardContent>
     </Card>
   );
 }
-
