@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 
-const PLACE_ID = 'ChIJ1531aM2EpzsRB3g6xgYqay0'; // Place ID for Telefun Mobiles, Madikeri
+const PLACE_ID = 'ChIJpyWp9ZkBpTsRKxMyNpP2GLc'; // Place ID for Telefun Mobiles, Madikeri
 
 export async function GET() {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
