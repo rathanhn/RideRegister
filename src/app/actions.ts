@@ -2,32 +2,27 @@
 "use server";
 
 import { z } from "zod";
-import { db, auth as adminAuth, admin } from "@/lib/firebase-admin";
+import { db } from "@/lib/firebase"; // Using client SDK on server, which is fine for these operations
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { revalidatePath } from "next/cache";
+import { doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, serverTimestamp } from "firebase/firestore";
 
 
-// Helper to get a user's role
+// Helper to get a user's role by directly querying Firestore
 async function checkAdminPermissions(adminId: string): Promise<boolean> {
-  console.log(`[AdminCheck] Checking permissions for adminId: ${adminId}`);
   if (!adminId) {
-    console.log('[AdminCheck] No adminId provided.');
     return false;
   }
   try {
-    const userDocRef = db.collection('users').doc(adminId);
-    const userDoc = await userDocRef.get();
+    const userDocRef = doc(db, 'users', adminId);
+    const userDoc = await getDoc(userDocRef);
 
-    if (!userDoc.exists) {
-      console.log(`[AdminCheck] User document not found for adminId: ${adminId}`);
+    if (!userDoc.exists()) {
       return false;
     }
     const userRole = userDoc.data()?.role;
-    console.log(`[AdminCheck] Found role: ${userRole}`);
-    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
-    console.log(`[AdminCheck] Is admin? ${isAdmin}`);
-    return isAdmin;
+    return userRole === 'admin' || userRole === 'superadmin';
   } catch (error) {
     console.error('[AdminCheck] Error checking permissions:', error);
     return false;
@@ -40,7 +35,6 @@ const phoneRegex = new RegExp(
 
 
 // The schema for the ride registration form
-// It now includes uid and email which are passed from the client
 const registrationFormSchema = z
   .object({
     email: z.string().email("A valid email is required."),
@@ -110,28 +104,23 @@ const registrationFormSchema = z
 type RegistrationInput = z.infer<typeof registrationFormSchema>;
 
 export async function createAccountAndRegisterRider(values: RegistrationInput) {
-    console.log("[Server Action] createAccountAndRegisterRider invoked.");
-
     const parsed = registrationFormSchema.safeParse(values);
     if (!parsed.success) {
-        console.error("[Server Action] Validation Errors:", parsed.error.flatten());
         return { success: false, message: "Invalid data provided." };
     }
 
     const { email, password, confirmPassword, ...registrationData } = parsed.data;
     
-    // This is the data we want to save, excluding rules and password info
     const { rule1, rule2, rule3, rule4, rule5, rule6, rule7, ...coreData } = registrationData;
         
     const dataToSave: any = {
       ...coreData,
       email: email,
       status: "pending" as const,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
       consent: true,
     };
     
-    // Remove any keys with undefined values to prevent Firestore errors
     Object.keys(dataToSave).forEach(key => {
         if (dataToSave[key] === undefined) {
             delete dataToSave[key];
@@ -140,38 +129,27 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
 
 
     try {
-        // Step 1: Create Firebase Auth user
-        console.log("[Server Action] Attempting to create Auth user...");
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         const uid = user.uid;
-        console.log(`[Server Action] New Auth user created with UID: ${uid}`);
 
-        // Step 2: Create user document in Firestore for the new user
-        console.log("[Server Action] Creating user document in Firestore...");
-        const userRef = db.collection("users").doc(uid);
-        await userRef.set({
+        const userRef = doc(db, "users", uid);
+        await setDoc(userRef, {
             email: user.email,
             displayName: registrationData.fullName,
             role: 'user', 
             photoURL: registrationData.photoURL || null,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
         });
-        console.log(`[Server Action] User document created for new user UID: ${uid}`);
         
-        // Step 3: Create registration document in Firestore
-        const registrationRef = db.collection("registrations").doc(uid);
-        await registrationRef.set({ ...dataToSave, uid });
-        console.log(`[Server Action] Registration document created for UID: ${uid}`);
+        const registrationRef = doc(db, "registrations", uid);
+        await setDoc(registrationRef, { ...dataToSave, uid });
         
         revalidatePath('/dashboard');
         return { success: true, message: "Registration successful! Your application is pending review.", uid: uid };
 
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
-            console.warn(`[Server Action] Email ${email} is already in use.`);
-            // No new user is created, but we flag it for the client to handle sign-in.
-            // The registration data will be created client-side after sign-in.
              Object.keys(dataToSave).forEach(key => {
                 if (dataToSave[key] === undefined) {
                     delete dataToSave[key];
@@ -180,13 +158,12 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
             return { 
                 success: true, 
                 message: "Account already exists. We've linked this registration to your account. Logging you in...",
-                uid: null, // No new UID was created
+                uid: null,
                 existingUser: true,
-                dataForExistingUser: dataToSave // Pass the cleaned data back
+                dataForExistingUser: dataToSave
             };
         }
         
-        console.error("[Server Action] CRITICAL ERROR in registration process: ", error);
         return { success: false, message: error.message || "Could not create your account or registration. Please try again." };
     }
 }
@@ -213,15 +190,14 @@ export async function updateRegistrationStatus(values: z.infer<typeof updateStat
 
     try {
         const { registrationId, status, adminId } = parsed.data;
-        const registrationRef = db.collection("registrations").doc(registrationId);
-        await registrationRef.update({ 
+        const registrationRef = doc(db, "registrations", registrationId);
+        await updateDoc(registrationRef, { 
           status,
-          statusLastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          statusLastUpdatedBy: adminId, // Record which admin made the change
+          statusLastUpdatedAt: serverTimestamp(),
+          statusLastUpdatedBy: adminId,
         });
         return { success: true, message: `Registration status updated to ${status}.` };
     } catch (error) {
-        console.error("Error updating registration status: ", error);
         return { success: false, message: "Could not update registration status." };
     }
 }
@@ -246,13 +222,14 @@ export async function deleteRegistration(values: z.infer<typeof deleteRegistrati
     const { registrationId } = parsed.data;
     
     try {
-      await db.collection("registrations").doc(registrationId).delete();
-      await db.collection("users").doc(registrationId).delete();
-      await adminAuth.deleteUser(registrationId);
+      await deleteDoc(doc(db, "registrations", registrationId));
+      await deleteDoc(doc(db, "users", registrationId));
+      // NOTE: Deleting the auth user requires the Admin SDK, which is currently removed.
+      // This action will now only delete the database records.
+      // await adminAuth.deleteUser(registrationId);
       
       return { success: true, message: "Registration and user data have been deleted." };
     } catch (error) {
-      console.error("Error deleting registration:", error);
       return { success: false, message: "Failed to delete registration data." };
     }
 }
@@ -279,14 +256,13 @@ export async function checkInRider(values: z.infer<typeof checkInSchema>) {
 
     try {
         const { registrationId, riderNumber } = parsed.data;
-        const registrationRef = db.collection("registrations").doc(registrationId);
+        const registrationRef = doc(db, "registrations", registrationId);
         
         const fieldToUpdate = riderNumber === 1 ? 'rider1CheckedIn' : 'rider2CheckedIn';
 
-        await registrationRef.update({ [fieldToUpdate]: true });
+        await updateDoc(registrationRef, { [fieldToUpdate]: true });
         return { success: true, message: `Rider ${riderNumber} checked in successfully.` };
     } catch (error) {
-        console.error("Error checking in rider: ", error);
         return { success: false, message: "Could not process check-in." };
     }
 }
@@ -312,14 +288,13 @@ export async function finishRider(values: z.infer<typeof finishRiderSchema>) {
 
     try {
         const { registrationId, riderNumber } = parsed.data;
-        const registrationRef = db.collection("registrations").doc(registrationId);
+        const registrationRef = doc(db, "registrations", registrationId);
         
         const fieldToUpdate = riderNumber === 1 ? 'rider1Finished' : 'rider2Finished';
 
-        await registrationRef.update({ [fieldToUpdate]: true });
+        await updateDoc(registrationRef, { [fieldToUpdate]: true });
         return { success: true, message: `Rider ${riderNumber} marked as finished!` };
     } catch (error) {
-        console.error("Error marking rider as finished: ", error);
         return { success: false, message: "Could not process finish." };
     }
 }
@@ -341,17 +316,17 @@ export async function addQuestion(values: z.infer<typeof addQuestionSchema>) {
     }
     
     try {
-        const userDoc = await db.collection("users").doc(values.userId).get();
-        const displayName = userDoc.data()?.displayName;
-        await db.collection("qna").add({
+        const userDocRef = doc(db, "users", values.userId);
+        const userDocSnap = await getDoc(userDocRef);
+        const displayName = userDocSnap.data()?.displayName;
+        await addDoc(collection(db, "qna"), {
             ...parsed.data,
             userName: displayName || values.userName,
             isPinned: false,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
         });
         return { success: true, message: "Question posted successfully!" };
     } catch (error) {
-        console.error("Error adding question: ", error);
         return { success: false, message: "Could not post your question. Please try again." };
     }
 }
@@ -372,23 +347,22 @@ export async function addReply(values: z.infer<typeof addReplySchema>) {
     if (!parsed.success) {
         return { success: false, message: "Invalid data provided." };
     }
-    const userDocRef = db.collection('users').doc(values.userId);
-    const userDoc = await userDocRef.get();
+    const userDocRef = doc(db, 'users', values.userId);
+    const userDoc = await getDoc(userDocRef);
     const userRole = userDoc.data()?.role;
     const displayName = userDoc.data()?.displayName;
 
     try {
         const { questionId, ...replyData } = parsed.data;
-        const replyCollectionRef = db.collection("qna").doc(questionId).collection("replies");
-        await replyCollectionRef.add({
+        const replyCollectionRef = collection(db, "qna", questionId, "replies");
+        await addDoc(replyCollectionRef, {
             ...replyData,
             userName: displayName || values.userName,
             isAdmin: userRole === 'admin' || userRole === 'superadmin',
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
         });
         return { success: true, message: "Reply posted successfully!" };
     } catch (error) {
-        console.error("Error adding reply: ", error);
         return { success: false, message: "Could not post your reply. Please try again." };
     }
 }
@@ -401,7 +375,7 @@ const updateUserRoleSchema = z.object({
 });
 
 export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema>) {
-  const adminDoc = await db.collection('users').doc(values.adminId).get();
+  const adminDoc = await getDoc(doc(db, 'users', values.adminId));
   const adminRole = adminDoc.data()?.role;
 
   if (adminRole !== 'superadmin' && values.newRole === 'superadmin') {
@@ -423,11 +397,10 @@ export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema
   }
 
   try {
-    const userRef = db.collection("users").doc(targetUserId);
-    await userRef.update({ role: newRole });
+    const userRef = doc(db, "users", targetUserId);
+    await updateDoc(userRef, { role: newRole });
     return { success: true, message: `User role updated to ${newRole}.`};
   } catch (error) {
-    console.error("Error updating user role:", error);
     return { success: false, message: "Failed to update user role." };
   }
 }
@@ -445,10 +418,9 @@ export async function deleteQuestion(values: z.infer<typeof qnaModSchema>) {
       return { success: false, message: "Permission denied." };
     }
     try {
-        await db.collection("qna").doc(values.questionId).delete();
+        await deleteDoc(doc(db, "qna", values.questionId));
         return { success: true, message: "Question deleted." };
     } catch (error) {
-        console.error("Error deleting question:", error);
         return { success: false, message: "Failed to delete question." };
     }
 }
@@ -460,16 +432,15 @@ export async function togglePinQuestion(values: z.infer<typeof qnaModSchema>) {
         return { success: false, message: "Permission denied." };
     }
     try {
-        const questionRef = db.collection("qna").doc(values.questionId);
-        const questionSnap = await questionRef.get();
-        if (!questionSnap.exists) {
+        const questionRef = doc(db, "qna", values.questionId);
+        const questionSnap = await getDoc(questionRef);
+        if (!questionSnap.exists()) {
             return { success: false, message: "Question not found." };
         }
         const currentPinStatus = questionSnap.data()?.isPinned || false;
-        await questionRef.update({ isPinned: !currentPinStatus });
+        await updateDoc(questionRef, { isPinned: !currentPinStatus });
         return { success: true, message: `Question ${!currentPinStatus ? 'pinned' : 'unpinned'}.` };
     } catch (error) {
-        console.error("Error pinning question:", error);
         return { success: false, message: "Failed to update pin status." };
     }
 }
@@ -494,16 +465,15 @@ export async function createAndRequestOrganizerAccess(values: z.infer<typeof req
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
-    // Create user document with access request
-    const userRef = db.collection("users").doc(user.uid);
-    await userRef.set({
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(userRef, {
         email: user.email,
-        displayName: user.email?.split('@')[0], // Default display name
-        role: 'user', // Start as a user
+        displayName: user.email?.split('@')[0],
+        role: 'user',
         photoURL: null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
         accessRequest: {
-          requestedAt: admin.firestore.FieldValue.serverTimestamp(),
+          requestedAt: serverTimestamp(),
           status: 'pending_review',
         }
     });
@@ -516,7 +486,6 @@ export async function createAndRequestOrganizerAccess(values: z.infer<typeof req
             message: "An account with this email already exists. Please log in and request access from your dashboard.",
         };
     }
-    console.error("Error creating account for organizer request:", error);
     return { success: false, message: "Failed to create account or submit your request." };
   }
 }
@@ -524,7 +493,6 @@ export async function createAndRequestOrganizerAccess(values: z.infer<typeof req
 
 // === ANNOUNCEMENT ACTIONS ===
 
-// Schema for adding an announcement
 const addAnnouncementSchema = z.object({
   message: z.string().min(5, "Announcement must be at least 5 characters.").max(280, "Announcement cannot be longer than 280 characters."),
   adminId: z.string().min(1, "Admin ID is required."),
@@ -541,23 +509,21 @@ export async function addAnnouncement(values: z.infer<typeof addAnnouncementSche
         return { success: false, message: "Invalid data provided." };
     }
     try {
-        const userDoc = await db.collection("users").doc(values.adminId).get();
-        const userData = userDoc.data();
+        const userDocSnap = await getDoc(doc(db, "users", values.adminId));
+        const userData = userDocSnap.data();
         
-        await db.collection("announcements").add({
+        await addDoc(collection(db, "announcements"), {
             ...parsed.data,
             adminName: userData?.displayName || values.adminName,
             adminRole: userData?.role || 'admin',
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
         });
         return { success: true, message: "Announcement posted successfully!" };
     } catch (error) {
-        console.error("Error adding announcement: ", error);
         return { success: false, message: "Could not post announcement." };
     }
 }
 
-// Schema for deleting an announcement
 const deleteAnnouncementSchema = z.object({
   announcementId: z.string().min(1, "Announcement ID is required."),
   adminId: z.string().min(1, "Admin ID is required."),
@@ -569,10 +535,9 @@ export async function deleteAnnouncement(values: z.infer<typeof deleteAnnounceme
       return { success: false, message: "Permission denied." };
     }
     try {
-        await db.collection("announcements").doc(values.announcementId).delete();
+        await deleteDoc(doc(db, "announcements", values.announcementId));
         return { success: true, message: "Announcement deleted." };
     } catch (error) {
-        console.error("Error deleting announcement:", error);
         return { success: false, message: "Failed to delete announcement." };
     }
 }
@@ -589,24 +554,21 @@ export async function cancelRegistration(values: z.infer<typeof cancelRegistrati
         return { success: false, message: "Invalid data provided." };
     }
     try {
-        const registrationRef = db.collection("registrations").doc(values.registrationId);
-        await registrationRef.update({
+        const registrationRef = doc(db, "registrations", values.registrationId);
+        await updateDoc(registrationRef, {
             status: 'cancellation_requested',
             cancellationReason: values.reason,
         });
         return { success: true, message: "Your cancellation request has been submitted." };
     } catch (error) {
-        console.error("Error submitting cancellation request: ", error);
         return { success: false, message: "Could not submit your request. Please try again." };
     }
 }
 
-// Schema for password reset
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
 });
 
-// Server action to send a password reset link
 export async function sendPasswordResetLink(values: z.infer<typeof forgotPasswordSchema>) {
     const parsed = forgotPasswordSchema.safeParse(values);
     if (!parsed.success) {
@@ -617,15 +579,12 @@ export async function sendPasswordResetLink(values: z.infer<typeof forgotPasswor
         await sendPasswordResetEmail(auth, parsed.data.email);
         return { success: true, message: "If an account exists for this email, a password reset link has been sent." };
     } catch (error: any) {
-        console.error("Error sending password reset email: ", error);
-        // We return a generic message to prevent email enumeration attacks
         return { success: true, message: "If an account exists for this email, a password reset link has been sent." };
     }
 }
 
 // === CONTENT MANAGEMENT ACTIONS ===
 
-// Schedule Actions
 const scheduleSchema = z.object({
   time: z.string().min(1, "Time is required."),
   title: z.string().min(3, "Title is required."),
@@ -644,11 +603,11 @@ export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { 
 
   try {
     if (scheduleId) {
-      await db.collection("schedule").doc(scheduleId).update(parsed.data);
+      await updateDoc(doc(db, "schedule", scheduleId), parsed.data);
       revalidatePath('/');
       return { success: true, message: "Schedule item updated." };
     } else {
-      await db.collection("schedule").add({ ...parsed.data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+      await addDoc(collection(db, "schedule"), { ...parsed.data, createdAt: serverTimestamp() });
       revalidatePath('/');
       return { success: true, message: "Schedule item added." };
     }
@@ -663,7 +622,7 @@ export async function deleteScheduleItem(id: string, adminId: string) {
     return { success: false, message: "Permission denied." };
   }
   try {
-    await db.collection("schedule").doc(id).delete();
+    await deleteDoc(doc(db, "schedule", id));
     revalidatePath('/');
     return { success: true, message: "Schedule item deleted." };
   } catch (error) {
@@ -671,7 +630,6 @@ export async function deleteScheduleItem(id: string, adminId: string) {
   }
 }
 
-// Organizer Actions
 const organizerSchema = z.object({
   name: z.string().min(3, "Name is required."),
   role: z.string().min(3, "Role is required."),
@@ -691,11 +649,11 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
 
   try {
     if (organizerId) {
-      await db.collection("organizers").doc(organizerId).update(parsed.data);
+      await updateDoc(doc(db, "organizers", organizerId), parsed.data);
       revalidatePath('/');
       return { success: true, message: "Organizer updated." };
     } else {
-      await db.collection("organizers").add({ ...parsed.data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+      await addDoc(collection(db, "organizers"), { ...parsed.data, createdAt: serverTimestamp() });
       revalidatePath('/');
       return { success: true, message: "Organizer added." };
     }
@@ -710,7 +668,7 @@ export async function deleteOrganizer(id: string, adminId: string) {
     return { success: false, message: "Permission denied." };
   }
   try {
-    await db.collection("organizers").doc(id).delete();
+    await deleteDoc(doc(db, "organizers", id));
     revalidatePath('/');
     return { success: true, message: "Organizer deleted." };
   } catch (error) {
@@ -718,7 +676,6 @@ export async function deleteOrganizer(id: string, adminId: string) {
   }
 }
 
-// Promotion Actions
 const promotionSchema = z.object({
   title: z.string().min(3, "Title is required."),
   description: z.string().min(10, "Description is required."),
@@ -740,11 +697,11 @@ export async function managePromotion(values: z.infer<typeof promotionSchema> & 
 
   try {
     if (promotionId) {
-      await db.collection("promotions").doc(promotionId).update(parsed.data);
+      await updateDoc(doc(db, "promotions", promotionId), parsed.data);
       revalidatePath('/');
       return { success: true, message: "Promotion updated." };
     } else {
-      await db.collection("promotions").add({ ...parsed.data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+      await addDoc(collection(db, "promotions"), { ...parsed.data, createdAt: serverTimestamp() });
       revalidatePath('/');
       return { success: true, message: "Promotion added." };
     }
@@ -759,10 +716,12 @@ export async function deletePromotion(id: string, adminId: string) {
     return { success: false, message: "Permission denied." };
   }
   try {
-    await db.collection("promotions").doc(id).delete();
+    await deleteDoc(doc(db, "promotions", id));
     revalidatePath('/');
     return { success: true, message: "Promotion deleted." };
   } catch (error) {
     return { success: false, message: "Failed to delete promotion." };
   }
 }
+
+    
