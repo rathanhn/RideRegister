@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
   title: z.string().min(3, "Title is required."),
@@ -129,18 +130,18 @@ export function PromotionForm({ isOpen, setIsOpen, promotion, user }: PromotionF
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{promotion ? "Edit Promotion" : "Add Promotion"}</DialogTitle>
           <DialogDescription>Fill in the details for the shop promotion.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-1">
             <FormField name="title" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField name="description" control={form.control} render={({ field }) => (
-              <FormItem><FormLabel>Description</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField name="validity" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Validity</FormLabel><FormControl><Input {...field} placeholder="e.g., Valid until August 15th" /></FormControl><FormMessage /></FormItem>
@@ -184,7 +185,7 @@ export function PromotionForm({ isOpen, setIsOpen, promotion, user }: PromotionF
                 )} />
             </div>
 
-            <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full">
+            <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4 sticky bottom-0 bg-background/95 py-3 -mx-1 px-1">
                 {promotion ? (
                      <AlertDialog>
                         <AlertDialogTrigger asChild><Button type="button" variant="destructive" disabled={isSubmitting}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>

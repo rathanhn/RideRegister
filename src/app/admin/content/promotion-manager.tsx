@@ -68,7 +68,16 @@ export function PromotionManager() {
             ) : (
               promotionItems.map(item => (
                 <TableRow key={item.id}>
-                  <TableCell><Image src={item.imageUrl} alt={item.title} width={40} height={40} className="rounded-md object-cover" /></TableCell>
+                  <TableCell>
+                    <Image 
+                        src={item.imageUrl} 
+                        alt={item.title} 
+                        width={40} 
+                        height={40} 
+                        className="rounded-md object-cover"
+                        data-ai-hint={item.imageHint}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{item.title}</TableCell>
                   <TableCell>{item.actualPrice ? `₹${item.actualPrice}` : 'N/A'}</TableCell>
                   <TableCell>{item.offerPrice ? `₹${item.offerPrice}` : 'N/A'}</TableCell>
