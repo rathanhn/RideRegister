@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { manageOrganizer, deleteOrganizer } from "@/app/actions";
-import type { Organizer } from "@/lib/types";
+import type { Organizer, UserRole } from "@/lib/types";
 import type { User } from 'firebase/auth';
 import { Loader2, Trash2, Upload } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
@@ -40,6 +40,7 @@ interface OrganizerFormProps {
   setIsOpen: (open: boolean) => void;
   organizer: Organizer | null;
   user: User | null | undefined;
+  userRole: UserRole | null;
 }
 
 const fileToDataUri = (file: File) => {
@@ -51,7 +52,7 @@ const fileToDataUri = (file: File) => {
     });
 };
 
-export function OrganizerForm({ isOpen, setIsOpen, organizer, user }: OrganizerFormProps) {
+export function OrganizerForm({ isOpen, setIsOpen, organizer, user, userRole }: OrganizerFormProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,6 +63,7 @@ export function OrganizerForm({ isOpen, setIsOpen, organizer, user }: OrganizerF
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   
+  const isSuperAdmin = userRole === 'superadmin';
 
   useEffect(() => {
     if (isOpen) {

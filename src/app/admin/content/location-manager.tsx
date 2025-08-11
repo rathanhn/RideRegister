@@ -9,13 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { manageLocation } from "@/app/actions";
-import type { LocationSettings } from "@/lib/types";
+import type { LocationSettings, UserRole } from "@/lib/types";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useDocument } from 'react-firebase-hooks/firestore';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { Loader2, AlertTriangle, Save } from "lucide-react";
-import { useEffect } from "react";
+import { Loader2, AlertTriangle, Save, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const formSchema = z.object({
@@ -25,6 +25,7 @@ const formSchema = z.object({
 
 export function LocationManager() {
   const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const { toast } = useToast();
   
   const [locationSettings, loading, error] = useDocument(doc(db, 'settings', 'route'));
@@ -33,6 +34,17 @@ export function LocationManager() {
     resolver: zodResolver(formSchema),
     defaultValues: { origin: "", destination: "" },
   });
+
+   useEffect(() => {
+    if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        getDoc(userDocRef).then(doc => {
+            if (doc.exists()) {
+                setUserRole(doc.data().role as UserRole);
+            }
+        })
+    }
+  }, [user]);
 
   useEffect(() => {
     if (locationSettings?.exists()) {
@@ -53,6 +65,7 @@ export function LocationManager() {
   };
 
   const isLoading = loading || authLoading;
+  const isSuperAdmin = userRole === 'superadmin';
 
   return (
     <Card>
@@ -68,6 +81,11 @@ export function LocationManager() {
         ) : error ? (
             <div className="text-destructive flex items-center gap-2">
                 <AlertTriangle/> Error loading location data.
+            </div>
+        ) : !isSuperAdmin ? (
+             <div className="text-muted-foreground flex items-center gap-2 p-4 bg-secondary rounded-md h-full text-sm">
+                <ShieldAlert className="h-5 w-5" />
+                <p>Only Super Admins can change the location.</p>
             </div>
         ) : (
             <Form {...form}>
@@ -86,7 +104,7 @@ export function LocationManager() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting || !isSuperAdmin}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   <Save className="mr-2 h-4 w-4"/>
                   Save Location

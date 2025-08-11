@@ -1,23 +1,35 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, getDoc, doc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle, Edit, PlusCircle } from 'lucide-react';
-import type { Organizer } from '@/lib/types';
+import { Loader2, AlertTriangle, Edit, PlusCircle, ShieldAlert } from 'lucide-react';
+import type { Organizer, UserRole } from '@/lib/types';
 import { OrganizerForm } from './organizer-form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function OrganizerManager() {
   const [organizers, loading, error] = useCollection(query(collection(db, 'organizers'), orderBy('createdAt', 'asc')));
   const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Organizer | null>(null);
+
+  useEffect(() => {
+    if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        getDoc(userDocRef).then(doc => {
+            if (doc.exists()) {
+                setUserRole(doc.data().role as UserRole);
+            }
+        })
+    }
+  }, [user]);
 
   const organizerItems = organizers?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Organizer)) || [];
 
@@ -30,12 +42,16 @@ export function OrganizerManager() {
     setSelectedItem(null);
     setIsFormOpen(true);
   };
+  
+  const isSuperAdmin = userRole === 'superadmin';
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Manage Organizers</h3>
-        <Button onClick={handleAddNew} size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add New Organizer</Button>
+        {isSuperAdmin && (
+            <Button onClick={handleAddNew} size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add New Organizer</Button>
+        )}
       </div>
 
       <OrganizerForm
@@ -43,6 +59,7 @@ export function OrganizerManager() {
         setIsOpen={setIsFormOpen}
         organizer={selectedItem}
         user={user}
+        userRole={userRole}
       />
 
       <div className="border rounded-lg">
@@ -76,7 +93,11 @@ export function OrganizerManager() {
                   <TableCell>{item.role}</TableCell>
                    <TableCell>{item.contactNumber || 'N/A'}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}><Edit className="h-4 w-4" /></Button>
+                    {isSuperAdmin ? (
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}><Edit className="h-4 w-4" /></Button>
+                    ) : (
+                        <span className='text-muted-foreground text-xs'>View Only</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -84,6 +105,12 @@ export function OrganizerManager() {
           </TableBody>
         </Table>
       </div>
+       {!isSuperAdmin && (
+            <div className="text-muted-foreground flex items-center gap-2 p-2 bg-secondary rounded-md text-xs">
+                <ShieldAlert className="h-4 w-4" />
+                <p>Only Super Admins can add, edit, or delete organizers.</p>
+            </div>
+        )}
     </div>
   );
 }

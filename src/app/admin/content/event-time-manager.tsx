@@ -8,13 +8,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { manageEventTime } from "@/app/actions";
-import type { EventSettings } from "@/lib/types";
+import type { EventSettings, UserRole } from "@/lib/types";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { doc, Timestamp } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { Loader2, AlertTriangle, Save, Calendar as CalendarIcon } from "lucide-react";
-import { useEffect } from "react";
+import { Loader2, AlertTriangle, Save, Calendar as CalendarIcon, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -29,6 +29,7 @@ const formSchema = z.object({
 
 export function EventTimeManager() {
   const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const { toast } = useToast();
   
   const [eventSettings, loading, error] = useDocument(doc(db, 'settings', 'event'));
@@ -37,6 +38,17 @@ export function EventTimeManager() {
     resolver: zodResolver(formSchema),
     defaultValues: { eventDate: new Date() },
   });
+
+  useEffect(() => {
+    if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        getDoc(userDocRef).then(doc => {
+            if (doc.exists()) {
+                setUserRole(doc.data().role as UserRole);
+            }
+        })
+    }
+  }, [user]);
 
   useEffect(() => {
     if (eventSettings?.exists()) {
@@ -60,6 +72,7 @@ export function EventTimeManager() {
   };
 
   const isLoading = loading || authLoading;
+  const isSuperAdmin = userRole === 'superadmin';
 
   return (
     <Card>
@@ -75,6 +88,11 @@ export function EventTimeManager() {
         ) : error ? (
             <div className="text-destructive flex items-center gap-2">
                 <AlertTriangle/> Error loading event time data.
+            </div>
+        ) : !isSuperAdmin ? (
+             <div className="text-muted-foreground flex items-center gap-2 p-4 bg-secondary rounded-md h-full text-sm">
+                <ShieldAlert className="h-5 w-5" />
+                <p>Only Super Admins can change the event time.</p>
             </div>
         ) : (
             <Form {...form}>
@@ -131,7 +149,7 @@ export function EventTimeManager() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting || !isSuperAdmin}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   <Save className="mr-2 h-4 w-4"/>
                   Save Event Time

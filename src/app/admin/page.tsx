@@ -43,6 +43,8 @@ export default function AdminPage() {
     }
   }, [user]);
 
+  const isSuperAdmin = userRole === 'superadmin';
+
   return (
     <div className="flex flex-col min-h-screen bg-secondary/50">
       <Header />
@@ -60,14 +62,16 @@ export default function AdminPage() {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
              <div className="space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Settings2 className="h-6 w-6 text-primary"/> General Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <GeneralSettingsManager />
-                    </CardContent>
-                </Card>
+                {isSuperAdmin && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='flex items-center gap-2'><Settings2 className="h-6 w-6 text-primary"/> General Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <GeneralSettingsManager />
+                        </CardContent>
+                    </Card>
+                )}
 
                  <Card>
                     <CardHeader>
@@ -87,7 +91,7 @@ export default function AdminPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                 <Card>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><Calendar className="h-6 w-6 text-primary"/> Event Schedule</CardTitle>
                         <CardDescription>Manage the timeline of events for the ride day.</CardDescription>
@@ -121,14 +125,16 @@ export default function AdminPage() {
                     </CardContent>
                 </Card>
                 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <UserRolesManager />
-                    </CardContent>
-                </Card>
+                {isSuperAdmin && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <UserRolesManager />
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card>
                     <CardHeader>

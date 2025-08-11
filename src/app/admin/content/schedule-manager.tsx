@@ -1,24 +1,36 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, getDoc, doc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Edit, Trash2, PlusCircle } from 'lucide-react';
-import type { ScheduleEvent } from '@/lib/types';
+import { Loader2, AlertTriangle, Edit, Trash2, PlusCircle, ShieldAlert } from 'lucide-react';
+import type { ScheduleEvent, UserRole } from '@/lib/types';
 import { ScheduleForm } from './schedule-form';
 
 export function ScheduleManager() {
   const [schedule, loading, error] = useCollection(query(collection(db, 'schedule'), orderBy('createdAt', 'asc')));
   const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ScheduleEvent | null>(null);
+
+  useEffect(() => {
+    if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        getDoc(userDocRef).then(doc => {
+            if (doc.exists()) {
+                setUserRole(doc.data().role as UserRole);
+            }
+        })
+    }
+  }, [user]);
 
   const scheduleItems = schedule?.docs.map(doc => ({ id: doc.id, ...doc.data() } as ScheduleEvent)) || [];
 
@@ -31,14 +43,18 @@ export function ScheduleManager() {
     setSelectedItem(null);
     setIsFormOpen(true);
   };
+  
+  const isSuperAdmin = userRole === 'superadmin';
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Manage Event Schedule</h3>
-        <Button onClick={handleAddNew} size="sm">
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
-        </Button>
+        {isSuperAdmin && (
+             <Button onClick={handleAddNew} size="sm">
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
+            </Button>
+        )}
       </div>
 
       <ScheduleForm
@@ -46,6 +62,7 @@ export function ScheduleManager() {
         setIsOpen={setIsFormOpen}
         scheduleItem={selectedItem}
         user={user}
+        userRole={userRole}
       />
 
       <div className="border rounded-lg">
@@ -72,9 +89,13 @@ export function ScheduleManager() {
                   <TableCell className="font-medium">{item.title}</TableCell>
                   <TableCell>{item.description}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    {isSuperAdmin ? (
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <span className='text-muted-foreground text-xs'>View Only</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -82,6 +103,12 @@ export function ScheduleManager() {
           </TableBody>
         </Table>
       </div>
+      {!isSuperAdmin && (
+        <div className="text-muted-foreground flex items-center gap-2 p-2 bg-secondary rounded-md text-xs">
+            <ShieldAlert className="h-4 w-4" />
+            <p>Only Super Admins can add, edit, or delete schedule items.</p>
+        </div>
+      )}
     </div>
   );
 }

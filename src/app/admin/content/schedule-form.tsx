@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { manageSchedule, deleteScheduleItem } from "@/app/actions";
-import type { ScheduleEvent } from "@/lib/types";
+import type { ScheduleEvent, UserRole } from "@/lib/types";
 import type { User } from 'firebase/auth';
 import { Loader2, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,14 +41,17 @@ interface ScheduleFormProps {
   setIsOpen: (open: boolean) => void;
   scheduleItem: ScheduleEvent | null;
   user: User | null | undefined;
+  userRole: UserRole | null;
 }
 
-export function ScheduleForm({ isOpen, setIsOpen, scheduleItem, user }: ScheduleFormProps) {
+export function ScheduleForm({ isOpen, setIsOpen, scheduleItem, user, userRole }: ScheduleFormProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { time: "", title: "", description: "", icon: "Default" },
   });
+  
+  const isSuperAdmin = userRole === 'superadmin';
 
   useEffect(() => {
     if (scheduleItem) {

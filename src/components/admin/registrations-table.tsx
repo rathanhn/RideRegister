@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Check, X, Ban, Trash2, Users, Phone, User } from 'lucide-react';
+import { Loader2, AlertTriangle, Check, X, Ban, Trash2, Users, Phone, User, ShieldAlert } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { updateRegistrationStatus, deleteRegistration } from '@/app/actions';
@@ -96,10 +96,10 @@ export function RegistrationsTable() {
     }
   }, [registrations]);
 
-  const canEdit = userRole === 'admin' || userRole === 'superadmin';
+  const isSuperAdmin = userRole === 'superadmin';
 
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
-    if (!user || !canEdit) {
+    if (!user || !isSuperAdmin) {
       toast({ variant: "destructive", title: "Error", description: "You don't have permission to perform this action." });
       return;
     }
@@ -115,7 +115,7 @@ export function RegistrationsTable() {
   }
 
   const handleCancellation = async (id: string, approve: boolean) => {
-    if (!user || !canEdit) {
+    if (!user || !isSuperAdmin) {
       toast({ variant: "destructive", title: "Error", description: "You don't have permission to perform this action." });
       return;
     }
@@ -152,6 +152,12 @@ export function RegistrationsTable() {
     <div className="space-y-8">
         <div>
             <h4 className="font-semibold text-lg mb-2">Pending Approvals</h4>
+            {!isSuperAdmin && (
+                 <div className="text-muted-foreground flex items-center gap-2 p-2 bg-secondary rounded-md text-xs mb-4">
+                    <ShieldAlert className="h-4 w-4" />
+                    <p>Only Super Admins can approve or reject registrations.</p>
+                </div>
+            )}
             <div className="md:hidden space-y-4">
                  {(loading || authLoading) ? <CardSkeleton /> : pendingRegistrations.length > 0 ? (
                     pendingRegistrations.map((reg) => (
@@ -178,7 +184,7 @@ export function RegistrationsTable() {
                                     </div>
                                     <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'} className="capitalize mt-1">{reg.registrationType}</Badge>
                                 </div>
-                                {canEdit && (
+                                {isSuperAdmin && (
                                     <div className="flex justify-end gap-2 pt-2 border-t">
                                         <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateStatus(reg.id, 'approved')} disabled={isUpdating === reg.id}>
                                             {isUpdating === reg.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4" />}<span className="ml-2">Approve</span>
@@ -234,7 +240,7 @@ export function RegistrationsTable() {
                             </TableCell>
                             <TableCell>{reg.phoneNumber}</TableCell>
                             <TableCell className="text-right">
-                            {!canEdit ? (
+                            {!isSuperAdmin ? (
                                 <span className='text-muted-foreground text-sm'>View Only</span>
                             ) : (
                                 <div className="flex justify-end gap-2">
@@ -279,6 +285,12 @@ export function RegistrationsTable() {
         
         <div>
             <h4 className="font-semibold text-lg mb-2">Cancellation Requests</h4>
+             {!isSuperAdmin && (
+                 <div className="text-muted-foreground flex items-center gap-2 p-2 bg-secondary rounded-md text-xs mb-4">
+                    <ShieldAlert className="h-4 w-4" />
+                    <p>Only Super Admins can manage cancellation requests.</p>
+                </div>
+            )}
             <div className="border rounded-lg">
                 <Table>
                     <TableHeader>
@@ -297,7 +309,7 @@ export function RegistrationsTable() {
                             <TableCell className="font-medium">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</TableCell>
                             <TableCell className="text-muted-foreground max-w-sm truncate">{reg.cancellationReason}</TableCell>
                             <TableCell className="text-right">
-                                {!canEdit ? (
+                                {!isSuperAdmin ? (
                                     <span className='text-muted-foreground text-sm'>View Only</span>
                                 ) : (
                                     <div className="flex justify-end gap-2">
@@ -358,5 +370,3 @@ export function RegistrationsTable() {
     </div>
   );
 }
-
-    

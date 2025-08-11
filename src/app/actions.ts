@@ -29,6 +29,26 @@ async function checkAdminPermissions(adminId: string): Promise<boolean> {
   }
 }
 
+// Helper to check for superadmin permissions
+async function checkSuperAdminPermissions(adminId: string): Promise<boolean> {
+  if (!adminId) {
+    return false;
+  }
+  try {
+    const userDocRef = doc(db, 'users', adminId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      return false;
+    }
+    const userRole = userDoc.data()?.role;
+    return userRole === 'superadmin';
+  } catch (error) {
+    console.error('[SuperAdminCheck] Error checking permissions:', error);
+    return false;
+  }
+}
+
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
 );
@@ -199,9 +219,9 @@ type EditRegistrationInput = z.infer<typeof editRegistrationFormSchema> & {
 };
 
 export async function updateRegistrationDetails(values: EditRegistrationInput) {
-    const isAdmin = await checkAdminPermissions(values.adminId);
-    if (!isAdmin) {
-      return { success: false, message: "Permission denied." };
+    const isSuperAdmin = await checkSuperAdminPermissions(values.adminId);
+    if (!isSuperAdmin) {
+      return { success: false, message: "Permission denied. Only Super Admins can edit registrations." };
     }
 
     const { registrationId, adminId, ...dataToUpdate } = values;
@@ -271,9 +291,9 @@ const updateStatusSchema = z.object({
 });
 
 export async function updateRegistrationStatus(values: z.infer<typeof updateStatusSchema>) {
-    const isAdmin = await checkAdminPermissions(values.adminId);
-    if (!isAdmin) {
-      return { success: false, message: "Permission denied." };
+    const isSuperAdmin = await checkSuperAdminPermissions(values.adminId);
+    if (!isSuperAdmin) {
+      return { success: false, message: "Permission denied. Only Super Admins can change status." };
     }
 
     const parsed = updateStatusSchema.safeParse(values);
@@ -303,9 +323,9 @@ const deleteRegistrationSchema = z.object({
 });
 
 export async function deleteRegistration(values: z.infer<typeof deleteRegistrationSchema>) {
-    const isAdmin = await checkAdminPermissions(values.adminId);
-    if (!isAdmin) {
-      return { success: false, message: "Permission denied." };
+    const isSuperAdmin = await checkSuperAdminPermissions(values.adminId);
+    if (!isSuperAdmin) {
+      return { success: false, message: "Permission denied. Only Super Admins can delete registrations." };
     }
 
     const parsed = deleteRegistrationSchema.safeParse(values);
@@ -469,12 +489,15 @@ const updateUserRoleSchema = z.object({
 });
 
 export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema>) {
+  const isSuperAdmin = await checkSuperAdminPermissions(values.adminId);
   const adminDoc = await getDoc(doc(db, 'users', values.adminId));
   const adminRole = adminDoc.data()?.role;
-
-  if (adminRole !== 'superadmin' && values.newRole === 'superadmin') {
+  
+  // Only superadmins can assign the superadmin role.
+  if (!isSuperAdmin && values.newRole === 'superadmin') {
     return { success: false, message: "Only superadmins can assign the superadmin role." };
   }
+   // Only superadmins or admins can change roles.
    if (adminRole !== 'superadmin' && adminRole !== 'admin') {
     return { success: false, message: "Permission denied." };
   }
@@ -486,7 +509,12 @@ export async function updateUserRole(values: z.infer<typeof updateUserRoleSchema
   
   const { targetUserId, newRole } = parsed.data;
 
-  if (values.adminId === targetUserId && newRole !== adminRole) {
+  // Superadmins can't change their own role.
+  if (values.adminId === targetUserId && newRole !== adminRole && adminRole === 'superadmin') {
+    return { success: false, message: "Superadmins cannot change their own role." };
+  }
+  // Admins can't change their own role.
+   if (values.adminId === targetUserId && newRole !== adminRole && adminRole === 'admin') {
     return { success: false, message: "Admins cannot change their own role." };
   }
 
@@ -689,8 +717,8 @@ const scheduleSchema = z.object({
 
 export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { adminId: string; scheduleId?: string }) {
   const { adminId, scheduleId, ...data } = values;
-  const isAdmin = await checkAdminPermissions(adminId);
-  if (!isAdmin) {
+  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
+  if (!isSuperAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = scheduleSchema.safeParse(data);
@@ -712,8 +740,8 @@ export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { 
 }
 
 export async function deleteScheduleItem(id: string, adminId: string) {
-  const isAdmin = await checkAdminPermissions(adminId);
-  if (!isAdmin) {
+  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
+  if (!isSuperAdmin) {
     return { success: false, message: "Permission denied." };
   }
   try {
@@ -735,8 +763,8 @@ const organizerSchema = z.object({
 
 export async function manageOrganizer(values: z.infer<typeof organizerSchema> & { adminId: string; organizerId?: string }) {
   const { adminId, organizerId, ...data } = values;
-  const isAdmin = await checkAdminPermissions(adminId);
-  if (!isAdmin) {
+  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
+  if (!isSuperAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = organizerSchema.safeParse(data);
@@ -770,8 +798,8 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
 }
 
 export async function deleteOrganizer(id: string, adminId: string) {
-  const isAdmin = await checkAdminPermissions(adminId);
-  if (!isAdmin) {
+  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
+  if (!isSuperAdmin) {
     return { success: false, message: "Permission denied." };
   }
   try {
@@ -839,8 +867,8 @@ const locationSchema = z.object({
 
 export async function manageLocation(values: z.infer<typeof locationSchema> & { adminId: string }) {
   const { adminId, ...data } = values;
-  const isAdmin = await checkAdminPermissions(adminId);
-  if (!isAdmin) {
+  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
+  if (!isSuperAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = locationSchema.safeParse(data);
@@ -862,8 +890,8 @@ const eventTimeSchema = z.object({
 
 export async function manageEventTime(values: z.infer<typeof eventTimeSchema> & { adminId: string }) {
   const { adminId, ...data } = values;
-  const isAdmin = await checkAdminPermissions(adminId);
-  if (!isAdmin) {
+  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
+  if (!isSuperAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = eventTimeSchema.safeParse(data);
@@ -872,10 +900,33 @@ export async function manageEventTime(values: z.infer<typeof eventTimeSchema> & 
   try {
     await setDoc(doc(db, "settings", "event"), {
       startTime: parsed.data.eventDate,
-    });
+    }, { merge: true });
     revalidatePath('/');
     return { success: true, message: "Event time updated successfully." };
   } catch (error) {
     return { success: false, message: "Failed to update event time." };
+  }
+}
+
+const generalSettingsSchema = z.object({
+    registrationsOpen: z.boolean(),
+});
+
+export async function manageGeneralSettings(values: z.infer<typeof generalSettingsSchema> & { adminId: string }) {
+  const { adminId, ...data } = values;
+  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
+  if (!isSuperAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = generalSettingsSchema.safeParse(data);
+  if (!parsed.success) return { success: false, message: "Invalid data." };
+
+  try {
+    await setDoc(doc(db, "settings", "event"), parsed.data, { merge: true });
+    revalidatePath('/');
+    revalidatePath('/register');
+    return { success: true, message: "Settings updated." };
+  } catch (error) {
+    return { success: false, message: "Failed to update settings." };
   }
 }

@@ -116,9 +116,10 @@ export function UserRolesManager() {
 
   const isLoading = authLoading || isRoleLoading || adminUsersLoading || requestingUsersLoading;
   const queryError = adminUsersError || requestingUsersError;
+  const isSuperAdmin = currentUserRole === 'superadmin';
 
-  // Only superadmins and admins can view this component
-  if (!isLoading && currentUserRole !== 'superadmin' && currentUserRole !== 'admin') {
+  // Component is only for superadmins now
+  if (!isLoading && !isSuperAdmin) {
     return (
       <div className="text-muted-foreground flex items-center justify-center gap-2 p-4 bg-secondary rounded-md">
         <ShieldAlert className="h-5 w-5" />
@@ -175,10 +176,7 @@ export function UserRolesManager() {
                     <Select
                       defaultValue={user.role}
                       onValueChange={(newRole) => handleRoleChange(user.id, newRole as UserRole)}
-                      disabled={
-                        user.id === loggedInUser?.uid || 
-                        (currentUserRole !== 'superadmin' && currentUserRole !== 'admin')
-                      }
+                      disabled={user.id === loggedInUser?.uid}
                     >
                       <SelectTrigger className="w-[180px] ml-auto">
                         <SelectValue placeholder="Select a role" />
@@ -187,10 +185,7 @@ export function UserRolesManager() {
                         <SelectItem value="user">User</SelectItem>
                         <SelectItem value="viewer">Viewer</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem 
-                          value="superadmin"
-                          disabled={currentUserRole !== 'superadmin'}
-                        >
+                        <SelectItem value="superadmin">
                           Super Admin
                         </SelectItem>
                       </SelectContent>

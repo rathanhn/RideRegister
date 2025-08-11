@@ -5,12 +5,13 @@ import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { Loader2, AlertTriangle, ToggleLeft, ToggleRight, Settings } from 'lucide-react';
-import type { EventSettings } from '@/lib/types';
+import { Loader2, AlertTriangle, ToggleLeft, ToggleRight, Settings, ShieldAlert } from 'lucide-react';
+import type { EventSettings, UserRole } from "@/lib/types";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { manageGeneralSettings } from '@/app/actions';
 
 export function GeneralSettingsManager() {
   const [user, authLoading] = useAuthState(auth);
@@ -48,26 +49,25 @@ export function GeneralSettingsManager() {
     
     const newStatus = !eventSettings.registrationsOpen;
     
-    try {
-      await setDoc(doc(db, "settings", "event"), {
-        ...eventSettings,
+    const result = await manageGeneralSettings({
+        adminId: user.uid,
         registrationsOpen: newStatus
-      }, { merge: true });
+    });
 
+    if (result.success) {
       toast({
         title: "Success",
         description: `Registrations are now ${newStatus ? 'OPEN' : 'CLOSED'}.`,
       });
-    } catch (e) {
+    } else {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update registration status.",
+        description: result.message || "Failed to update registration status.",
       });
-      console.error(e);
-    } finally {
-      setIsUpdating(false);
     }
+    
+    setIsUpdating(false);
   };
   
   const isLoading = loading || authLoading;
