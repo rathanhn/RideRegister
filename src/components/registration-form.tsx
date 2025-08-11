@@ -19,7 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
-import { Loader2, PartyPopper, User, Users, Upload, Crop } from "lucide-react";
+import { Loader2, PartyPopper, User, Users, Upload } from "lucide-react";
 import { createAccountAndRegisterRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
@@ -27,10 +27,8 @@ import { auth, db } from "@/lib/firebase";
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
-import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop'
-import 'react-image-crop/dist/ReactCrop.css'
+import { doc, setDoc } from "firebase/firestore";
+
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -110,26 +108,6 @@ const fileToDataUri = (file: File) => {
     });
 };
 
-function centerAspectCrop(
-  mediaWidth: number,
-  mediaHeight: number,
-  aspect: number,
-) {
-  return centerCrop(
-    makeAspectCrop(
-      {
-        unit: '%',
-        width: 90,
-      },
-      aspect,
-      mediaWidth,
-      mediaHeight,
-    ),
-    mediaWidth,
-    mediaHeight,
-  )
-}
-
 
 export function RegistrationForm() {
   const { toast } = useToast();
@@ -144,14 +122,6 @@ export function RegistrationForm() {
   const photoInputRef2 = useRef<HTMLInputElement>(null);
   
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Cropping state
-  const [crop, setCrop] = useState<CropType>()
-  const [isCropperOpen, setIsCropperOpen] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
-  const [croppingRider, setCroppingRider] = useState<1 | 2>(1);
-  const imageToCropRef = useRef<HTMLImageElement>(null);
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -185,75 +155,21 @@ export function RegistrationForm() {
     }
   }, [sameAsPhone, phoneNumber, form]);
   
-  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
     const file = event.target.files?.[0];
     if (file) {
-      setCrop(undefined) // Reset crop state
-      const reader = new FileReader()
-      reader.addEventListener('load', () => {
-        setImageToCrop(reader.result as string);
-        setCroppingRider(rider);
-        setIsCropperOpen(true);
-      });
-      reader.readAsDataURL(file)
-    }
-     if (event.target) {
-        event.target.value = '';
+      setIsProcessing(true);
+      const dataUri = await fileToDataUri(file);
+      if (rider === 1) {
+        setPhotoPreview1(dataUri);
+        form.setValue('photoURL', dataUri, { shouldValidate: true });
+      } else {
+        setPhotoPreview2(dataUri);
+        form.setValue('photoURL2', dataUri, { shouldValidate: true });
+      }
+      setIsProcessing(false);
     }
   };
-
-  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
-    const { width, height } = e.currentTarget
-    setCrop(centerAspectCrop(width, height, 1 / 1))
-  }
-  
-   const handleCrop = async () => {
-    if (!imageToCropRef.current || !crop || !crop.width || !crop.height) {
-        return;
-    }
-    const canvas = document.createElement('canvas');
-    const scaleX = imageToCropRef.current.naturalWidth / imageToCropRef.current.width;
-    const scaleY = imageToCropRef.current.naturalHeight / imageToCropRef.current.height;
-    canvas.width = crop.width;
-    canvas.height = crop.height;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not process image.' });
-        return;
-    }
-
-    const pixelRatio = window.devicePixelRatio;
-    canvas.width = crop.width * pixelRatio;
-    canvas.height = crop.height * pixelRatio;
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    ctx.imageSmoothingQuality = 'high';
-
-    ctx.drawImage(
-        imageToCropRef.current,
-        crop.x * scaleX,
-        crop.y * scaleY,
-        crop.width * scaleX,
-        crop.height * scaleY,
-        0,
-        0,
-        crop.width,
-        crop.height
-    );
-    
-    const croppedDataUrl = canvas.toDataURL('image/jpeg');
-
-    if (croppingRider === 1) {
-        setPhotoPreview1(croppedDataUrl);
-        form.setValue('photoURL', croppedDataUrl, { shouldValidate: true });
-    } else {
-        setPhotoPreview2(croppedDataUrl);
-        form.setValue('photoURL2', croppedDataUrl, { shouldValidate: true });
-    }
-    
-    setIsCropperOpen(false);
-    setImageToCrop(null);
-  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("[Client] Form submitted. Values:", values);
@@ -438,7 +354,7 @@ export function RegistrationForm() {
                         type="file"
                         className="hidden"
                         ref={photoInputRef1}
-                        onChange={(e) => handlePhotoSelect(e, 1)}
+                        onChange={(e) => handlePhotoChange(e, 1)}
                         accept="image/png, image/jpeg"
                       />
                   </div>
@@ -505,7 +421,7 @@ export function RegistrationForm() {
                                     type="file"
                                     className="hidden"
                                     ref={photoInputRef2}
-                                    onChange={(e) => handlePhotoSelect(e, 2)}
+                                    onChange={(e) => handlePhotoChange(e, 2)}
                                     accept="image/png, image/jpeg"
                                 />
                             </div>
@@ -558,33 +474,6 @@ export function RegistrationForm() {
         </Form>
       </CardContent>
     </Card>
-
-    <Dialog open={isCropperOpen} onOpenChange={setIsCropperOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Crop & Adjust Photo</DialogTitle>
-            </DialogHeader>
-            {imageToCrop && (
-                <ReactCrop
-                    crop={crop}
-                    onChange={(_, percentCrop) => setCrop(percentCrop)}
-                    aspect={1}
-                >
-                    <img
-                        ref={imageToCropRef}
-                        alt="Crop preview"
-                        src={imageToCrop}
-                        onLoad={onImageLoad}
-                        className="max-h-[70vh] w-auto object-contain"
-                    />
-                </ReactCrop>
-            )}
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCropperOpen(false)}>Cancel</Button>
-                <Button onClick={handleCrop}><Crop className="mr-2 h-4 w-4"/> Crop Image</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }
