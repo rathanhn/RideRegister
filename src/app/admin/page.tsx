@@ -6,12 +6,12 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Header } from '@/components/header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck, Flag, Blocks } from 'lucide-react';
+import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck, Flag, Settings, Calendar, MapPin, Gift, UserCog, Blocks, Settings2 } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,12 @@ import { RidersListTable } from '@/components/admin/riders-list-table';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
 import { CheckedInListTable } from '@/components/admin/checked-in-list-table';
 import { FinishersListTable } from '@/components/admin/finishers-list-table';
-import ContentManagement from './content/page';
+import { ScheduleManager } from "./content/schedule-manager";
+import { OrganizerManager } from "./content/organizer-manager";
+import { PromotionManager } from "./content/promotion-manager";
+import { LocationManager } from "./content/location-manager";
+import { EventTimeManager } from "./content/event-time-manager";
+import { GeneralSettingsManager } from '@/components/admin/general-settings-manager';
 
 export default function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -52,21 +57,62 @@ export default function AdminPage() {
         </div>
         
         <StatsOverview />
+        
+        <Card>
+            <CardHeader>
+                <CardTitle className='flex items-center gap-2'><Settings2 className="h-6 w-6 text-primary"/> General Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <GeneralSettingsManager />
+            </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-             <div className="lg:col-span-2">
-                 <Card>
+             <div className="space-y-8">
+                <Card>
                     <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Blocks className="h-6 w-6 text-primary"/> Content Management</CardTitle>
+                        <CardTitle className='flex items-center gap-2'><Calendar className="h-6 w-6 text-primary"/> Event Schedule</CardTitle>
+                        <CardDescription>Manage the timeline of events for the ride day.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ContentManagement />
+                        <ScheduleManager />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Gift className="h-6 w-6 text-primary"/> Promotions</CardTitle>
+                         <CardDescription>Create and manage special offers for the shop.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <PromotionManager />
+                    </CardContent>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><MapPin className="h-6 w-6 text-primary"/> Location & Time</CardTitle>
+                         <CardDescription>Set the core details for the event countdown and map.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <LocationManager />
+                        <EventTimeManager />
                     </CardContent>
                 </Card>
             </div>
-
-            <div className="lg:col-span-2 space-y-8">
+            
+            <div className="space-y-8">
                  <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><UserCog className="h-6 w-6 text-primary"/> Organizers</CardTitle>
+                        <CardDescription>Add or remove members of the organizing team.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <OrganizerManager />
+                    </CardContent>
+                </Card>
+                
+                <Card>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
                     </CardHeader>
@@ -74,7 +120,9 @@ export default function AdminPage() {
                         <RegistrationsTable />
                     </CardContent>
                 </Card>
-                
+            </div>
+            
+            <div className="lg:col-span-2 space-y-8">
                  <Card>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
