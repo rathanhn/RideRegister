@@ -14,11 +14,13 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import type { Organizer } from "@/lib/types";
-import { Users, Loader2, AlertTriangle } from "lucide-react";
+import { Users, Loader2, AlertTriangle, Phone } from "lucide-react";
 import { CardHeader, CardTitle } from "./ui/card";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { collection, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Button } from "./ui/button";
+import Link from "next/link";
 
 const OrganizerSkeleton = () => (
     <CarouselItem className="md:basis-1/2 lg:basis-1/3">
@@ -63,17 +65,25 @@ export function Organizers() {
               <CarouselItem key={organizer.id} className="md:basis-1/2 lg:basis-1/3">
                 <div className="p-1">
                   <Card className="text-center">
-                    <CardContent className="flex flex-col items-center aspect-square justify-center p-6">
+                    <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
                        <Image
                           src={organizer.imageUrl}
                           alt={organizer.name}
                           width={120}
                           height={120}
-                          className="rounded-full border-4 border-primary/50 mb-4 object-cover h-[120px]"
+                          className="rounded-full border-4 border-primary/50 mb-2 object-cover h-[120px]"
                           data-ai-hint={organizer.imageHint}
                         />
                       <h3 className="text-lg font-semibold">{organizer.name}</h3>
                       <p className="text-sm text-muted-foreground">{organizer.role}</p>
+                      {organizer.contactNumber && (
+                        <Button asChild variant="outline" size="sm" className="mt-2">
+                            <Link href={`tel:${organizer.contactNumber}`}>
+                                <Phone className="mr-2 h-4 w-4" />
+                                Contact
+                            </Link>
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
