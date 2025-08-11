@@ -11,10 +11,11 @@ import { RegistrationsTable } from '@/components/admin/registrations-table';
 import { AdminQna } from '@/components/admin/admin-qna';
 import { StatsOverview } from '@/components/admin/stats-overview';
 import { QrScanner } from '@/components/admin/qr-scanner';
-import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck, Flag, Settings, Blocks, Settings2 } from 'lucide-react';
+import { ScanLine, Users, Loader2, List, FileCheck, MessageSquare, Megaphone, UserCheck, Flag, Settings, Blocks } from 'lucide-react';
 import { UserRolesManager } from '@/components/admin/user-roles-manager';
 import type { UserRole } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { RidersListTable } from '@/components/admin/riders-list-table';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
 import { CheckedInListTable } from '@/components/admin/checked-in-list-table';
@@ -81,7 +82,6 @@ export default function AdminPage() {
                         <CardHeader>
                             <CardTitle className='flex items-center justify-between'>
                                 <span className='flex items-center gap-2'><Blocks className="h-6 w-6 text-primary"/> Website Content</span>
-                                {isSuperAdmin && <Link href="/admin/content"><Settings className='h-4 w-4'/></Link>}
                             </CardTitle>
                              <CardDescription>Manage schedule, organizers, promotions, and more.</CardDescription>
                         </CardHeader>
