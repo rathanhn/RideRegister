@@ -5,7 +5,7 @@ import Image from "next/image";
 import HeroImage from "@/hero.png";
 import { Gift, UtensilsCrossed, BadgePercent } from "lucide-react";
 
-export function Hero() {
+export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
     return (
         <div className="rounded-lg bg-card shadow-lg overflow-hidden">
             <div className="p-6 sm:p-8 md:p-12 text-center">
@@ -53,8 +53,12 @@ export function Hero() {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button asChild size="lg">
-                        <Link href="/register">Register Now</Link>
+                    <Button asChild size="lg" disabled={!registrationsOpen}>
+                        {registrationsOpen ? (
+                             <Link href="/register">Register Now</Link>
+                        ) : (
+                            <span>Registrations Closed</span>
+                        )}
                     </Button>
                     <Button asChild variant="outline" size="lg">
                         <Link href="/login">Check Status / Login</Link>

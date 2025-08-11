@@ -47,6 +47,7 @@ export interface LocationSettings {
 
 export interface EventSettings {
   startTime: any; // Firestore timestamp
+  registrationsOpen?: boolean;
 }
 
 export interface Registration {

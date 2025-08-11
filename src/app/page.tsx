@@ -7,7 +7,7 @@ import { Offers } from "@/components/offers";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { StoreDetails } from "@/components/store-details";
 import { RouteMap } from "@/components/route-map";
-import { MapPin } from "lucide-react";
+import { MapPin, Info } from "lucide-react";
 import { Organizers } from "@/components/organizers";
 import { EventSchedule } from "@/components/event-schedule";
 import { Hero } from "@/components/hero";
@@ -21,6 +21,7 @@ import { db } from "@/lib/firebase";
 import { useMemo } from "react";
 import type { EventSettings } from "@/lib/types";
 import { GoogleReviews } from "@/components/google-reviews";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 export default function Home() {
@@ -39,6 +40,8 @@ export default function Home() {
     return new Date(data.startTime);
   }, [eventSettings, loading, error]);
 
+  const registrationsOpen = eventSettings?.data()?.registrationsOpen ?? true;
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -52,7 +55,16 @@ export default function Home() {
       </div>
       <CountdownTimer targetDate={targetDate} />
       <main className="flex-grow container mx-auto p-4 md:p-8 space-y-8">
-        <Hero />
+        {!registrationsOpen && (
+          <Alert variant="destructive" className="border-2">
+            <Info className="h-4 w-4" />
+            <AlertTitle className="font-bold text-lg">Registration is Closed</AlertTitle>
+            <AlertDescription>
+              Please contact event Head : 7899359217
+            </AlertDescription>
+          </Alert>
+        )}
+        <Hero registrationsOpen={registrationsOpen}/>
         <RegisteredRiders />
         
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
