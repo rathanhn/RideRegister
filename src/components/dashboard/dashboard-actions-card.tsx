@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { Registration, AppUser } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ban, Loader2, Send } from "lucide-react";
+import { Gift, Ban, Loader2, Send, UserPlus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +24,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { cancelRegistration } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { AddCoRiderForm } from './add-co-rider-form';
 
 interface DashboardActionsCardProps {
     registration: Registration | null;
@@ -36,8 +37,10 @@ const cancelSchema = z.object({
 
 export function DashboardActionsCard({ registration, user }: DashboardActionsCardProps) {
     const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+    const [isAddCoRiderOpen, setIsAddCoRiderOpen] = useState(false);
+
 
     const form = useForm<z.infer<typeof cancelSchema>>({
         resolver: zodResolver(cancelSchema),
@@ -46,22 +49,23 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
     
     const handleCancellation = async (values: z.infer<typeof cancelSchema>) => {
         if (!registration) return;
-        setIsSubmitting(true);
+        setIsCancelling(true);
         const result = await cancelRegistration({
             registrationId: registration.id,
             reason: values.reason
         });
         if (result.success) {
             toast({ title: "Success", description: result.message });
-            setIsDialogOpen(false);
+            setIsCancelDialogOpen(false);
             form.reset();
         } else {
             toast({ variant: 'destructive', title: 'Error', description: result.message });
         }
-        setIsSubmitting(false);
+        setIsCancelling(false);
     }
     
     const canCancel = registration && (registration.status === 'approved' || registration.status === 'pending');
+    const canAddCoRider = registration && registration.status === 'approved' && registration.registrationType === 'solo';
 
     return (
         <Card>
@@ -70,12 +74,32 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
                 <CardDescription>Other event-related actions are available here.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                 {canAddCoRider && (
+                    <>
+                        <div className="p-4 border rounded-md flex items-center justify-between">
+                             <div>
+                                <h4 className="font-semibold flex items-center gap-2"><UserPlus className="text-primary"/> Add a Co-Rider</h4>
+                                <p className="text-sm text-muted-foreground">Upgrade your solo registration to a duo.</p>
+                            </div>
+                            <Button onClick={() => setIsAddCoRiderOpen(true)}>
+                                Add Co-Rider
+                            </Button>
+                        </div>
+                        <AddCoRiderForm 
+                            isOpen={isAddCoRiderOpen}
+                            setIsOpen={setIsAddCoRiderOpen}
+                            registrationId={registration.id}
+                        />
+                    </>
+                 )}
+
+
                 <div className="p-4 border rounded-md flex items-center justify-between">
                      <div>
                         <h4 className="font-semibold flex items-center gap-2"><Ban className="text-destructive"/> Cancel Registration</h4>
                         <p className="text-sm text-muted-foreground">Request to withdraw your participation from the event.</p>
                     </div>
-                    <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" disabled={!canCancel}>
                                 Request Cancellation
@@ -108,9 +132,9 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
                                     </div>
 
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel disabled={isSubmitting}>Back</AlertDialogCancel>
-                                        <Button type="submit" disabled={isSubmitting}>
-                                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                        <AlertDialogCancel disabled={isCancelling}>Back</AlertDialogCancel>
+                                        <Button type="submit" disabled={isCancelling}>
+                                            {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                                             Submit Request
                                         </Button>
                                     </AlertDialogFooter>

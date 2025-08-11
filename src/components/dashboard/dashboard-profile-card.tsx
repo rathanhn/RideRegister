@@ -4,8 +4,11 @@
 import type { AppUser, Registration } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Phone, Calendar, Ticket } from "lucide-react";
+import { User, Phone, Calendar, Ticket, UserPlus } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import { Button } from "../ui/button";
+import { useState } from "react";
+import { AddCoRiderForm } from "./add-co-rider-form";
 
 interface DashboardProfileCardProps {
     user: AppUser | null;
@@ -13,9 +16,11 @@ interface DashboardProfileCardProps {
 }
 
 export function DashboardProfileCard({ user, registration }: DashboardProfileCardProps) {
+    const [isAddCoRiderOpen, setIsAddCoRiderOpen] = useState(false);
     if (!user) return null;
 
     const photoSrc = registration?.photoURL || user.photoURL || undefined;
+    const canAddCoRider = registration && registration.status === 'approved' && registration.registrationType === 'solo';
 
     return (
         <Card>
@@ -31,21 +36,24 @@ export function DashboardProfileCard({ user, registration }: DashboardProfileCar
             </CardHeader>
             <CardContent>
                 {registration ? (
-                    <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
-                        <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <span>{registration.phoneNumber}</span>
+                    <div className="space-y-4 pt-4 border-t">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                <span>{registration.phoneNumber}</span>
+                            </div>
+                             <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span>{registration.age} years old</span>
+                            </div>
+                            <div className="flex items-center gap-2 col-span-2">
+                                <Ticket className="h-4 w-4 text-muted-foreground" />
+                                <span className="capitalize">{registration.registrationType} Registration</span>
+                            </div>
                         </div>
-                         <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>{registration.age} years old</span>
-                        </div>
-                        <div className="flex items-center gap-2 col-span-2">
-                            <Ticket className="h-4 w-4 text-muted-foreground" />
-                            <span className="capitalize">{registration.registrationType} Registration</span>
-                        </div>
-                        {registration.registrationType === 'duo' && (
-                            <div className="col-span-2 p-3 bg-secondary rounded-md flex items-start gap-4">
+
+                        {registration.registrationType === 'duo' ? (
+                            <div className="p-3 bg-secondary rounded-md flex items-start gap-4">
                                  <Avatar className="h-12 w-12 border">
                                     <AvatarImage src={registration.photoURL2 ?? undefined} alt={registration.fullName2} />
                                     <AvatarFallback><User /></AvatarFallback>
@@ -56,7 +64,22 @@ export function DashboardProfileCard({ user, registration }: DashboardProfileCar
                                     <p className="text-xs text-muted-foreground">{registration.age2} years old</p>
                                 </div>
                             </div>
-                        )}
+                        ) : canAddCoRider ? (
+                            <>
+                                <div className="p-4 border-2 border-dashed rounded-lg text-center space-y-2">
+                                    <p className="text-sm text-muted-foreground">Want to bring a friend?</p>
+                                    <Button onClick={() => setIsAddCoRiderOpen(true)}>
+                                        <UserPlus className="mr-2 h-4 w-4" />
+                                        Add a Co-Rider
+                                    </Button>
+                                </div>
+                                 <AddCoRiderForm 
+                                    isOpen={isAddCoRiderOpen}
+                                    setIsOpen={setIsAddCoRiderOpen}
+                                    registrationId={registration.id}
+                                />
+                            </>
+                        ) : null}
                     </div>
                 ) : (
                    <div className="space-y-2 text-center text-muted-foreground border-t pt-4">
