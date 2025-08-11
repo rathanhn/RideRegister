@@ -166,10 +166,6 @@ export function RegistrationForm() {
         form.setValue('photoURL2', file, { shouldValidate: true });
       }
     }
-    // Reset the input value to ensure onChange fires again for the same file.
-    if (event.target) {
-        event.target.value = '';
-    }
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
