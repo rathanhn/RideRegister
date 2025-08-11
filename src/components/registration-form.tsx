@@ -180,10 +180,12 @@ export function RegistrationForm() {
     try {
         let finalPhotoUrl1: string | undefined = undefined;
         let finalPhotoUrl2: string | undefined = undefined;
+        const { photoURL, photoURL2, ...restOfValues } = values;
 
-        if (values.photoURL instanceof File) {
+
+        if (photoURL instanceof File) {
             console.log("[Client] Uploading photo 1...");
-            const dataUri = await fileToDataUri(values.photoURL);
+            const dataUri = await fileToDataUri(photoURL);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
                 body: JSON.stringify({ file: dataUri }),
@@ -194,9 +196,9 @@ export function RegistrationForm() {
             finalPhotoUrl1 = url;
         }
 
-        if (registrationType === 'duo' && values.photoURL2 instanceof File) {
+        if (registrationType === 'duo' && photoURL2 instanceof File) {
              console.log("[Client] Uploading photo 2...");
-            const dataUri = await fileToDataUri(values.photoURL2);
+            const dataUri = await fileToDataUri(photoURL2);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
                 body: JSON.stringify({ file: dataUri }),
@@ -207,7 +209,7 @@ export function RegistrationForm() {
             finalPhotoUrl2 = url;
         }
       
-      const submissionData = { ...values, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
+      const submissionData = { ...restOfValues, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
 
       console.log("[Client] Calling createAccountAndRegisterRider with data:", submissionData);
       const result = await createAccountAndRegisterRider(submissionData);
@@ -254,7 +256,7 @@ export function RegistrationForm() {
     <>
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="font-headline text-3xl">Create Account & Register</CardTitle>
+        <CardTitle className="font-headline text-3xl">Create Account &amp; Register</CardTitle>
         <CardDescription>Fill in your details below to join the ride. Already have an account? <a href="/login" className="text-primary hover:underline">Login here</a>.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -307,7 +309,7 @@ export function RegistrationForm() {
             </div>
             
             <Separator />
-            <h3 className="text-lg font-medium text-primary">Ride & Rider Details</h3>
+            <h3 className="text-lg font-medium text-primary">Ride &amp; Rider Details</h3>
             
             <FormField
               control={form.control}
@@ -319,13 +321,13 @@ export function RegistrationForm() {
                     <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl><RadioGroupItem value="solo" id="solo" className="peer sr-only" /></FormControl>
-                        <FormLabel htmlFor="solo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                        <FormLabel htmlFor="solo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
                             <User className="mb-3 h-6 w-6" /> Solo Rider
                         </FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl><RadioGroupItem value="duo" id="duo" className="peer sr-only" /></FormControl>
-                        <FormLabel htmlFor="duo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary w-full cursor-pointer">
+                        <FormLabel htmlFor="duo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&amp;:has([data-state=checked])]:border-primary w-full cursor-pointer">
                            <Users className="mb-3 h-6 w-6" /> Duo (2 Riders)
                         </FormLabel>
                       </FormItem>
@@ -442,7 +444,7 @@ export function RegistrationForm() {
 
             <div className="space-y-4">
                 <div className="space-y-2 rounded-md border p-4">
-                    <h4 className="font-medium text-base">General Ride Rules & Consent</h4>
+                    <h4 className="font-medium text-base">General Ride Rules &amp; Consent</h4>
                      <p className="text-sm text-muted-foreground">Please read and agree to all rules to continue.</p>
                      <div className="space-y-4 pt-2">
                         {rideRules.map((rule) => (
@@ -471,7 +473,7 @@ export function RegistrationForm() {
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting || !form.formState.isValid || isProcessing}>
               {(isSubmitting || isProcessing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isProcessing ? "Submitting..." : "Create Account & Register"}
+              {isProcessing ? "Submitting..." : "Create Account &amp; Register"}
             </Button>
           </form>
         </Form>
@@ -480,3 +482,5 @@ export function RegistrationForm() {
     </>
   );
 }
+
+    
