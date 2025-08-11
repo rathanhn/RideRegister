@@ -21,6 +21,7 @@ import { collection, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "./ui/button";
 import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const OrganizerSkeleton = () => (
     <CarouselItem className="md:basis-1/2 lg:basis-1/3">
@@ -66,14 +67,10 @@ export function Organizers() {
                 <div className="p-1">
                   <Card className="text-center">
                     <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
-                       <Image
-                          src={organizer.imageUrl}
-                          alt={organizer.name}
-                          width={120}
-                          height={120}
-                          className="rounded-full border-4 border-primary/50 mb-2 object-cover h-[120px]"
-                          data-ai-hint={organizer.imageHint}
-                        />
+                       <Avatar className="h-[120px] w-[120px] border-4 border-primary/50 text-4xl">
+                           <AvatarImage src={organizer.imageUrl} alt={organizer.name} className="object-cover"/>
+                           <AvatarFallback>{organizer.name.charAt(0)}</AvatarFallback>
+                       </Avatar>
                       <h3 className="text-lg font-semibold">{organizer.name}</h3>
                       <p className="text-sm text-muted-foreground">{organizer.role}</p>
                       {organizer.contactNumber && (

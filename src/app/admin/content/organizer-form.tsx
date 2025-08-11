@@ -5,14 +5,14 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { manageOrganizer, deleteOrganizer } from "@/app/actions";
 import type { Organizer } from "@/lib/types";
 import type { User } from 'firebase/auth';
-import { Loader2, Trash2, Upload } from "lucide-react";
+import { Loader2, Trash2, Upload, User as UserIcon } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import {
@@ -30,8 +30,8 @@ import {
 const formSchema = z.object({
   name: z.string().min(3, "Name is required."),
   role: z.string().min(3, "Role is required."),
-  imageUrl: z.string().url("A valid photo URL is required."),
-  imageHint: z.string().min(2, "Image hint is required"),
+  imageUrl: z.string().url().optional(),
+  imageHint: z.string().optional(),
   contactNumber: z.string().optional(),
 });
 
@@ -143,13 +143,13 @@ export function OrganizerForm({ isOpen, setIsOpen, organizer, user }: OrganizerF
             )} />
             
             <FormItem>
-              <FormLabel>Organizer Photo</FormLabel>
+              <FormLabel>Organizer Photo (Optional)</FormLabel>
               <FormControl>
                   <div className="flex items-center gap-4">
                       <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center bg-muted">
                         {photoPreview ? (
                             <Image src={photoPreview} alt="Organizer preview" fill sizes="96px" className="rounded-full object-cover" />
-                        ) : null}
+                        ) : ( <UserIcon className="w-10 h-10 text-muted-foreground" /> )}
                          {isUploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}
                       </div>
                       <Button type="button" variant="outline" onClick={() => photoInputRef.current?.click()} disabled={isUploading}>
@@ -169,7 +169,12 @@ export function OrganizerForm({ isOpen, setIsOpen, organizer, user }: OrganizerF
             </FormItem>
 
             <FormField name="imageHint" control={form.control} render={({ field }) => (
-              <FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} placeholder="man portrait" /></FormControl><FormMessage /></FormItem>
+              <FormItem>
+                <FormLabel>Image Hint</FormLabel>
+                <FormControl><Input {...field} placeholder="e.g., man portrait" /></FormControl>
+                <FormDescription>Describe the photo in one or two words (e.g., "woman smiling").</FormDescription>
+                <FormMessage />
+              </FormItem>
             )} />
             <FormField name="contactNumber" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Contact Number (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>

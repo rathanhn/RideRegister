@@ -117,7 +117,6 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
       ...coreData,
       email: email,
       status: "pending" as const,
-      createdAt: serverTimestamp(),
       consent: true,
     };
     
@@ -142,6 +141,7 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
             createdAt: serverTimestamp(),
         });
         
+        dataToSave.createdAt = serverTimestamp();
         const registrationRef = doc(db, "registrations", uid);
         await setDoc(registrationRef, { ...dataToSave, uid });
         
@@ -150,15 +150,12 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
 
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
-             // remove non-serializable fields before returning
-            const { createdAt, ...serializableData } = dataToSave;
-            
-            // Ensure all undefined values are converted to null for serialization
-            for (const key in serializableData) {
+            const serializableData = { ...dataToSave };
+            Object.keys(serializableData).forEach(key => {
                 if (serializableData[key] === undefined) {
                     serializableData[key] = null;
                 }
-            }
+            });
 
             return { 
                 success: true, 
@@ -678,8 +675,8 @@ export async function deleteScheduleItem(id: string, adminId: string) {
 const organizerSchema = z.object({
   name: z.string().min(3, "Name is required."),
   role: z.string().min(3, "Role is required."),
-  imageUrl: z.string().url("A valid photo URL is required."),
-  imageHint: z.string().min(2, "Image hint is required"),
+  imageUrl: z.string().url().optional(),
+  imageHint: z.string().optional(),
   contactNumber: z.string().optional(),
 });
 
@@ -693,12 +690,17 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
   if (!parsed.success) return { success: false, message: "Invalid data." };
 
   try {
+    const dataToSave = { ...parsed.data };
+    // Ensure optional fields that are empty strings are removed before saving
+    if (dataToSave.imageUrl === "") delete dataToSave.imageUrl;
+    if (dataToSave.imageHint === "") delete dataToSave.imageHint;
+    
     if (organizerId) {
-      await updateDoc(doc(db, "organizers", organizerId), parsed.data);
+      await updateDoc(doc(db, "organizers", organizerId), dataToSave);
       revalidatePath('/');
       return { success: true, message: "Organizer updated." };
     } else {
-      await addDoc(collection(db, "organizers"), { ...parsed.data, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "organizers"), { ...dataToSave, createdAt: serverTimestamp() });
       revalidatePath('/');
       return { success: true, message: "Organizer added." };
     }
