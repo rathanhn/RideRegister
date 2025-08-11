@@ -27,7 +27,7 @@ import { auth, db } from "@/lib/firebase";
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 
 const phoneRegex = new RegExp(
@@ -44,7 +44,6 @@ const rideRules = [
     { id: 'rule7', text: "Riders are recommended to wear necessary gear like a jacket, shoes, and suitable pants." }
 ];
 
-// Looser schema for form state, allowing file objects
 const formSchema = z
   .object({
     email: z.string().email("A valid email is required."),
@@ -167,20 +166,21 @@ export function RegistrationForm() {
         form.setValue('photoURL2', file, { shouldValidate: true });
       }
     }
+    // Reset the input value to ensure onChange fires again for the same file.
+    if (event.target) {
+        event.target.value = '';
+    }
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("[Client] Form submitted.");
     setIsProcessing(true);
 
     try {
         let finalPhotoUrl1: string | undefined = undefined;
         let finalPhotoUrl2: string | undefined = undefined;
-        const { photoURL, photoURL2, ...restOfValues } = values;
 
-        // Upload photos first
-        if (photoURL instanceof File) {
-            const dataUri = await fileToDataUri(photoURL);
+        if (values.photoURL instanceof File) {
+            const dataUri = await fileToDataUri(values.photoURL);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST', body: JSON.stringify({ file: dataUri }), headers: { 'Content-Type': 'application/json' },
             });
@@ -189,8 +189,8 @@ export function RegistrationForm() {
             finalPhotoUrl1 = url;
         }
 
-        if (registrationType === 'duo' && photoURL2 instanceof File) {
-            const dataUri = await fileToDataUri(photoURL2);
+        if (registrationType === 'duo' && values.photoURL2 instanceof File) {
+            const dataUri = await fileToDataUri(values.photoURL2);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST', body: JSON.stringify({ file: dataUri }), headers: { 'Content-Type': 'application/json' },
             });
@@ -199,7 +199,7 @@ export function RegistrationForm() {
             finalPhotoUrl2 = url;
         }
       
-      const submissionData = { ...restOfValues, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
+      const submissionData = { ...values, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
 
       const result = await createAccountAndRegisterRider(submissionData);
       
@@ -216,7 +216,7 @@ export function RegistrationForm() {
              if (result.existingUser && result.dataForExistingUser) {
                 const uid = userCredential.user.uid;
                 const registrationRef = doc(db, "registrations", uid);
-                await setDoc(registrationRef, { ...result.dataForExistingUser, uid });
+                await setDoc(registrationRef, { ...result.dataForExistingUser, uid, createdAt: serverTimestamp() });
             }
             router.push('/dashboard');
         } else {
