@@ -10,6 +10,7 @@ import type { EventSettings } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 
 export function GeneralSettingsManager() {
   const [user, authLoading] = useAuthState(auth);
