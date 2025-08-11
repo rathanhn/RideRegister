@@ -150,17 +150,15 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
 
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
-             Object.keys(dataToSave).forEach(key => {
-                if (dataToSave[key] === undefined) {
-                    delete dataToSave[key];
-                }
-            });
+             // remove non-serializable fields before returning
+            const { createdAt, ...serializableData } = dataToSave;
+
             return { 
                 success: true, 
                 message: "Account already exists. We've linked this registration to your account. Logging you in...",
                 uid: null,
                 existingUser: true,
-                dataForExistingUser: dataToSave
+                dataForExistingUser: serializableData
             };
         }
         
