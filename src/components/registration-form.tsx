@@ -155,7 +155,7 @@ export function RegistrationForm() {
     }
   }, [sameAsPhone, phoneNumber, form]);
   
-  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
     const file = event.target.files?.[0];
     if (file) {
       if (rider === 1) {
@@ -166,7 +166,57 @@ export function RegistrationForm() {
         form.setValue('photoURL2', file, { shouldValidate: true });
       }
     }
+    // Reset the input value to ensure onChange fires for the same file if re-selected
+    event.target.value = '';
   };
+  
+    // This effect provides a fallback for mobile browsers that don't fire onChange reliably
+    useEffect(() => {
+        const lastClickedRef = { current: null as (1 | 2 | null) };
+
+        const handleFocus = () => {
+            if (!lastClickedRef.current) return;
+
+            // Timeout to allow the file picker to close and the file list to update
+            setTimeout(() => {
+                const inputRef = lastClickedRef.current === 1 ? photoInputRef1 : photoInputRef2;
+                if (inputRef.current?.files?.length) {
+                    const file = inputRef.current.files[0];
+                    if (lastClickedRef.current === 1) {
+                         setPhotoPreview1(URL.createObjectURL(file));
+                         form.setValue('photoURL', file, { shouldValidate: true });
+                    } else {
+                         setPhotoPreview2(URL.createObjectURL(file));
+                         form.setValue('photoURL2', file, { shouldValidate: true });
+                    }
+                }
+                lastClickedRef.current = null; // Reset after checking
+            }, 500);
+        };
+        
+        const setupFocusListener = (rider: 1 | 2) => {
+          lastClickedRef.current = rider;
+        };
+
+        window.addEventListener('focus', handleFocus);
+
+        // We can't directly add onClick to the hidden input, so we use the button's onClick
+        const btn1 = document.getElementById('upload-btn-1');
+        const btn2 = document.getElementById('upload-btn-2');
+        
+        const listener1 = () => setupFocusListener(1);
+        const listener2 = () => setupFocusListener(2);
+
+        btn1?.addEventListener('click', listener1);
+        btn2?.addEventListener('click', listener2);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            btn1?.removeEventListener('click', listener1);
+            btn2?.removeEventListener('click', listener2);
+        };
+    }, [form]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsProcessing(true);
@@ -206,17 +256,21 @@ export function RegistrationForm() {
           action: <PartyPopper className="text-primary" />,
         });
 
+        // Attempt to log the user in regardless of whether they were new or existing.
         const userCredential = await signInWithEmailAndPassword(values.email, values.password);
 
         if (userCredential) {
-             if (result.existingUser && result.dataForExistingUser) {
+            // This handles the edge case where an existing user registers. We link the registration.
+            if (result.existingUser && result.dataForExistingUser) {
                 const uid = userCredential.user.uid;
                 const registrationRef = doc(db, "registrations", uid);
-                await setDoc(registrationRef, { ...result.dataForExistingUser, uid, createdAt: serverTimestamp() });
+                // Make sure to remove any undefined properties before saving
+                const dataToSave = Object.fromEntries(Object.entries(result.dataForExistingUser).filter(([_, v]) => v !== null));
+                await setDoc(registrationRef, { ...dataToSave, uid, createdAt: serverTimestamp() });
             }
             router.push('/dashboard');
         } else {
-             throw new Error(signInError?.message || "Could not log you in. Please go to the login page.");
+             throw new Error(signInError?.message || "Registration succeeded, but login failed. Please go to the login page.");
         }
 
       } else {
@@ -335,7 +389,7 @@ export function RegistrationForm() {
                             <User className="w-10 h-10 text-muted-foreground" />
                         )}
                       </div>
-                      <Button type="button" variant="outline" onClick={() => photoInputRef1.current?.click()} disabled={isSubmitting || isProcessing}>
+                      <Button id="upload-btn-1" type="button" variant="outline" onClick={() => photoInputRef1.current?.click()} disabled={isSubmitting || isProcessing}>
                          <Upload className="mr-2 h-4 w-4" /> Change Photo
                       </Button>
                       <Input
@@ -402,7 +456,7 @@ export function RegistrationForm() {
                                         <User className="w-10 h-10 text-muted-foreground" />
                                     )}
                                 </div>
-                                <Button type="button" variant="outline" onClick={() => photoInputRef2.current?.click()} disabled={isSubmitting || isProcessing}>
+                                <Button id="upload-btn-2" type="button" variant="outline" onClick={() => photoInputRef2.current?.click()} disabled={isSubmitting || isProcessing}>
                                     <Upload className="mr-2 h-4 w-4" /> Upload Photo
                                 </Button>
                                 <Input
