@@ -728,7 +728,7 @@ export async function deleteScheduleItem(id: string, adminId: string) {
 const organizerSchema = z.object({
   name: z.string().min(3, "Name is required."),
   role: z.string().min(3, "Role is required."),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z.string().url("A valid URL is required.").optional().or(z.literal("")),
   imageHint: z.string().optional(),
   contactNumber: z.string().optional(),
 });
