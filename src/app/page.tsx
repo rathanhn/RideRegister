@@ -79,7 +79,7 @@ export default function Home() {
             <RouteMap />
         </div>
         
-        <Offers />
+        <Organizers />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <Announcements />
@@ -98,7 +98,7 @@ export default function Home() {
             </div>
         </div>
         
-        <Organizers />
+        <Offers />
 
       </main>
       <footer className="text-center p-4 text-muted-foreground text-sm">
