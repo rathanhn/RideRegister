@@ -778,5 +778,3 @@ export async function manageEventTime(values: z.infer<typeof eventTimeSchema> & 
     return { success: false, message: "Failed to update event time." };
   }
 }
-
-    

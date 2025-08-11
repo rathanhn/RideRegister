@@ -170,8 +170,7 @@ export function RegistrationForm() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("[Client] Form submitted. Values:", values);
-    
+    console.log("[Client] Form submitted.");
     setIsProcessing(true);
 
     try {
@@ -179,43 +178,31 @@ export function RegistrationForm() {
         let finalPhotoUrl2: string | undefined = undefined;
         const { photoURL, photoURL2, ...restOfValues } = values;
 
-        // Check for existing user BEFORE uploading photos
-        const initialResultCheck = await createAccountAndRegisterRider({ ...restOfValues, photoURL: undefined, photoURL2: undefined });
-        
-        if (initialResultCheck.success && !initialResultCheck.existingUser) {
-             if (photoURL instanceof File) {
-                console.log("[Client] Uploading photo 1...");
-                const dataUri = await fileToDataUri(photoURL);
-                const uploadResponse = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: JSON.stringify({ file: dataUri }),
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                const { url, error } = await uploadResponse.json();
-                if (error || !url) throw new Error(error || 'Failed to upload photo 1.');
-                finalPhotoUrl1 = url;
-            }
+        // Upload photos first
+        if (photoURL instanceof File) {
+            const dataUri = await fileToDataUri(photoURL);
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST', body: JSON.stringify({ file: dataUri }), headers: { 'Content-Type': 'application/json' },
+            });
+            const { url, error } = await uploadResponse.json();
+            if (error || !url) throw new Error(error || 'Failed to upload photo 1.');
+            finalPhotoUrl1 = url;
+        }
 
-            if (registrationType === 'duo' && photoURL2 instanceof File) {
-                 console.log("[Client] Uploading photo 2...");
-                const dataUri = await fileToDataUri(photoURL2);
-                const uploadResponse = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: JSON.stringify({ file: dataUri }),
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                const { url, error } = await uploadResponse.json();
-                if (error || !url) throw new Error(error || 'Failed to upload photo 2.');
-                finalPhotoUrl2 = url;
-            }
+        if (registrationType === 'duo' && photoURL2 instanceof File) {
+            const dataUri = await fileToDataUri(photoURL2);
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST', body: JSON.stringify({ file: dataUri }), headers: { 'Content-Type': 'application/json' },
+            });
+            const { url, error } = await uploadResponse.json();
+            if (error || !url) throw new Error(error || 'Failed to upload photo 2.');
+            finalPhotoUrl2 = url;
         }
       
       const submissionData = { ...restOfValues, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
 
-      console.log("[Client] Calling createAccountAndRegisterRider with data:", submissionData);
       const result = await createAccountAndRegisterRider(submissionData);
-      console.log("[Client] Got result from server action:", result);
-
+      
       if (result.success) {
         toast({
           title: "Success!",
@@ -230,7 +217,6 @@ export function RegistrationForm() {
                 const uid = userCredential.user.uid;
                 const registrationRef = doc(db, "registrations", uid);
                 await setDoc(registrationRef, { ...result.dataForExistingUser, uid });
-                console.log(`[Client] Registration document created for existing user UID: ${uid}`);
             }
             router.push('/dashboard');
         } else {
@@ -483,5 +469,3 @@ export function RegistrationForm() {
     </>
   );
 }
-
-    
