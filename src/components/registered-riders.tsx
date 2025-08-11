@@ -22,12 +22,12 @@ import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 
 const RiderSkeleton = () => (
-    <CarouselItem className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+    <CarouselItem className="basis-1/3 md:basis-1/4 lg:basis-1/5">
         <div className="p-1">
             <Card>
                 <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
-                    <Skeleton className="w-24 h-24 rounded-full" />
-                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="w-20 h-20 rounded-full" />
+                    <Skeleton className="h-5 w-3/4" />
                 </CardContent>
             </Card>
         </div>
@@ -84,19 +84,19 @@ export function RegisteredRiders() {
             }}
             className="w-full"
           >
-            <CarouselContent className="-ml-2 sm:-ml-4">
+            <CarouselContent className="-ml-2">
               {loading ? [...Array(5)].map((_, i) => <RiderSkeleton key={i} />)
               : allParticipants.map((rider) => (
-                <CarouselItem key={rider.id} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 pl-2 sm:pl-4">
+                <CarouselItem key={rider.id} className="basis-1/3 md:basis-1/4 lg:basis-1/5 pl-2">
                     <Card>
-                      <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 gap-2 aspect-square">
-                        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-primary/50">
+                      <CardContent className="flex flex-col items-center justify-center p-2 sm:p-4 gap-2 aspect-square">
+                        <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-primary/50">
                           <AvatarImage src={rider.photo} alt={rider.name} />
                           <AvatarFallback>
-                            <User className="w-10 h-10 sm:w-12 sm:h-12" />
+                            <User className="w-8 h-8 sm:w-10 sm:h-10" />
                           </AvatarFallback>
                         </Avatar>
-                        <p className="text-sm sm:text-base font-semibold text-center truncate w-full px-1">{rider.name}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-center truncate w-full px-1">{rider.name}</p>
                       </CardContent>
                     </Card>
                 </CarouselItem>
@@ -123,16 +123,16 @@ export function RegisteredRiders() {
                         </SheetDescription>
                     </SheetHeader>
                     <ScrollArea className="h-[calc(100vh-8rem)] mt-4 pr-4">
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {allParticipants.map((rider) => (
-                                <div key={rider.id} className="flex items-center gap-4 p-2 border rounded-md">
-                                    <Avatar className="h-12 w-12">
+                                <div key={rider.id} className="flex items-center gap-3 p-2 border rounded-md">
+                                    <Avatar className="h-10 w-10">
                                         <AvatarImage src={rider.photo} />
                                         <AvatarFallback><User /></AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <p className="font-semibold">{rider.name}</p>
-                                        <p className="text-sm text-muted-foreground">{rider.type}</p>
+                                        <p className="text-sm font-semibold">{rider.name}</p>
+                                        <p className="text-xs text-muted-foreground">{rider.type}</p>
                                     </div>
                                 </div>
                             ))}
