@@ -717,8 +717,8 @@ const scheduleSchema = z.object({
 
 export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { adminId: string; scheduleId?: string }) {
   const { adminId, scheduleId, ...data } = values;
-  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
-  if (!isSuperAdmin) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = scheduleSchema.safeParse(data);
@@ -740,8 +740,8 @@ export async function manageSchedule(values: z.infer<typeof scheduleSchema> & { 
 }
 
 export async function deleteScheduleItem(id: string, adminId: string) {
-  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
-  if (!isSuperAdmin) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   try {
@@ -763,8 +763,8 @@ const organizerSchema = z.object({
 
 export async function manageOrganizer(values: z.infer<typeof organizerSchema> & { adminId: string; organizerId?: string }) {
   const { adminId, organizerId, ...data } = values;
-  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
-  if (!isSuperAdmin) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = organizerSchema.safeParse(data);
@@ -798,8 +798,8 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
 }
 
 export async function deleteOrganizer(id: string, adminId: string) {
-  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
-  if (!isSuperAdmin) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   try {
@@ -867,8 +867,8 @@ const locationSchema = z.object({
 
 export async function manageLocation(values: z.infer<typeof locationSchema> & { adminId: string }) {
   const { adminId, ...data } = values;
-  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
-  if (!isSuperAdmin) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = locationSchema.safeParse(data);
@@ -890,8 +890,8 @@ const eventTimeSchema = z.object({
 
 export async function manageEventTime(values: z.infer<typeof eventTimeSchema> & { adminId: string }) {
   const { adminId, ...data } = values;
-  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
-  if (!isSuperAdmin) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = eventTimeSchema.safeParse(data);
@@ -914,8 +914,8 @@ const generalSettingsSchema = z.object({
 
 export async function manageGeneralSettings(values: z.infer<typeof generalSettingsSchema> & { adminId: string }) {
   const { adminId, ...data } = values;
-  const isSuperAdmin = await checkSuperAdminPermissions(adminId);
-  if (!isSuperAdmin) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
   const parsed = generalSettingsSchema.safeParse(data);

@@ -43,13 +43,13 @@ export function OrganizerManager() {
     setIsFormOpen(true);
   };
   
-  const isSuperAdmin = userRole === 'superadmin';
+  const canEdit = userRole === 'admin' || userRole === 'superadmin';
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Manage Organizers</h3>
-        {isSuperAdmin && (
+        {canEdit && (
             <Button onClick={handleAddNew} size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add New Organizer</Button>
         )}
       </div>
@@ -93,7 +93,7 @@ export function OrganizerManager() {
                   <TableCell>{item.role}</TableCell>
                    <TableCell>{item.contactNumber || 'N/A'}</TableCell>
                   <TableCell className="text-right">
-                    {isSuperAdmin ? (
+                    {canEdit ? (
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}><Edit className="h-4 w-4" /></Button>
                     ) : (
                         <span className='text-muted-foreground text-xs'>View Only</span>
@@ -105,10 +105,10 @@ export function OrganizerManager() {
           </TableBody>
         </Table>
       </div>
-       {!isSuperAdmin && (
+       {!canEdit && (
             <div className="text-muted-foreground flex items-center gap-2 p-2 bg-secondary rounded-md text-xs">
                 <ShieldAlert className="h-4 w-4" />
-                <p>Only Super Admins can add, edit, or delete organizers.</p>
+                <p>Only Admins can add, edit, or delete organizers.</p>
             </div>
         )}
     </div>

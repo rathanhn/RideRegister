@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { Loader2, AlertTriangle, ToggleLeft, ToggleRight, Settings, ShieldAlert } from 'lucide-react';
 import type { EventSettings, UserRole } from "@/lib/types";
@@ -15,11 +15,23 @@ import { manageGeneralSettings } from '@/app/actions';
 
 export function GeneralSettingsManager() {
   const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [eventSettings, setEventSettings] = useState<EventSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
+
+   useEffect(() => {
+    if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        getDoc(userDocRef).then(doc => {
+            if (doc.exists()) {
+                setUserRole(doc.data().role as UserRole);
+            }
+        })
+    }
+  }, [user]);
 
   useEffect(() => {
     const docRef = doc(db, 'settings', 'event');
@@ -72,6 +84,8 @@ export function GeneralSettingsManager() {
   
   const isLoading = loading || authLoading;
   const isRegistrationsOpen = eventSettings?.registrationsOpen ?? true;
+  const canEdit = userRole === 'admin' || userRole === 'superadmin';
+
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -93,7 +107,7 @@ export function GeneralSettingsManager() {
              <Badge variant={isRegistrationsOpen ? "default" : "destructive"}>
                 {isRegistrationsOpen ? 'Open' : 'Closed'}
              </Badge>
-            <Button onClick={handleToggleRegistration} disabled={isUpdating} variant="outline">
+            <Button onClick={handleToggleRegistration} disabled={isUpdating || !canEdit} variant="outline">
                 {isUpdating ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : isRegistrationsOpen ? (

@@ -65,7 +65,7 @@ export function LocationManager() {
   };
 
   const isLoading = loading || authLoading;
-  const isSuperAdmin = userRole === 'superadmin';
+  const canEdit = userRole === 'admin' || userRole === 'superadmin';
 
   return (
     <Card>
@@ -82,10 +82,10 @@ export function LocationManager() {
             <div className="text-destructive flex items-center gap-2">
                 <AlertTriangle/> Error loading location data.
             </div>
-        ) : !isSuperAdmin ? (
+        ) : !canEdit ? (
              <div className="text-muted-foreground flex items-center gap-2 p-4 bg-secondary rounded-md h-full text-sm">
                 <ShieldAlert className="h-5 w-5" />
-                <p>Only Super Admins can change the location.</p>
+                <p>Only Admins can change the location.</p>
             </div>
         ) : (
             <Form {...form}>
@@ -104,7 +104,7 @@ export function LocationManager() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" disabled={isSubmitting || !isSuperAdmin}>
+                <Button type="submit" disabled={isSubmitting || !canEdit}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   <Save className="mr-2 h-4 w-4"/>
                   Save Location

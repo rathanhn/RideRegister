@@ -39,8 +39,7 @@ export default function AdminPage() {
     }
   }, [user]);
 
-  const isSuperAdmin = userRole === 'superadmin';
-  const canViewContent = userRole === 'superadmin' || userRole === 'admin';
+  const canManageContent = userRole === 'superadmin' || userRole === 'admin';
 
   return (
     <div className="flex flex-col min-h-screen bg-secondary/50">
@@ -77,7 +76,7 @@ export default function AdminPage() {
                     </CardContent>
                 </Card>
                  
-                {canViewContent && (
+                {canManageContent && (
                     <Card>
                         <CardHeader>
                             <CardTitle className='flex items-center justify-between'>
@@ -107,7 +106,7 @@ export default function AdminPage() {
                     </CardContent>
                 </Card>
                 
-                {isSuperAdmin && (
+                {userRole === 'superadmin' && (
                     <Card>
                         <CardHeader>
                             <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>

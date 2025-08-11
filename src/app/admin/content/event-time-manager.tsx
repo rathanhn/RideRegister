@@ -11,7 +11,7 @@ import { manageEventTime } from "@/app/actions";
 import type { EventSettings, UserRole } from "@/lib/types";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useDocument } from 'react-firebase-hooks/firestore';
-import { doc, Timestamp } from 'firebase/firestore';
+import { doc, Timestamp, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { Loader2, AlertTriangle, Save, Calendar as CalendarIcon, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -72,7 +72,7 @@ export function EventTimeManager() {
   };
 
   const isLoading = loading || authLoading;
-  const isSuperAdmin = userRole === 'superadmin';
+  const canEdit = userRole === 'admin' || userRole === 'superadmin';
 
   return (
     <Card>
@@ -89,10 +89,10 @@ export function EventTimeManager() {
             <div className="text-destructive flex items-center gap-2">
                 <AlertTriangle/> Error loading event time data.
             </div>
-        ) : !isSuperAdmin ? (
+        ) : !canEdit ? (
              <div className="text-muted-foreground flex items-center gap-2 p-4 bg-secondary rounded-md h-full text-sm">
                 <ShieldAlert className="h-5 w-5" />
-                <p>Only Super Admins can change the event time.</p>
+                <p>Only Admins can change the event time.</p>
             </div>
         ) : (
             <Form {...form}>
@@ -134,10 +134,10 @@ export function EventTimeManager() {
                             <input
                                 type="time"
                                 className="w-full border-input bg-background p-2 rounded-md"
-                                value={format(field.value, 'HH:mm')}
+                                value={format(field.value || new Date(), 'HH:mm')}
                                 onChange={(e) => {
                                     const [hours, minutes] = e.target.value.split(':').map(Number);
-                                    const newDate = new Date(field.value);
+                                    const newDate = field.value ? new Date(field.value) : new Date();
                                     newDate.setHours(hours, minutes);
                                     field.onChange(newDate);
                                 }}
@@ -149,7 +149,7 @@ export function EventTimeManager() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={isSubmitting || !isSuperAdmin}>
+                <Button type="submit" disabled={isSubmitting || !canEdit}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   <Save className="mr-2 h-4 w-4"/>
                   Save Event Time
