@@ -22,14 +22,16 @@ import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 
 const RiderSkeleton = () => (
-    <div className="p-1">
-        <Card>
-            <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
-                <Skeleton className="w-24 h-24 sm:w-32 sm:h-32 rounded-full" />
-                <Skeleton className="h-6 w-3/4" />
-            </CardContent>
-        </Card>
-    </div>
+    <CarouselItem className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+        <div className="p-1">
+            <Card>
+                <CardContent className="flex flex-col items-center justify-center p-6 gap-2 aspect-square">
+                    <Skeleton className="w-24 h-24 rounded-full" />
+                    <Skeleton className="h-6 w-3/4" />
+                </CardContent>
+            </Card>
+        </div>
+    </CarouselItem>
 );
 
 export function RegisteredRiders() {
@@ -64,51 +66,28 @@ export function RegisteredRiders() {
     console.error("Error loading registered riders:", error);
     return null;
   }
-
-  if (loading) {
-    return (
-       <Card>
-           <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold font-headline">Registered Riders</CardTitle>
-           </CardHeader>
-           <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {[...Array(5)].map((_, i) => <RiderSkeleton key={i} />)}
-              </div>
-           </CardContent>
-       </Card>
-    );
-  }
   
-  if (allParticipants.length === 0) {
-    return (
-        <Card>
-            <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold font-headline">Join the Ride!</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground text-center">No riders have been approved yet. Be the first to register and see your profile here!</p>
-            </CardContent>
-        </Card>
-    );
+  if (loading || allParticipants.length === 0) {
+    return null;
   }
 
   return (
     <Card>
        <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold font-headline">Our Registered Riders</CardTitle>
+            <CardTitle className="text-2xl font-bold font-headline">Our Registered Riders ({allParticipants.length})</CardTitle>
        </CardHeader>
        <CardContent>
           <Carousel
             opts={{
               align: "start",
-              loop: allParticipants.length > 5,
+              loop: allParticipants.length > 7,
             }}
             className="w-full"
           >
             <CarouselContent className="-ml-2 sm:-ml-4">
-              {allParticipants.map((rider) => (
-                <CarouselItem key={rider.id} className="basis-1/2 md:basis-1/3 lg:basis-1/5 pl-2 sm:pl-4">
+              {loading ? [...Array(5)].map((_, i) => <RiderSkeleton key={i} />)
+              : allParticipants.map((rider) => (
+                <CarouselItem key={rider.id} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 pl-2 sm:pl-4">
                     <Card>
                       <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 gap-2 aspect-square">
                         <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-primary/50">
@@ -134,7 +113,7 @@ export function RegisteredRiders() {
           <div className="text-center mt-4">
             <Sheet>
                 <SheetTrigger asChild>
-                    <Button variant="outline">View All Riders ({allParticipants.length})</Button>
+                    <Button variant="outline">View All Riders</Button>
                 </SheetTrigger>
                 <SheetContent side="right">
                     <SheetHeader>

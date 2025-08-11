@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Check, X, Ban, Trash2 } from 'lucide-react';
+import { Loader2, AlertTriangle, Check, X, Ban, Trash2, Users, Phone, User } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { updateRegistrationStatus, deleteRegistration } from '@/app/actions';
@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Separator } from '../ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { Card, CardContent } from '../ui/card';
 
 const TableSkeleton = () => (
     [...Array(3)].map((_, i) => (
@@ -39,6 +40,26 @@ const TableSkeleton = () => (
         </TableRow>
     ))
 );
+
+const CardSkeleton = () => (
+    [...Array(2)].map((_, i) => (
+         <Card key={i}>
+            <CardContent className="p-4 space-y-4">
+                 <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-6 w-20" />
+                </div>
+                <div className="flex justify-end gap-2">
+                    <Skeleton className="h-9 w-24" />
+                    <Skeleton className="h-9 w-24" />
+                </div>
+            </CardContent>
+        </Card>
+    ))
+)
 
 export function RegistrationsTable() {
   const [registrations, loading, error] = useCollection(
@@ -95,15 +116,13 @@ export function RegistrationsTable() {
     }
     setIsUpdating(id);
     if (approve) {
-        // Approve cancellation -> delete registration
-        const result = await deleteRegistration({ registrationId: id, adminId: user.uid });
+        const result = await updateRegistrationStatus({ registrationId: id, status: 'cancelled', adminId: user.uid });
         if (result.success) {
-            toast({ title: "Cancellation Approved", description: "The registration and user data have been deleted." });
+            toast({ title: "Cancellation Approved", description: "The registration has been cancelled." });
         } else {
             toast({ variant: "destructive", title: "Error", description: result.message });
         }
     } else {
-        // Reject cancellation -> revert status to approved
         const result = await updateRegistrationStatus({ registrationId: id, status: 'approved', adminId: user.uid });
         if (result.success) {
             toast({ title: "Cancellation Rejected", description: "The registration status has been reverted to approved." });
@@ -128,11 +147,46 @@ export function RegistrationsTable() {
     <div className="space-y-8">
         <div>
             <h4 className="font-semibold text-lg mb-2">Pending Approvals</h4>
-            <div className="border rounded-lg">
+            <div className="md:hidden space-y-4">
+                 {(loading || authLoading) ? <CardSkeleton /> : pendingRegistrations.length > 0 ? (
+                    pendingRegistrations.map((reg) => (
+                        <Card key={reg.id}>
+                            <CardContent className="p-4 space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-semibold">{reg.fullName}</p>
+                                        <p className="text-sm text-muted-foreground">{reg.phoneNumber}</p>
+                                        <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'} className="mt-1 capitalize">{reg.registrationType}</Badge>
+                                    </div>
+                                    {reg.registrationType === 'duo' && (
+                                        <div className="text-right">
+                                            <p className="font-semibold">{reg.fullName2}</p>
+                                            <p className="text-sm text-muted-foreground">{reg.phoneNumber2}</p>
+                                        </div>
+                                    )}
+                                </div>
+                                {canEdit && (
+                                    <div className="flex justify-end gap-2 pt-2 border-t">
+                                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateStatus(reg.id, 'approved')} disabled={isUpdating === reg.id}>
+                                            {isUpdating === reg.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4" />}<span className="ml-2">Approve</span>
+                                        </Button>
+                                        <Button size="sm" variant="destructive" onClick={() => handleUpdateStatus(reg.id, 'rejected')} disabled={isUpdating === reg.id}>
+                                            {isUpdating === reg.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="h-4 w-4" />}<span className="ml-2">Reject</span>
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))
+                 ) : (
+                    <p className="text-muted-foreground text-center py-4">No pending registrations.</p>
+                 )}
+            </div>
+            <div className="hidden md:block border rounded-lg">
                 <Table>
                     <TableHeader>
                     <TableRow>
-                        <TableHead>Name</TableHead>
+                        <TableHead>Name(s)</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Phone</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -146,16 +200,14 @@ export function RegistrationsTable() {
                         <TableRow key={reg.id}>
                             <TableCell className="font-medium">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</TableCell>
                             <TableCell>
-                            <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'}>
+                            <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'} className="capitalize">
                                 {reg.registrationType}
                             </Badge>
                             </TableCell>
                             <TableCell>{reg.phoneNumber}</TableCell>
                             <TableCell className="text-right">
                             {!canEdit ? (
-                                <div className='flex justify-end items-center gap-2 text-muted-foreground'>
-                                <span>View Only</span>
-                                </div>
+                                <span className='text-muted-foreground text-sm'>View Only</span>
                             ) : (
                                 <div className="flex justify-end gap-2">
                                     <Button 
@@ -218,9 +270,7 @@ export function RegistrationsTable() {
                             <TableCell className="text-muted-foreground max-w-sm truncate">{reg.cancellationReason}</TableCell>
                             <TableCell className="text-right">
                                 {!canEdit ? (
-                                    <div className='flex justify-end items-center gap-2 text-muted-foreground'>
-                                        <span>View Only</span>
-                                    </div>
+                                    <span className='text-muted-foreground text-sm'>View Only</span>
                                 ) : (
                                     <div className="flex justify-end gap-2">
                                       <AlertDialog>
@@ -239,13 +289,13 @@ export function RegistrationsTable() {
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Approve Cancellation?</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                    This will permanently delete the registration and user data. This action cannot be undone.
+                                                    This will mark the registration as "Cancelled". The user record will remain.
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                 <AlertDialogAction onClick={() => handleCancellation(reg.id, true)} className="bg-destructive hover:bg-destructive/90">
-                                                    Yes, Delete Registration
+                                                    Yes, Cancel Registration
                                                 </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>

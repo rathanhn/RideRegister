@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { deleteRegistration } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Separator } from '../ui/separator';
+import { Card, CardContent } from '../ui/card';
 
 // Helper function to format WhatsApp links
 const formatWhatsAppLink = (phone: string, message?: string) => {
@@ -47,7 +48,7 @@ const formatWhatsAppLink = (phone: string, message?: string) => {
     return url;
 };
 
-const getTicketMessage = (name: string, ticketUrl: string) => `Hi ${name}, your registration for the TeleFun Mobiles Independence Day Ride is confirmed! You can view and download your digital ticket here: ${ticketUrl}`;
+const getTicketMessage = (name: string, ticketUrl: string) => `Hi ${name}, your registration for the TeleFun Mobiles Freedom Ride is confirmed! You can view and download your digital ticket here: ${ticketUrl}`;
 
 const TableSkeleton = () => (
     [...Array(5)].map((_, i) => (
@@ -174,13 +175,81 @@ export function RidersListTable() {
                 Export as CSV
             </Button>
         </div>
+
+        {/* Mobile card view */}
+        <div className="md:hidden space-y-4">
+            {(loading || authLoading) ? (
+                 [...Array(3)].map((_, i) => (
+                    <Card key={i}><CardContent className="p-4"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                 ))
+            ) : filteredRegistrations.length > 0 ? (
+                filteredRegistrations.map((reg) => (
+                    <Card key={reg.id}>
+                        <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</p>
+                                    <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'} className="capitalize mt-1">{reg.registrationType}</Badge>
+                                </div>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Rider Actions</DialogTitle>
+                                            <DialogDescription>{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</DialogDescription>
+                                        </DialogHeader>
+                                        {/* Content duplicated from desktop view for consistency */}
+                                        <div className="space-y-4 py-4">
+                                            <div className="p-3 border rounded-md bg-background space-y-2">
+                                                <p className="font-semibold">{reg.fullName}</p>
+                                                <p className="text-sm text-muted-foreground">{reg.phoneNumber}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className={`justify-center ${reg.rider1CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>P1: {reg.rider1CheckedIn ? 'Checked-in' : 'Pending'}</Badge>
+                                                    <Badge variant="outline" className={`justify-center ${reg.rider1Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P1: {reg.rider1Finished ? 'Finished' : 'Pending'}</Badge>
+                                                </div>
+                                                <div className="flex items-center gap-2 pt-2">
+                                                    <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, `/ticket/${reg.id}`))} target="_blank"><Send /> Send</Link></Button>
+                                                    <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Message</Link></Button>
+                                                </div>
+                                            </div>
+
+                                            {reg.registrationType === 'duo' && reg.phoneNumber2 && (
+                                                <div className="p-3 border rounded-md bg-background space-y-2">
+                                                    <p className="font-semibold">{reg.fullName2}</p>
+                                                    <p className="text-sm text-muted-foreground">{reg.phoneNumber2}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className={`justify-center ${reg.rider2CheckedIn ? 'bg-green-100 text-green-800' : ''}`}>P2: {reg.rider2CheckedIn ? 'Checked-in' : 'Pending'}</Badge>
+                                                        <Badge variant="outline" className={`justify-center ${reg.rider2Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P2: {reg.rider2Finished ? 'Finished' : 'Pending'}</Badge>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 pt-2">
+                                                        <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider', `/ticket/${reg.id}`))} target="_blank"><Send /> Send</Link></Button>
+                                                        <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank"><MessageCircle /> Message</Link></Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))
+            ) : (
+                 <div className="text-center py-10 text-muted-foreground">
+                    {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
+                </div>
+            )}
+        </div>
         
-        <div className="border rounded-lg">
+        {/* Desktop table view */}
+        <div className="hidden md:block border rounded-lg">
         <Table>
             <TableHeader>
             <TableRow>
                 <TableHead>Rider(s)</TableHead>
-                <TableHead className="hidden md:table-cell">Type</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
             </TableRow>
             </TableHeader>
@@ -195,8 +264,8 @@ export function RidersListTable() {
                             <TableCell className="font-medium">
                                 {reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                                <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'}>
+                            <TableCell>
+                                <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'} className="capitalize">
                                     {reg.registrationType}
                                 </Badge>
                             </TableCell>

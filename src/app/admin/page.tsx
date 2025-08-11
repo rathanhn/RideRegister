@@ -58,17 +58,35 @@ export default function AdminPage() {
         
         <StatsOverview />
         
-        <Card>
-            <CardHeader>
-                <CardTitle className='flex items-center gap-2'><Settings2 className="h-6 w-6 text-primary"/> General Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <GeneralSettingsManager />
-            </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
              <div className="space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Settings2 className="h-6 w-6 text-primary"/> General Settings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <GeneralSettingsManager />
+                    </CardContent>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <RegistrationsTable />
+                    </CardContent>
+                </Card>
+                
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AnnouncementManager />
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><Calendar className="h-6 w-6 text-primary"/> Event Schedule</CardTitle>
@@ -79,74 +97,13 @@ export default function AdminPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                 <Card>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><Gift className="h-6 w-6 text-primary"/> Promotions</CardTitle>
                          <CardDescription>Create and manage special offers for the shop.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <PromotionManager />
-                    </CardContent>
-                </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><MapPin className="h-6 w-6 text-primary"/> Location & Time</CardTitle>
-                         <CardDescription>Set the core details for the event countdown and map.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <LocationManager />
-                        <EventTimeManager />
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="space-y-8">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><UserCog className="h-6 w-6 text-primary"/> Organizers</CardTitle>
-                        <CardDescription>Add or remove members of the organizing team.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <OrganizerManager />
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><FileCheck className="h-6 w-6 text-primary"/> Manage Registrations</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <RegistrationsTable />
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="lg:col-span-2 space-y-8">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <RidersListTable />
-                    </CardContent>
-                </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <CheckedInListTable />
-                    </CardContent>
-                </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Flag className="h-6 w-6 text-primary"/>Finishers List</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <FinishersListTable />
                     </CardContent>
                 </Card>
             </div>
@@ -163,17 +120,8 @@ export default function AdminPage() {
                         <QrScanner />
                     </CardContent>
                 </Card>
-            
-                <Card>
-                    <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Megaphone className="h-6 w-6 text-primary"/>Announcements</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <AnnouncementManager />
-                    </CardContent>
-                </Card>
                 
-                 <Card>
+                <Card>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><Users className="h-6 w-6 text-primary"/> User Role Management</CardTitle>
                     </CardHeader>
@@ -181,17 +129,66 @@ export default function AdminPage() {
                         <UserRolesManager />
                     </CardContent>
                 </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><UserCog className="h-6 w-6 text-primary"/> Organizers</CardTitle>
+                        <CardDescription>Add or remove members of the organizing team.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <OrganizerManager />
+                    </CardContent>
+                </Card>
+                
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><MapPin className="h-6 w-6 text-primary"/> Location & Time</CardTitle>
+                         <CardDescription>Set the core details for the event countdown and map.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <LocationManager />
+                        <EventTimeManager />
+                    </CardContent>
+                </Card>
             </div>
-            
-             <Card>
-                <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&amp;A</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <AdminQna />
-                </CardContent>
-            </Card>
         </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className='flex items-center gap-2'><List className="h-6 w-6 text-primary"/>Approved Riders List</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <RidersListTable />
+            </CardContent>
+        </Card>
+
+         <Card>
+            <CardHeader>
+                <CardTitle className='flex items-center gap-2'><UserCheck className="h-6 w-6 text-primary"/>Checked-In Riders</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <CheckedInListTable />
+            </CardContent>
+        </Card>
+
+         <Card>
+            <CardHeader>
+                <CardTitle className='flex items-center gap-2'><Flag className="h-6 w-6 text-primary"/>Finishers List</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <FinishersListTable />
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className='flex items-center gap-2'><MessageSquare className="h-6 w-6 text-primary"/>Community Q&amp;A</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <AdminQna />
+            </CardContent>
+        </Card>
+        
       </main>
     </div>
   );
