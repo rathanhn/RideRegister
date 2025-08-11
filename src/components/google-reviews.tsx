@@ -91,7 +91,7 @@ export function GoogleReviews() {
             {loading && <CardDescription>Loading our latest reviews...</CardDescription>}
             {error && <CardDescription className="text-destructive">Could not load reviews.</CardDescription>}
             {data && (
-                 <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                 <div className="text-sm text-muted-foreground flex flex-col sm:flex-row sm:items-center sm:gap-4">
                     <div className="flex items-center gap-2">
                         <span className="font-bold text-lg text-foreground">{data.rating}</span>
                         <StarRating rating={data.rating} />
@@ -102,7 +102,7 @@ export function GoogleReviews() {
                             View on Google Maps <ExternalLink className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
-                </CardDescription>
+                </div>
             )}
         </CardHeader>
       <CardContent>
