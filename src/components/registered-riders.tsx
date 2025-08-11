@@ -47,7 +47,7 @@ export function RegisteredRiders() {
       participants.push({
         id: `${rider.id}-1`,
         name: rider.fullName,
-        photo: rider.photoURL || rider.photoURL,
+        photo: rider.photoURL,
         type: rider.registrationType === 'duo' ? 'Duo Rider' : 'Solo Rider'
       });
       if (rider.registrationType === 'duo' && rider.fullName2) {
