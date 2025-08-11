@@ -152,6 +152,13 @@ export async function createAccountAndRegisterRider(values: RegistrationInput) {
         if (error.code === 'auth/email-already-in-use') {
              // remove non-serializable fields before returning
             const { createdAt, ...serializableData } = dataToSave;
+            
+            // Ensure all undefined values are converted to null for serialization
+            for (const key in serializableData) {
+                if (serializableData[key] === undefined) {
+                    serializableData[key] = null;
+                }
+            }
 
             return { 
                 success: true, 
@@ -771,3 +778,5 @@ export async function manageEventTime(values: z.infer<typeof eventTimeSchema> & 
     return { success: false, message: "Failed to update event time." };
   }
 }
+
+    

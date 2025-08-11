@@ -27,7 +27,7 @@ import { auth, db } from "@/lib/firebase";
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 
 const phoneRegex = new RegExp(
@@ -44,10 +44,7 @@ const rideRules = [
     { id: 'rule7', text: "Riders are recommended to wear necessary gear like a jacket, shoes, and suitable pants." }
 ];
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
-
+// Looser schema for form state, allowing file objects
 const formSchema = z
   .object({
     email: z.string().email("A valid email is required."),
@@ -182,31 +179,35 @@ export function RegistrationForm() {
         let finalPhotoUrl2: string | undefined = undefined;
         const { photoURL, photoURL2, ...restOfValues } = values;
 
+        // Check for existing user BEFORE uploading photos
+        const initialResultCheck = await createAccountAndRegisterRider({ ...restOfValues, photoURL: undefined, photoURL2: undefined });
+        
+        if (initialResultCheck.success && !initialResultCheck.existingUser) {
+             if (photoURL instanceof File) {
+                console.log("[Client] Uploading photo 1...");
+                const dataUri = await fileToDataUri(photoURL);
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: JSON.stringify({ file: dataUri }),
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                const { url, error } = await uploadResponse.json();
+                if (error || !url) throw new Error(error || 'Failed to upload photo 1.');
+                finalPhotoUrl1 = url;
+            }
 
-        if (photoURL instanceof File) {
-            console.log("[Client] Uploading photo 1...");
-            const dataUri = await fileToDataUri(photoURL);
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: JSON.stringify({ file: dataUri }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-            const { url, error } = await uploadResponse.json();
-            if (error || !url) throw new Error(error || 'Failed to upload photo 1.');
-            finalPhotoUrl1 = url;
-        }
-
-        if (registrationType === 'duo' && photoURL2 instanceof File) {
-             console.log("[Client] Uploading photo 2...");
-            const dataUri = await fileToDataUri(photoURL2);
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: JSON.stringify({ file: dataUri }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-            const { url, error } = await uploadResponse.json();
-            if (error || !url) throw new Error(error || 'Failed to upload photo 2.');
-            finalPhotoUrl2 = url;
+            if (registrationType === 'duo' && photoURL2 instanceof File) {
+                 console.log("[Client] Uploading photo 2...");
+                const dataUri = await fileToDataUri(photoURL2);
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: JSON.stringify({ file: dataUri }),
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                const { url, error } = await uploadResponse.json();
+                if (error || !url) throw new Error(error || 'Failed to upload photo 2.');
+                finalPhotoUrl2 = url;
+            }
         }
       
       const submissionData = { ...restOfValues, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
