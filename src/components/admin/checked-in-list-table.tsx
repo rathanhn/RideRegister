@@ -14,19 +14,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, CheckCircle, Clock, User } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
 import { format } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 type CheckedInParticipant = {
     id: string;
     registrationId: string;
     name: string;
     phone: string;
+    photoUrl?: string;
     type: 'Solo' | 'Duo (Rider 1)' | 'Duo (Rider 2)';
     checkedInAt?: Date; // Assuming we might add this later
 }
@@ -34,6 +36,7 @@ type CheckedInParticipant = {
 const TableSkeleton = () => (
     [...Array(5)].map((_, i) => (
         <TableRow key={i}>
+            <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
             <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
@@ -62,6 +65,7 @@ export function CheckedInListTable() {
               registrationId: reg.id,
               name: reg.fullName,
               phone: reg.phoneNumber,
+              photoUrl: reg.photoURL,
               type: reg.registrationType === 'solo' ? 'Solo' : 'Duo (Rider 1)',
           });
       }
@@ -71,6 +75,7 @@ export function CheckedInListTable() {
               registrationId: reg.id,
               name: reg.fullName2,
               phone: reg.phoneNumber2,
+              photoUrl: reg.photoURL2,
               type: 'Duo (Rider 2)',
           });
       }
@@ -147,9 +152,12 @@ export function CheckedInListTable() {
                     <Card key={i}>
                         <CardContent className="p-4 space-y-4">
                              <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <Skeleton className="h-5 w-32" />
-                                    <Skeleton className="h-4 w-24" />
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="h-12 w-12 rounded-full" />
+                                    <div className="space-y-1">
+                                        <Skeleton className="h-5 w-32" />
+                                        <Skeleton className="h-4 w-24" />
+                                    </div>
                                 </div>
                                 <Skeleton className="h-6 w-20" />
                             </div>
@@ -160,10 +168,16 @@ export function CheckedInListTable() {
                 filteredParticipants.map((p) => (
                     <Card key={p.id}>
                         <CardContent className="p-4 space-y-3">
-                            <div>
-                                <p className="font-semibold">{p.name}</p>
-                                <p className="text-sm text-muted-foreground">{p.phone}</p>
-                                <Badge variant="secondary" className="mt-1">{p.type}</Badge>
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-12 w-12">
+                                    <AvatarImage src={p.photoUrl} alt={p.name} />
+                                    <AvatarFallback><User /></AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold">{p.name}</p>
+                                    <p className="text-sm text-muted-foreground">{p.phone}</p>
+                                    <Badge variant="secondary" className="mt-1">{p.type}</Badge>
+                                </div>
                             </div>
                             <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -184,6 +198,7 @@ export function CheckedInListTable() {
             <Table>
                 <TableHeader>
                 <TableRow>
+                    <TableHead>Photo</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Type</TableHead>
@@ -196,6 +211,12 @@ export function CheckedInListTable() {
                 ) : filteredParticipants.length > 0 ? (
                     filteredParticipants.map((p) => (
                     <TableRow key={p.id}>
+                        <TableCell>
+                            <Avatar>
+                                <AvatarImage src={p.photoUrl} alt={p.name} />
+                                <AvatarFallback><User /></AvatarFallback>
+                            </Avatar>
+                        </TableCell>
                         <TableCell className="font-medium">{p.name}</TableCell>
                         <TableCell>{p.phone}</TableCell>
                         <TableCell><Badge variant="outline">{p.type}</Badge></TableCell>
@@ -209,7 +230,7 @@ export function CheckedInListTable() {
                     ))
                 ) : (
                     <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">
+                    <TableCell colSpan={5} className="text-center h-24">
                         {searchTerm ? 'No checked-in riders match your search.' : 'No riders have checked in yet.'}
                     </TableCell>
                     </TableRow>
@@ -220,3 +241,5 @@ export function CheckedInListTable() {
     </div>
   );
 }
+
+    

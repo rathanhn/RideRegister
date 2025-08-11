@@ -23,7 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, Eye, MoreVertical } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, Eye, MoreVertical, User as UserIcon } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -34,6 +34,7 @@ import { deleteRegistration } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Separator } from '../ui/separator';
 import { Card, CardContent } from '../ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 // Helper function to format WhatsApp links
 const formatWhatsAppLink = (phone: string, message?: string) => {
@@ -53,6 +54,7 @@ const getTicketMessage = (name: string, ticketUrl: string) => `Hi ${name}, your 
 const TableSkeleton = () => (
     [...Array(5)].map((_, i) => (
         <TableRow key={i}>
+            <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
             <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-1/4" /></TableCell>
             <TableCell className="text-right"><Skeleton className="h-9 w-9" /></TableCell>
@@ -187,9 +189,15 @@ export function RidersListTable() {
                     <Card key={reg.id}>
                         <CardContent className="p-4">
                             <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</p>
-                                    <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'} className="capitalize mt-1">{reg.registrationType}</Badge>
+                                <div className="flex items-center gap-3">
+                                    <Avatar>
+                                        <AvatarImage src={reg.photoURL} alt={reg.fullName} />
+                                        <AvatarFallback><UserIcon /></AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-semibold">{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</p>
+                                        <Badge variant={reg.registrationType === 'duo' ? 'default' : 'secondary'} className="capitalize mt-1">{reg.registrationType}</Badge>
+                                    </div>
                                 </div>
                                 <Dialog>
                                     <DialogTrigger asChild>
@@ -248,6 +256,7 @@ export function RidersListTable() {
         <Table>
             <TableHeader>
             <TableRow>
+                <TableHead>Photo</TableHead>
                 <TableHead>Rider(s)</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -261,6 +270,12 @@ export function RidersListTable() {
                     const ticketUrl = `/ticket/${reg.id}`;
                     return (
                         <TableRow key={reg.id}>
+                            <TableCell>
+                                <Avatar>
+                                    <AvatarImage src={reg.photoURL} alt={reg.fullName} />
+                                    <AvatarFallback><UserIcon /></AvatarFallback>
+                                </Avatar>
+                            </TableCell>
                             <TableCell className="font-medium">
                                 {reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}
                             </TableCell>
@@ -336,7 +351,7 @@ export function RidersListTable() {
                 })
             ) : (
                   <TableRow>
-                      <TableCell colSpan={3} className="text-center h-24">
+                      <TableCell colSpan={4} className="text-center h-24">
                           {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
                       </TableCell>
                   </TableRow>
@@ -347,3 +362,5 @@ export function RidersListTable() {
     </div>
   );
 }
+
+    

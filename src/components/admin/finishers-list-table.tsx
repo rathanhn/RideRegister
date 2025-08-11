@@ -14,24 +14,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, Flag } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, Flag, User } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 type FinishedParticipant = {
     id: string;
     registrationId: string;
     name: string;
     phone: string;
+    photoUrl?: string;
     type: 'Solo' | 'Duo (Rider 1)' | 'Duo (Rider 2)';
 }
 
 const TableSkeleton = () => (
     [...Array(5)].map((_, i) => (
         <TableRow key={i}>
+            <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
             <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
@@ -60,6 +63,7 @@ export function FinishersListTable() {
               registrationId: reg.id,
               name: reg.fullName,
               phone: reg.phoneNumber,
+              photoUrl: reg.photoURL,
               type: reg.registrationType === 'solo' ? 'Solo' : 'Duo (Rider 1)',
           });
       }
@@ -69,6 +73,7 @@ export function FinishersListTable() {
               registrationId: reg.id,
               name: reg.fullName2,
               phone: reg.phoneNumber2,
+              photoUrl: reg.photoURL2,
               type: 'Duo (Rider 2)',
           });
       }
@@ -137,16 +142,22 @@ export function FinishersListTable() {
         <div className="md:hidden space-y-4">
            {loading ? (
                 [...Array(3)].map((_, i) => (
-                    <Card key={i}><CardContent className="p-4 space-y-4"><div className="flex justify-between items-start"><div className="space-y-1"><Skeleton className="h-5 w-32" /><Skeleton className="h-4 w-24" /></div><Skeleton className="h-6 w-20" /></div></CardContent></Card>
+                    <Card key={i}><CardContent className="p-4 flex items-center gap-3"><Skeleton className="h-12 w-12 rounded-full" /><div className="space-y-1 flex-grow"><Skeleton className="h-5 w-32" /><Skeleton className="h-4 w-24" /></div></CardContent></Card>
                 ))
             ) : filteredParticipants.length > 0 ? (
                 filteredParticipants.map((p) => (
                     <Card key={p.id}>
                         <CardContent className="p-4 space-y-3">
-                            <div>
-                                <p className="font-semibold">{p.name}</p>
-                                <p className="text-sm text-muted-foreground">{p.phone}</p>
-                                <Badge variant="secondary" className="mt-1">{p.type}</Badge>
+                             <div className="flex items-center gap-3">
+                                <Avatar className="h-12 w-12">
+                                    <AvatarImage src={p.photoUrl} alt={p.name} />
+                                    <AvatarFallback><User /></AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold">{p.name}</p>
+                                    <p className="text-sm text-muted-foreground">{p.phone}</p>
+                                    <Badge variant="secondary" className="mt-1">{p.type}</Badge>
+                                </div>
                             </div>
                             <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
                         </CardContent>
@@ -160,11 +171,17 @@ export function FinishersListTable() {
         {/* Desktop View - Table */}
         <div className="hidden md:block border rounded-lg">
             <Table>
-                <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Photo</TableHead><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Status</TableHead></TableRow></TableHeader>
                 <TableBody>
                 {loading ? (<TableSkeleton />) : filteredParticipants.length > 0 ? (
                     filteredParticipants.map((p) => (
                     <TableRow key={p.id}>
+                        <TableCell>
+                            <Avatar>
+                                <AvatarImage src={p.photoUrl} alt={p.name} />
+                                <AvatarFallback><User /></AvatarFallback>
+                            </Avatar>
+                        </TableCell>
                         <TableCell className="font-medium">{p.name}</TableCell>
                         <TableCell>{p.phone}</TableCell>
                         <TableCell><Badge variant="outline">{p.type}</Badge></TableCell>
@@ -172,7 +189,7 @@ export function FinishersListTable() {
                     </TableRow>
                     ))
                 ) : (
-                    <TableRow><TableCell colSpan={4} className="text-center h-24">{searchTerm ? 'No finishers match your search.' : 'No riders have finished yet.'}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center h-24">{searchTerm ? 'No finishers match your search.' : 'No riders have finished yet.'}</TableCell></TableRow>
                 )}
                 </TableBody>
             </Table>
@@ -180,3 +197,5 @@ export function FinishersListTable() {
     </div>
   );
 }
+
+    
