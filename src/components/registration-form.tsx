@@ -44,6 +44,10 @@ const rideRules = [
     { id: 'rule7', text: "Riders are recommended to wear necessary gear like a jacket, shoes, and suitable pants." }
 ];
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+
 const formSchema = z
   .object({
     email: z.string().email("A valid email is required."),
@@ -57,13 +61,13 @@ const formSchema = z
     age: z.coerce.number().min(18, "You must be at least 18 years old.").max(100),
     phoneNumber: z.string().regex(phoneRegex, "Invalid phone number."),
     whatsappNumber: z.string().optional(),
-    photoURL: z.string().url().optional(),
+    photoURL: z.any().optional(),
 
     // Rider 2
     fullName2: z.string().optional(),
     age2: z.coerce.number().optional(),
     phoneNumber2: z.string().optional(),
-    photoURL2: z.string().url().optional(),
+    photoURL2: z.any().optional(),
     
     // Individual rule consents
     rule1: z.boolean().refine(val => val, { message: "You must agree to this rule." }),
@@ -158,16 +162,13 @@ export function RegistrationForm() {
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
     const file = event.target.files?.[0];
     if (file) {
-      setIsProcessing(true);
-      const dataUri = await fileToDataUri(file);
       if (rider === 1) {
-        setPhotoPreview1(dataUri);
-        form.setValue('photoURL', dataUri, { shouldValidate: true });
+        setPhotoPreview1(URL.createObjectURL(file));
+        form.setValue('photoURL', file, { shouldValidate: true });
       } else {
-        setPhotoPreview2(dataUri);
-        form.setValue('photoURL2', dataUri, { shouldValidate: true });
+        setPhotoPreview2(URL.createObjectURL(file));
+        form.setValue('photoURL2', file, { shouldValidate: true });
       }
-      setIsProcessing(false);
     }
   };
 
@@ -177,14 +178,15 @@ export function RegistrationForm() {
     setIsProcessing(true);
 
     try {
-        let finalPhotoUrl1 = values.photoURL;
-        let finalPhotoUrl2 = values.photoURL2;
+        let finalPhotoUrl1: string | undefined = undefined;
+        let finalPhotoUrl2: string | undefined = undefined;
 
-        if (finalPhotoUrl1 && finalPhotoUrl1.startsWith('data:')) {
+        if (values.photoURL instanceof File) {
             console.log("[Client] Uploading photo 1...");
+            const dataUri = await fileToDataUri(values.photoURL);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
-                body: JSON.stringify({ file: finalPhotoUrl1 }),
+                body: JSON.stringify({ file: dataUri }),
                 headers: { 'Content-Type': 'application/json' },
             });
             const { url, error } = await uploadResponse.json();
@@ -192,11 +194,12 @@ export function RegistrationForm() {
             finalPhotoUrl1 = url;
         }
 
-        if (registrationType === 'duo' && finalPhotoUrl2 && finalPhotoUrl2.startsWith('data:')) {
+        if (registrationType === 'duo' && values.photoURL2 instanceof File) {
              console.log("[Client] Uploading photo 2...");
+            const dataUri = await fileToDataUri(values.photoURL2);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
-                body: JSON.stringify({ file: finalPhotoUrl2 }),
+                body: JSON.stringify({ file: dataUri }),
                 headers: { 'Content-Type': 'application/json' },
             });
             const { url, error } = await uploadResponse.json();
