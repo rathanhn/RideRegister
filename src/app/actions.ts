@@ -728,7 +728,7 @@ export async function deleteScheduleItem(id: string, adminId: string) {
 const organizerSchema = z.object({
   name: z.string().min(3, "Name is required."),
   role: z.string().min(3, "Role is required."),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional().or(z.literal("")),
   imageHint: z.string().optional(),
   contactNumber: z.string().optional(),
 });
@@ -740,13 +740,16 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
     return { success: false, message: "Permission denied." };
   }
   const parsed = organizerSchema.safeParse(data);
-  if (!parsed.success) return { success: false, message: "Invalid data." };
+  if (!parsed.success) {
+    console.error("Organizer validation failed:", parsed.error.flatten().fieldErrors);
+    return { success: false, message: "Invalid data." };
+  }
 
   try {
     const dataToSave = { ...parsed.data };
-    // Ensure optional fields that are empty strings are removed before saving
-    if (dataToSave.imageUrl === "") delete dataToSave.imageUrl;
-    if (dataToSave.imageHint === "") delete dataToSave.imageHint;
+    // Ensure optional fields that are empty strings are removed or set to null before saving
+    if (dataToSave.imageUrl === "") dataToSave.imageUrl = undefined;
+    if (dataToSave.imageHint === "") dataToSave.imageHint = undefined;
     
     if (organizerId) {
       await updateDoc(doc(db, "organizers", organizerId), dataToSave);
@@ -758,6 +761,7 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
       return { success: true, message: "Organizer added." };
     }
   } catch (error) {
+    console.error("Error managing organizer:", error);
     return { success: false, message: "Failed to manage organizer." };
   }
 }
@@ -780,7 +784,7 @@ const promotionSchema = z.object({
   title: z.string().min(3, "Title is required."),
   description: z.string().min(10, "Description is required."),
   validity: z.string().min(3, "Validity is required."),
-  imageUrl: z.string().url("A valid photo URL is required."),
+  imageUrl: z.string().url("A valid promotion photo is required."),
   imageHint: z.string().min(2, "Image hint is required"),
   actualPrice: z.coerce.number().optional(),
   offerPrice: z.coerce.number().optional(),

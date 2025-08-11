@@ -30,7 +30,7 @@ import {
 const formSchema = z.object({
   name: z.string().min(3, "Name is required."),
   role: z.string().min(3, "Role is required."),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional().or(z.literal("")),
   imageHint: z.string().optional(),
   contactNumber: z.string().optional(),
 });
@@ -66,7 +66,10 @@ export function OrganizerForm({ isOpen, setIsOpen, organizer, user }: OrganizerF
   useEffect(() => {
     if (isOpen) {
         if (organizer) {
-            form.reset(organizer);
+            form.reset({
+              ...organizer,
+              imageUrl: organizer.imageUrl || "",
+            });
             setPhotoPreview(organizer.imageUrl);
         } else {
             form.reset({ name: "", role: "", imageUrl: "", imageHint: "", contactNumber: "" });
@@ -172,7 +175,7 @@ export function OrganizerForm({ isOpen, setIsOpen, organizer, user }: OrganizerF
               <FormItem>
                 <FormLabel>Image Hint</FormLabel>
                 <FormControl><Input {...field} placeholder="e.g., man portrait" /></FormControl>
-                <FormDescription>Describe the photo in one or two words (e.g., "woman smiling").</FormDescription>
+                <FormDescription>If you uploaded a photo, describe it in one or two words (e.g., "woman smiling").</FormDescription>
                 <FormMessage />
               </FormItem>
             )} />
