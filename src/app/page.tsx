@@ -7,7 +7,7 @@ import { Offers } from "@/components/offers";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { StoreDetails } from "@/components/store-details";
 import { RouteMap } from "@/components/route-map";
-import { MapPin, Info } from "lucide-react";
+import { MapPin, Info, Phone } from "lucide-react";
 import { Organizers } from "@/components/organizers";
 import { EventSchedule } from "@/components/event-schedule";
 import { Hero } from "@/components/hero";
@@ -22,6 +22,7 @@ import { useMemo } from "react";
 import type { EventSettings } from "@/lib/types";
 import { GoogleReviews } from "@/components/google-reviews";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 
 export default function Home() {
@@ -59,8 +60,14 @@ export default function Home() {
           <Alert variant="destructive" className="border-2">
             <Info className="h-4 w-4" />
             <AlertTitle className="font-bold text-lg">Registration is Closed</AlertTitle>
-            <AlertDescription>
-              Please contact event Head : 7899359217
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-2">
+              <span>For inquiries, please contact the event head.</span>
+               <Button asChild className="shrink-0">
+                  <Link href="tel:7899359217">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Call Event Head
+                  </Link>
+               </Button>
             </AlertDescription>
           </Alert>
         )}
