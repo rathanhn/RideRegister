@@ -8,17 +8,14 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Edit, Trash2, PlusCircle } from 'lucide-react';
+import { Loader2, AlertTriangle, Edit, PlusCircle } from 'lucide-react';
 import type { Organizer } from '@/lib/types';
 import { OrganizerForm } from './organizer-form';
-import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function OrganizerManager() {
   const [organizers, loading, error] = useCollection(query(collection(db, 'organizers'), orderBy('createdAt', 'asc')));
   const [user, authLoading] = useAuthState(auth);
-  const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Organizer | null>(null);
 

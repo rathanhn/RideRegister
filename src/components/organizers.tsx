@@ -1,7 +1,6 @@
 
 "use client";
 
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -14,23 +13,24 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import type { Organizer } from "@/lib/types";
-import { Users, Loader2, AlertTriangle, Phone } from "lucide-react";
+import { Users, AlertTriangle, Phone, User } from "lucide-react";
 import { CardHeader, CardTitle } from "./ui/card";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, query, orderBy } from "firebase/firestore";
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from "@/lib/firebase";
 import { Button } from "./ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Skeleton } from "./ui/skeleton";
 
 const OrganizerSkeleton = () => (
     <CarouselItem className="md:basis-1/2 lg:basis-1/3">
         <div className="p-1">
             <Card className="text-center">
                 <CardContent className="flex flex-col items-center aspect-square justify-center p-6">
-                    <div className="h-24 w-24 rounded-full bg-muted animate-pulse mb-4" />
-                    <div className="h-6 w-3/4 bg-muted animate-pulse rounded-md" />
-                    <div className="h-4 w-1/2 bg-muted animate-pulse rounded-md mt-2" />
+                    <Skeleton className="h-24 w-24 rounded-full mb-4" />
+                    <Skeleton className="h-6 w-3/4 rounded-md" />
+                    <Skeleton className="h-4 w-1/2 rounded-md mt-2" />
                 </CardContent>
             </Card>
         </div>
@@ -69,7 +69,7 @@ export function Organizers() {
                     <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
                        <Avatar className="h-[120px] w-[120px] border-4 border-primary/50 text-4xl">
                            <AvatarImage src={organizer.imageUrl} alt={organizer.name} className="object-cover"/>
-                           <AvatarFallback>{organizer.name.charAt(0)}</AvatarFallback>
+                           <AvatarFallback><User /></AvatarFallback>
                        </Avatar>
                       <h3 className="text-lg font-semibold">{organizer.name}</h3>
                       <p className="text-sm text-muted-foreground">{organizer.role}</p>

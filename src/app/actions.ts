@@ -728,7 +728,7 @@ export async function deleteScheduleItem(id: string, adminId: string) {
 const organizerSchema = z.object({
   name: z.string().min(3, "Name is required."),
   role: z.string().min(3, "Role is required."),
-  imageUrl: z.string().url("A valid URL is required.").optional().or(z.literal("")),
+  imageUrl: z.string().url("A valid URL is required.").or(z.literal("")).optional(),
   imageHint: z.string().optional(),
   contactNumber: z.string().optional(),
 });
@@ -747,9 +747,12 @@ export async function manageOrganizer(values: z.infer<typeof organizerSchema> & 
 
   try {
     const dataToSave = { ...parsed.data };
-    // Ensure optional fields that are empty strings are removed or set to null before saving
-    if (dataToSave.imageUrl === "") dataToSave.imageUrl = undefined;
-    if (dataToSave.imageHint === "") dataToSave.imageHint = undefined;
+    
+    Object.keys(dataToSave).forEach((key) => {
+        if (dataToSave[key as keyof typeof dataToSave] === "") {
+            delete dataToSave[key as keyof typeof dataToSave];
+        }
+    });
     
     if (organizerId) {
       await updateDoc(doc(db, "organizers", organizerId), dataToSave);
