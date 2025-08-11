@@ -188,11 +188,14 @@ export function RegistrationForm() {
   const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
     const file = event.target.files?.[0];
     if (file) {
+      setCrop(undefined) // Reset crop state
       const reader = new FileReader()
-      reader.addEventListener('load', () => setImageToCrop(reader.result as string))
+      reader.addEventListener('load', () => {
+        setImageToCrop(reader.result as string);
+        setCroppingRider(rider);
+        setIsCropperOpen(true);
+      });
       reader.readAsDataURL(file)
-      setCroppingRider(rider);
-      setIsCropperOpen(true);
     }
      if (event.target) {
         event.target.value = '';
