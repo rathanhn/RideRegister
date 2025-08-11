@@ -23,7 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, Eye, MoreVertical, User as UserIcon } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, Eye, MoreVertical, User as UserIcon, Edit } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -35,6 +35,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from '../ui/separator';
 import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { EditRegistrationForm } from './edit-registration-form';
+
 
 // Helper function to format WhatsApp links
 const formatWhatsAppLink = (phone: string, message?: string) => {
@@ -71,6 +73,8 @@ export function RidersListTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -102,6 +106,11 @@ export function RidersListTable() {
         (reg.phoneNumber2 && reg.phoneNumber2.includes(searchTerm))
     );
   }, [approvedRegistrations, searchTerm]);
+  
+  const handleEdit = (reg: Registration) => {
+    setSelectedRegistration(reg);
+    setIsFormOpen(true);
+  };
   
   const handleDelete = async (id: string) => {
     if (!user || !canEdit) {
@@ -177,6 +186,13 @@ export function RidersListTable() {
                 Export as CSV
             </Button>
         </div>
+
+        <EditRegistrationForm
+            isOpen={isFormOpen}
+            setIsOpen={setIsFormOpen}
+            registration={selectedRegistration}
+            user={user}
+        />
 
         {/* Mobile card view */}
         <div className="md:hidden space-y-4">
@@ -328,18 +344,21 @@ export function RidersListTable() {
                                             <div className="flex gap-2 justify-end">
                                                  <Button asChild variant="secondary" size="sm"><Link href={ticketUrl} target="_blank"><Eye /> View Ticket</Link></Button>
                                                 {canEdit && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="destructive" size="sm" disabled={isDeleting === reg.id}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.</AlertDialogDescription></AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">Yes, delete</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
+                                                    <>
+                                                        <Button variant="outline" size="sm" onClick={() => handleEdit(reg)}><Edit className="mr-2 h-4 w-4"/>Edit Info</Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="destructive" size="sm" disabled={isDeleting === reg.id}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.</AlertDialogDescription></AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">Yes, delete</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
