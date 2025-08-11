@@ -79,8 +79,8 @@ export function Offers() {
               <div className="flex-grow flex flex-col p-6">
                 <CardHeader className="p-0">
                   <CardTitle>{offer.title}</CardTitle>
-                  <CardDescription>
-                    <p className="whitespace-pre-wrap">{offer.description}</p>
+                  <CardDescription className="whitespace-pre-wrap">
+                    {offer.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow flex items-baseline gap-2 p-0 pt-4">
