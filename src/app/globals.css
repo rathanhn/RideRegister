@@ -85,4 +85,7 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  .ReactCrop__crop-selection {
+    border: 2px dashed hsl(var(--primary));
+  }
 }

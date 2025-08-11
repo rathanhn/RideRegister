@@ -16,10 +16,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
-import { Loader2, PartyPopper, User, Users, Upload } from "lucide-react";
+import { Loader2, PartyPopper, User, Users, Upload, Crop } from "lucide-react";
 import { createAccountAndRegisterRider } from "@/app/actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "./ui/separator";
@@ -28,6 +28,9 @@ import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
+import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/
@@ -107,21 +110,47 @@ const fileToDataUri = (file: File) => {
     });
 };
 
+function centerAspectCrop(
+  mediaWidth: number,
+  mediaHeight: number,
+  aspect: number,
+) {
+  return centerCrop(
+    makeAspectCrop(
+      {
+        unit: '%',
+        width: 90,
+      },
+      aspect,
+      mediaWidth,
+      mediaHeight,
+    ),
+    mediaWidth,
+    mediaHeight,
+  )
+}
+
+
 export function RegistrationForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [signInWithEmailAndPassword, , , signInError] = useSignInWithEmailAndPassword(auth);
   const [sameAsPhone, setSameAsPhone] = useState(false);
   
-  const [photoFile1, setPhotoFile1] = useState<File | null>(null);
   const [photoPreview1, setPhotoPreview1] = useState<string | null>(null);
   const photoInputRef1 = useRef<HTMLInputElement>(null);
 
-  const [photoFile2, setPhotoFile2] = useState<File | null>(null);
   const [photoPreview2, setPhotoPreview2] = useState<string | null>(null);
   const photoInputRef2 = useRef<HTMLInputElement>(null);
   
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Cropping state
+  const [crop, setCrop] = useState<CropType>()
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [croppingRider, setCroppingRider] = useState<1 | 2>(1);
+  const imageToCropRef = useRef<HTMLImageElement>(null);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -156,19 +185,72 @@ export function RegistrationForm() {
     }
   }, [sameAsPhone, phoneNumber, form]);
   
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>, rider: 1 | 2) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (rider === 1) {
-        setPhotoFile1(file);
-        setPhotoPreview1(URL.createObjectURL(file));
-      } else {
-        setPhotoFile2(file);
-        setPhotoPreview2(URL.createObjectURL(file));
-      }
+      const reader = new FileReader()
+      reader.addEventListener('load', () => setImageToCrop(reader.result as string))
+      reader.readAsDataURL(file)
+      setCroppingRider(rider);
+      setIsCropperOpen(true);
+    }
+     if (event.target) {
+        event.target.value = '';
     }
   };
 
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const { width, height } = e.currentTarget
+    setCrop(centerAspectCrop(width, height, 1 / 1))
+  }
+  
+   const handleCrop = async () => {
+    if (!imageToCropRef.current || !crop || !crop.width || !crop.height) {
+        return;
+    }
+    const canvas = document.createElement('canvas');
+    const scaleX = imageToCropRef.current.naturalWidth / imageToCropRef.current.width;
+    const scaleY = imageToCropRef.current.naturalHeight / imageToCropRef.current.height;
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not process image.' });
+        return;
+    }
+
+    const pixelRatio = window.devicePixelRatio;
+    canvas.width = crop.width * pixelRatio;
+    canvas.height = crop.height * pixelRatio;
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.drawImage(
+        imageToCropRef.current,
+        crop.x * scaleX,
+        crop.y * scaleY,
+        crop.width * scaleX,
+        crop.height * scaleY,
+        0,
+        0,
+        crop.width,
+        crop.height
+    );
+    
+    const croppedDataUrl = canvas.toDataURL('image/jpeg');
+
+    if (croppingRider === 1) {
+        setPhotoPreview1(croppedDataUrl);
+        form.setValue('photoURL', croppedDataUrl, { shouldValidate: true });
+    } else {
+        setPhotoPreview2(croppedDataUrl);
+        form.setValue('photoURL2', croppedDataUrl, { shouldValidate: true });
+    }
+    
+    setIsCropperOpen(false);
+    setImageToCrop(null);
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("[Client] Form submitted. Values:", values);
@@ -176,39 +258,31 @@ export function RegistrationForm() {
     setIsProcessing(true);
 
     try {
-        let finalPhotoUrl1 = undefined;
-        let finalPhotoUrl2 = undefined;
+        let finalPhotoUrl1 = values.photoURL;
+        let finalPhotoUrl2 = values.photoURL2;
 
-        if (photoFile1) {
+        if (finalPhotoUrl1 && finalPhotoUrl1.startsWith('data:')) {
             console.log("[Client] Uploading photo 1...");
-            const dataUri = await fileToDataUri(photoFile1);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
-                body: JSON.stringify({ file: dataUri }),
+                body: JSON.stringify({ file: finalPhotoUrl1 }),
                 headers: { 'Content-Type': 'application/json' },
             });
             const { url, error } = await uploadResponse.json();
-            if (error || !url) {
-                throw new Error(error || 'Failed to upload photo 1.');
-            }
+            if (error || !url) throw new Error(error || 'Failed to upload photo 1.');
             finalPhotoUrl1 = url;
-            console.log("[Client] Photo 1 uploaded:", finalPhotoUrl1);
         }
 
-        if (registrationType === 'duo' && photoFile2) {
+        if (registrationType === 'duo' && finalPhotoUrl2 && finalPhotoUrl2.startsWith('data:')) {
              console.log("[Client] Uploading photo 2...");
-            const dataUri = await fileToDataUri(photoFile2);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
-                body: JSON.stringify({ file: dataUri }),
+                body: JSON.stringify({ file: finalPhotoUrl2 }),
                 headers: { 'Content-Type': 'application/json' },
             });
             const { url, error } = await uploadResponse.json();
-            if (error || !url) {
-                throw new Error(error || 'Failed to upload photo 2.');
-            }
+            if (error || !url) throw new Error(error || 'Failed to upload photo 2.');
             finalPhotoUrl2 = url;
-            console.log("[Client] Photo 2 uploaded:", finalPhotoUrl2);
         }
       
       const submissionData = { ...values, photoURL: finalPhotoUrl1, photoURL2: finalPhotoUrl2 };
@@ -224,21 +298,17 @@ export function RegistrationForm() {
           action: <PartyPopper className="text-primary" />,
         });
 
-        // Sign in the user automatically, whether new or existing
         const userCredential = await signInWithEmailAndPassword(values.email, values.password);
 
         if (userCredential) {
-            // If the user was existing, we need to create the registration document now with their UID.
              if (result.existingUser && result.dataForExistingUser) {
                 const uid = userCredential.user.uid;
                 const registrationRef = doc(db, "registrations", uid);
-                // Use the sanitized data returned from the server action
                 await setDoc(registrationRef, { ...result.dataForExistingUser, uid });
                 console.log(`[Client] Registration document created for existing user UID: ${uid}`);
             }
             router.push('/dashboard');
         } else {
-            // This case might happen if sign-in fails for some reason after registration
              throw new Error(signInError?.message || "Could not log you in. Please go to the login page.");
         }
 
@@ -259,6 +329,7 @@ export function RegistrationForm() {
 
 
   return (
+    <>
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="font-headline text-3xl">Create Account & Register</CardTitle>
@@ -352,7 +423,7 @@ export function RegistrationForm() {
                   <div className="flex items-center gap-4">
                       <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center bg-muted overflow-hidden">
                         {photoPreview1 ? (
-                            <img src={photoPreview1} alt="Profile preview" className="w-full h-full object-cover" />
+                            <Image src={photoPreview1} alt="Profile preview" width={96} height={96} className="w-full h-full object-cover" />
                         ) : (
                             <User className="w-10 h-10 text-muted-foreground" />
                         )}
@@ -364,7 +435,7 @@ export function RegistrationForm() {
                         type="file"
                         className="hidden"
                         ref={photoInputRef1}
-                        onChange={(e) => handlePhotoChange(e, 1)}
+                        onChange={(e) => handlePhotoSelect(e, 1)}
                         accept="image/png, image/jpeg"
                       />
                   </div>
@@ -419,7 +490,7 @@ export function RegistrationForm() {
                             <div className="flex items-center gap-4">
                                 <div className="relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center bg-muted overflow-hidden">
                                     {photoPreview2 ? (
-                                        <img src={photoPreview2} alt="Rider 2 preview" className="w-full h-full object-cover" />
+                                        <Image src={photoPreview2} alt="Rider 2 preview" width={96} height={96} className="w-full h-full object-cover" />
                                     ) : (
                                         <User className="w-10 h-10 text-muted-foreground" />
                                     )}
@@ -431,7 +502,7 @@ export function RegistrationForm() {
                                     type="file"
                                     className="hidden"
                                     ref={photoInputRef2}
-                                    onChange={(e) => handlePhotoChange(e, 2)}
+                                    onChange={(e) => handlePhotoSelect(e, 2)}
                                     accept="image/png, image/jpeg"
                                 />
                             </div>
@@ -484,5 +555,35 @@ export function RegistrationForm() {
         </Form>
       </CardContent>
     </Card>
+
+    <Dialog open={isCropperOpen} onOpenChange={setIsCropperOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Crop & Adjust Photo</DialogTitle>
+            </DialogHeader>
+            {imageToCrop && (
+                <ReactCrop
+                    crop={crop}
+                    onChange={(_, percentCrop) => setCrop(percentCrop)}
+                    aspect={1}
+                >
+                    <Image
+                        ref={imageToCropRef}
+                        alt="Crop preview"
+                        src={imageToCrop}
+                        width={400}
+                        height={400}
+                        onLoad={onImageLoad}
+                        className="max-h-[70vh] w-auto object-contain"
+                    />
+                </ReactCrop>
+            )}
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCropperOpen(false)}>Cancel</Button>
+                <Button onClick={handleCrop}><Crop className="mr-2 h-4 w-4"/> Crop Image</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
