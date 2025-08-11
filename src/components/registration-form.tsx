@@ -567,12 +567,10 @@ export function RegistrationForm() {
                     onChange={(_, percentCrop) => setCrop(percentCrop)}
                     aspect={1}
                 >
-                    <Image
+                    <img
                         ref={imageToCropRef}
                         alt="Crop preview"
                         src={imageToCrop}
-                        width={400}
-                        height={400}
                         onLoad={onImageLoad}
                         className="max-h-[70vh] w-auto object-contain"
                     />
