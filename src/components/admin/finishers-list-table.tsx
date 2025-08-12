@@ -132,7 +132,8 @@ export function FinishersListTable() {
         
         const dataUrl = await htmlToImage.toPng(node, {
             cacheBust: true,
-            pixelRatio: 3, 
+            pixelRatio: 2,
+            useCORS: true, 
         });
 
         const pdf = new jsPDF({ 
@@ -243,7 +244,7 @@ export function FinishersListTable() {
             </Table>
         </div>
         
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-w-5xl w-full">
             <DialogHeader>
                 <DialogTitle>Certificate Preview</DialogTitle>
                 <DialogDescription>
@@ -251,8 +252,8 @@ export function FinishersListTable() {
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center justify-center p-4">
-                <div className="transform-gpu scale-[0.8] origin-top">
-                  {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} />}
+                <div className="w-[1123px] h-[794px] transform-gpu scale-[0.35] sm:scale-[0.5] md:scale-[0.7] lg:scale-[0.8] origin-top">
+                  {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} riderPhotoUrl={viewingParticipant.photoUrl} />}
                 </div>
                <Button onClick={handleDownload} disabled={isDownloading} className="mt-4">
                   {isDownloading ? (
