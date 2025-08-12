@@ -201,7 +201,9 @@ export function RidersListTable() {
                     <Card key={i}><CardContent className="p-4"><Skeleton className="h-24 w-full" /></CardContent></Card>
                  ))
             ) : filteredRegistrations.length > 0 ? (
-                filteredRegistrations.map((reg) => (
+                filteredRegistrations.map((reg) => {
+                    const ticketUrl = `/ticket/${reg.id}`;
+                    return (
                     <Card key={reg.id}>
                         <CardContent className="p-4">
                             <div className="flex justify-between items-start">
@@ -224,7 +226,6 @@ export function RidersListTable() {
                                             <DialogTitle>Rider Actions</DialogTitle>
                                             <DialogDescription>{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</DialogDescription>
                                         </DialogHeader>
-                                        {/* Content duplicated from desktop view for consistency */}
                                         <div className="space-y-4 py-4">
                                             <div className="p-3 border rounded-md bg-background space-y-2">
                                                 <p className="font-semibold">{reg.fullName}</p>
@@ -234,7 +235,7 @@ export function RidersListTable() {
                                                     <Badge variant="outline" className={`justify-center ${reg.rider1Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P1: {reg.rider1Finished ? 'Finished' : 'Pending'}</Badge>
                                                 </div>
                                                 <div className="flex items-center gap-2 pt-2">
-                                                    <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, `/ticket/${reg.id}`))} target="_blank"><Send /> Send</Link></Button>
+                                                    <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, ticketUrl))} target="_blank"><Send /> Send</Link></Button>
                                                     <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Message</Link></Button>
                                                 </div>
                                             </div>
@@ -248,18 +249,41 @@ export function RidersListTable() {
                                                         <Badge variant="outline" className={`justify-center ${reg.rider2Finished ? 'bg-blue-100 text-blue-800' : ''}`}>P2: {reg.rider2Finished ? 'Finished' : 'Pending'}</Badge>
                                                     </div>
                                                     <div className="flex items-center gap-2 pt-2">
-                                                        <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider', `/ticket/${reg.id}`))} target="_blank"><Send /> Send</Link></Button>
+                                                        <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider', ticketUrl))} target="_blank"><Send /> Send</Link></Button>
                                                         <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank"><MessageCircle /> Message</Link></Button>
                                                     </div>
                                                 </div>
                                             )}
+
+                                            <Separator />
+                                            
+                                            <div className="flex flex-col gap-2">
+                                                 <Button asChild variant="secondary"><Link href={ticketUrl} target="_blank"><Eye className="mr-2 h-4 w-4" /> View Ticket</Link></Button>
+                                                {canEdit && (
+                                                    <>
+                                                        <Button variant="outline" onClick={() => handleEdit(reg)}><Edit className="mr-2 h-4 w-4"/>Edit Info</Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="destructive" disabled={isDeleting === reg.id}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the registration for <span className="font-bold">{reg.fullName}</span>.</AlertDialogDescription></AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(reg.id)} className="bg-destructive hover:bg-destructive/90">Yes, delete</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </DialogContent>
                                 </Dialog>
                             </div>
                         </CardContent>
                     </Card>
-                ))
+                )})
             ) : (
                  <div className="text-center py-10 text-muted-foreground">
                     {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
