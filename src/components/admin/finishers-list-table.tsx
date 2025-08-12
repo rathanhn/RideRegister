@@ -131,8 +131,8 @@ export function FinishersListTable() {
         await document.fonts.ready;
         
         const dataUrl = await htmlToImage.toPng(node, { 
-            cacheBust: true, 
-            quality: 1.0 
+            cacheBust: true,
+            pixelRatio: 2, // Upscale for better quality
         });
 
         const pdf = new jsPDF({ 
