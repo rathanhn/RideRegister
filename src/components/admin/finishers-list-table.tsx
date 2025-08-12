@@ -23,7 +23,7 @@ import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { RideCertificate } from '../ride-certificate';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 
 
@@ -122,51 +122,31 @@ export function FinishersListTable() {
   };
   
    const handleDownload = async () => {
-    const certificate = document.getElementById("certificate");
-    if (!certificate) return;
-    
+    const node = document.getElementById('certificate');
+    if (!node) return;
+
     setIsDownloading(true);
 
     try {
-      // Wait for fonts
-      await document.fonts.ready;
+        await document.fonts.ready;
+        
+        const dataUrl = await htmlToImage.toPng(node, { 
+            cacheBust: true, 
+            quality: 1.0 
+        });
 
-      // Wait for all images
-      const imgs = Array.from(certificate.querySelectorAll("img"));
-      await Promise.all(
-        imgs.map(
-          (img) =>
-            new Promise((res) => {
-              if (img.complete) res(null);
-              else img.onload = () => res(null);
-            })
-        )
-      );
+        const pdf = new jsPDF({ 
+            orientation: 'landscape', 
+            unit: 'px', 
+            format: [1123, 794] 
+        });
 
-      // Capture high-res
-      const canvas = await html2canvas(certificate, {
-        scale: 2,
-        useCORS: true,
-      });
+        pdf.addImage(dataUrl, 'PNG', 0, 0, 1123, 794);
+        pdf.save(`${viewingParticipant?.name}-certificate.pdf`);
 
-      // Convert to image
-      const imgData = canvas.toDataURL("image/png");
-
-      // Create PDF in A4 landscape
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-      pdf.save(`${viewingParticipant?.name}-certificate.pdf`);
-    } catch(e) {
+    } catch (e) {
       console.error(e);
-      alert("Could not download certificate. See console for details.");
+      alert('Could not download certificate. See console for details.');
     } finally {
       setIsDownloading(false);
     }
