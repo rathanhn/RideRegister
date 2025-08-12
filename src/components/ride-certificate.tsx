@@ -10,28 +10,19 @@ interface RideCertificateProps {
   riderName: string;
 }
 
-// Using a forwardRef to allow the parent component to get a DOM reference to this component's root element.
-// This is necessary for html2canvas to capture it.
 export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateProps>(
   ({ riderName }, ref) => {
     const eventDate = format(new Date("2025-08-16"), "do 'of' MMMM yyyy");
 
     return (
       <div
-        id="certificate" // ID for capturing
+        id="certificate"
         ref={ref}
-        className="w-[1123px] h-[794px] p-8 bg-gray-900 text-white font-serif flex flex-col items-center justify-center border-4 border-gray-700"
-        style={{ fontFamily: "'Garamond', 'serif'"}}
+        className="w-[1123px] h-[794px] bg-black p-2 bg-gradient-to-r from-orange-500 via-white to-green-500"
+        style={{ fontFamily: "'Garamond', 'serif'" }}
       >
-        {/* Ornate Border */}
-        <div className="w-full h-full border-2 border-gray-600 p-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        <div className="w-full h-full p-6 bg-black flex flex-col items-center justify-center text-center relative">
           
-          {/* Corner decorations */}
-          <div className="absolute top-4 left-4 w-16 h-16 border-t-2 border-l-2 border-gray-500"></div>
-          <div className="absolute top-4 right-4 w-16 h-16 border-t-2 border-r-2 border-gray-500"></div>
-          <div className="absolute bottom-4 left-4 w-16 h-16 border-b-2 border-l-2 border-gray-500"></div>
-          <div className="absolute bottom-4 right-4 w-16 h-16 border-b-2 border-r-2 border-gray-500"></div>
-
           <div className="block mx-auto mb-4">
             <Image 
                 src={Logo} 
@@ -39,7 +30,7 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
                 width={80} 
                 height={80} 
                 className="rounded-full"
-                priority // Ensures preload
+                priority
             />
           </div>
 
@@ -74,8 +65,6 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
               <p className="text-sm mt-1 text-gray-400">{eventDate}</p>
             </div>
           </div>
-          
-           <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 via-white to-green-500" />
         </div>
       </div>
     );
