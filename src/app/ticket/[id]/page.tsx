@@ -20,9 +20,9 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState<number | null>(null);
     const { toast } = useToast();
+    const { id } = params;
 
     useEffect(() => {
-        const { id } = params;
         if (!id) {
             setError("No ticket ID provided.");
             setLoading(false);
@@ -53,7 +53,7 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
         };
 
         fetchTicket();
-    }, [params]);
+    }, [id]);
     
     const handleDownload = async (riderNumber: 1 | 2) => {
         const ticketId = `ticket-${riderNumber}`;
@@ -63,6 +63,8 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
         setIsDownloading(riderNumber);
 
         try {
+            await document.fonts.ready;
+            
             const dataUrl = await htmlToImage.toPng(node, {
                 pixelRatio: 3,
                 useCORS: true,
