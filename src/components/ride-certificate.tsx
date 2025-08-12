@@ -21,14 +21,18 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
       <div
         id="certificate"
         ref={ref}
-        className="w-[1123px] h-[794px] bg-black p-2"
+        className="w-[1123px] h-[794px] bg-gradient-to-r from-orange-500 via-white to-green-500 p-2"
         style={{ fontFamily: "'Garamond', 'serif'" }}
       >
-        <div className="w-full h-full p-6 bg-black flex flex-col items-center justify-between text-center relative border-4 border-transparent bg-gradient-to-r from-orange-500 via-white to-green-500 bg-clip-border">
+        <div className="w-full h-full p-6 bg-black flex flex-col items-center justify-between text-center relative">
           
-          <div className="w-full flex justify-between items-start">
-             <div className="w-20 h-20 border-t-4 border-l-4 border-orange-500"></div>
-             <div className="flex-grow flex justify-center pt-4">
+          <div className="w-full flex justify-between items-start absolute top-0 left-0 p-8">
+             <div className="w-20 h-20 border-t-4 border-l-4 border-primary"></div>
+             <div className="w-20 h-20 border-t-4 border-r-4 border-primary"></div>
+          </div>
+
+          <div className="flex-grow flex flex-col items-center justify-center">
+             <div className="block mx-auto">
                 <Image 
                     src={Logo} 
                     alt="TeleFun Logo" 
@@ -38,11 +42,8 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
                     priority
                 />
              </div>
-             <div className="w-20 h-20 border-t-4 border-r-4 border-green-500"></div>
-          </div>
 
-          <div className="flex-grow flex flex-col items-center justify-center -mt-16">
-            <h1 className="text-5xl font-bold text-primary" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <h1 className="text-5xl font-bold text-primary mt-4" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Certificate of Completion
             </h1>
 
@@ -66,9 +67,12 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
             </p>
           </div>
           
-          <div className="w-full flex justify-between items-end">
-            <div className="w-20 h-20 border-b-4 border-l-4 border-orange-500"></div>
-             <div className="flex-grow flex justify-around w-full max-w-3xl pb-4">
+           <div className="w-full flex justify-between items-end absolute bottom-0 left-0 p-8">
+             <div className="w-20 h-20 border-b-4 border-l-4 border-primary"></div>
+             <div className="w-20 h-20 border-b-4 border-r-4 border-primary"></div>
+          </div>
+
+           <div className="w-full flex justify-around max-w-3xl pb-4">
                 <div className="text-center">
                 <p className="text-xl font-semibold border-b-2 border-primary pb-1" style={{ fontFamily: "'Playfair Display', serif" }}>Event Organizer</p>
                 <p className="text-sm mt-1 text-gray-400">TeleFun Mobile</p>
@@ -78,8 +82,6 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
                 <p className="text-sm mt-1 text-gray-400">{eventDate}</p>
                 </div>
             </div>
-            <div className="w-20 h-20 border-b-4 border-r-4 border-green-500"></div>
-          </div>
         </div>
       </div>
     );

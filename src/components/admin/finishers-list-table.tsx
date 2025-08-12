@@ -21,10 +21,7 @@ import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { RideCertificate } from '../ride-certificate';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import * as htmlToImage from 'html-to-image';
-import jsPDF from 'jspdf';
+import Link from 'next/link';
 
 
 type FinishedParticipant = {
@@ -53,9 +50,6 @@ export function FinishersListTable() {
     query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
   );
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewingParticipant, setViewingParticipant] = useState<FinishedParticipant | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-
 
   const finishedParticipants = useMemo(() => {
     if (!registrations) return [];
@@ -120,39 +114,6 @@ export function FinishersListTable() {
     link.click();
     document.body.removeChild(link);
   };
-  
-  const handleDownload = async () => {
-    const node = document.getElementById('certificate');
-    if (!node) return;
-
-    setIsDownloading(true);
-
-    try {
-        await document.fonts.ready;
-        
-        const dataUrl = await htmlToImage.toPng(node, {
-            cacheBust: true,
-            pixelRatio: 3,
-            useCORS: true, 
-        });
-
-        const pdf = new jsPDF({ 
-            orientation: 'landscape', 
-            unit: 'px', 
-            format: [1123, 794] 
-        });
-
-        pdf.addImage(dataUrl, 'PNG', 0, 0, 1123, 794);
-        pdf.save(`${viewingParticipant?.name}-certificate.pdf`);
-
-    } catch (e) {
-      console.error(e);
-      alert('Could not download certificate. See console for details.');
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
 
   if (error) {
     return (
@@ -163,8 +124,18 @@ export function FinishersListTable() {
     );
   }
 
+  const generatePreviewUrl = (participant: FinishedParticipant) => {
+    const params = new URLSearchParams({
+      name: participant.name,
+    });
+    if (participant.photoUrl) {
+      params.append('photo', participant.photoUrl);
+    }
+    return `/certificate-preview?${params.toString()}`;
+  }
+
   return (
-    <Dialog onOpenChange={(isOpen) => !isOpen && setViewingParticipant(null)}>
+    <>
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
             <Input 
                 placeholder="Search by name or phone..."
@@ -201,9 +172,11 @@ export function FinishersListTable() {
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
-                                <DialogTrigger asChild>
-                                    <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View Certificate</Button>
-                                </DialogTrigger>
+                                 <Button asChild size="sm" variant="outline" className="mt-2 sm:mt-0">
+                                    <Link href={generatePreviewUrl(p)} target="_blank">
+                                        <Eye className="mr-2 h-4 w-4" /> View Certificate
+                                    </Link>
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -231,9 +204,11 @@ export function FinishersListTable() {
                         <TableCell>{p.phone}</TableCell>
                         <TableCell><Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge></TableCell>
                         <TableCell className="text-right space-x-2">
-                           <DialogTrigger asChild>
-                                <Button size="sm" variant="outline" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View</Button>
-                           </DialogTrigger>
+                            <Button asChild size="sm" variant="outline">
+                                <Link href={generatePreviewUrl(p)} target="_blank">
+                                    <Eye className="mr-2 h-4 w-4" /> View
+                                </Link>
+                            </Button>
                         </TableCell>
                     </TableRow>
                     ))
@@ -243,28 +218,6 @@ export function FinishersListTable() {
                 </TableBody>
             </Table>
         </div>
-        
-         <DialogContent className="max-w-4xl w-full p-2 sm:p-4 md:p-6 overflow-y-auto max-h-[90vh]">
-            <DialogHeader>
-                <DialogTitle>Certificate Preview</DialogTitle>
-                <DialogDescription>
-                    This is a preview of the certificate for {viewingParticipant?.name}.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col items-center justify-center py-4">
-                <div className="transform-gpu scale-[0.3] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.7] origin-top">
-                    {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} riderPhotoUrl={viewingParticipant.photoUrl} />}
-                </div>
-                <Button onClick={handleDownload} disabled={isDownloading} className="mt-4">
-                    {isDownloading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <Award className="mr-2 h-4 w-4" />
-                    )}
-                    {isDownloading ? "Downloading..." : "Download PDF"}
-                </Button>
-            </div>
-        </DialogContent>
-    </Dialog>
+    </>
   );
 }
