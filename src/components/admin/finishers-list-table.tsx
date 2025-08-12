@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -23,7 +23,8 @@ import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { RideCertificate } from '../ride-certificate';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import Link from 'next/link';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 
 type FinishedParticipant = {
@@ -53,6 +54,7 @@ export function FinishersListTable() {
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingParticipant, setViewingParticipant] = useState<FinishedParticipant | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
 
   const finishedParticipants = useMemo(() => {
@@ -118,6 +120,57 @@ export function FinishersListTable() {
     link.click();
     document.body.removeChild(link);
   };
+  
+   const handleDownload = async () => {
+    const certificate = document.getElementById("certificate");
+    if (!certificate) return;
+    
+    setIsDownloading(true);
+
+    try {
+      // Wait for fonts
+      await document.fonts.ready;
+
+      // Wait for all images
+      const imgs = Array.from(certificate.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            new Promise((res) => {
+              if (img.complete) res(null);
+              else img.onload = () => res(null);
+            })
+        )
+      );
+
+      // Capture high-res
+      const canvas = await html2canvas(certificate, {
+        scale: 2,
+        useCORS: true,
+      });
+
+      // Convert to image
+      const imgData = canvas.toDataURL("image/png");
+
+      // Create PDF in A4 landscape
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+      pdf.save(`${viewingParticipant?.name}-certificate.pdf`);
+    } catch(e) {
+      console.error(e);
+      alert("Could not download certificate. See console for details.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
 
   if (error) {
@@ -168,13 +221,8 @@ export function FinishersListTable() {
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
                                 <DialogTrigger asChild>
-                                    <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View</Button>
+                                    <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View Certificate</Button>
                                 </DialogTrigger>
-                                <Button size="sm" variant="outline" className="mt-2 sm:mt-0" asChild>
-                                    <Link href={`/api/generate-pdf?name=${encodeURIComponent(p.name)}`} target="_blank">
-                                        <Award className="mr-2 h-4 w-4" /> Download
-                                    </Link>
-                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -187,7 +235,7 @@ export function FinishersListTable() {
         {/* Desktop View - Table */}
         <div className="hidden md:block border rounded-lg">
             <Table>
-                <TableHeader><TableRow><TableHead>Photo</TableHead><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Photo</TableHead><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Certificate</TableHead></TableRow></TableHeader>
                 <TableBody>
                 {loading ? (<TableSkeleton />) : filteredParticipants.length > 0 ? (
                     filteredParticipants.map((p) => (
@@ -205,11 +253,6 @@ export function FinishersListTable() {
                            <DialogTrigger asChild>
                                 <Button size="sm" variant="outline" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View</Button>
                            </DialogTrigger>
-                            <Button size="sm" variant="outline" asChild>
-                               <Link href={`/api/generate-pdf?name=${encodeURIComponent(p.name)}`} target="_blank">
-                                   <Award className="mr-2 h-4 w-4" /> Certificate
-                                </Link>
-                            </Button>
                         </TableCell>
                     </TableRow>
                     ))
@@ -227,8 +270,16 @@ export function FinishersListTable() {
                     This is a preview of the certificate for {viewingParticipant?.name}.
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex justify-center items-center p-4">
+            <div className="flex flex-col items-center justify-center p-4">
               {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} />}
+               <Button onClick={handleDownload} disabled={isDownloading} className="mt-4">
+                  {isDownloading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                      <Award className="mr-2 h-4 w-4" />
+                  )}
+                  {isDownloading ? "Downloading..." : "Download PDF"}
+                </Button>
             </div>
         </DialogContent>
     </Dialog>

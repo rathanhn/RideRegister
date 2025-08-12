@@ -17,7 +17,8 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
     const eventDate = format(new Date("2025-08-16"), "do 'of' MMMM yyyy");
 
     return (
-      <div 
+      <div
+        id="certificate" // ID for capturing
         ref={ref} 
         className="w-[1123px] h-[794px] p-8 bg-white text-black font-serif flex flex-col items-center justify-center border-4 border-amber-500"
         style={{ fontFamily: "'Garamond', 'serif'"}}
@@ -32,7 +33,14 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
           <div className="absolute bottom-4 right-4 w-16 h-16 border-b-2 border-r-2 border-amber-400"></div>
 
           <div className="block mx-auto mb-4">
-            <Image src={Logo} alt="TeleFun Logo" width={80} height={80} className="rounded-full" />
+            <Image 
+                src={Logo} 
+                alt="TeleFun Logo" 
+                width={80} 
+                height={80} 
+                className="rounded-full"
+                priority // Ensures preload
+            />
           </div>
 
           <h1 className="text-5xl font-bold text-amber-800" style={{ fontFamily: "'Playfair Display', serif" }}>
