@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, Flag, User, Award } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, Flag, User, Award, Eye } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { RideCertificate } from '../ride-certificate';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 
 
 type FinishedParticipant = {
@@ -54,6 +55,8 @@ export function FinishersListTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const certificateRef = useRef<HTMLDivElement>(null);
   const [downloadingParticipant, setDownloadingParticipant] = useState<FinishedParticipant | null>(null);
+  const [viewingParticipant, setViewingParticipant] = useState<FinishedParticipant | null>(null);
+
 
   const finishedParticipants = useMemo(() => {
     if (!registrations) return [];
@@ -169,9 +172,9 @@ export function FinishersListTable() {
   }
 
   return (
-    <div>
+    <Dialog open={!!viewingParticipant} onOpenChange={(isOpen) => !isOpen && setViewingParticipant(null)}>
         {/* Hidden certificate component for rendering */}
-        <div style={{ position: 'fixed', left: '-2000px', top: 0 }}>
+        <div style={{ position: 'fixed', left: '-2000px', top: 0, zIndex: -100 }}>
              <RideCertificate 
                 ref={certificateRef}
                 riderName={downloadingParticipant?.name || ''} 
@@ -214,9 +217,12 @@ export function FinishersListTable() {
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View</Button>
+                                </DialogTrigger>
                                 <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => handleDownloadCertificate(p)} disabled={!!downloadingParticipant}>
                                     {downloadingParticipant?.id === p.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Award className="mr-2 h-4 w-4" />}
-                                    Download Certificate
+                                    Download
                                 </Button>
                             </div>
                         </CardContent>
@@ -244,7 +250,10 @@ export function FinishersListTable() {
                         <TableCell className="font-medium">{p.name}</TableCell>
                         <TableCell>{p.phone}</TableCell>
                         <TableCell><Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge></TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-2">
+                           <DialogTrigger asChild>
+                                <Button size="sm" variant="outline" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View</Button>
+                           </DialogTrigger>
                            <Button size="sm" variant="outline" onClick={() => handleDownloadCertificate(p)} disabled={!!downloadingParticipant}>
                                {downloadingParticipant?.id === p.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Award className="mr-2 h-4 w-4" />}
                                Certificate
@@ -258,6 +267,11 @@ export function FinishersListTable() {
                 </TableBody>
             </Table>
         </div>
-    </div>
+        
+        <DialogContent className="max-w-fit w-auto p-0 border-0 bg-transparent shadow-none">
+            {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} />}
+        </DialogContent>
+    </Dialog>
   );
 }
+
