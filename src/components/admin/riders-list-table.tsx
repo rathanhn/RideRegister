@@ -36,7 +36,6 @@ import { Separator } from '../ui/separator';
 import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { EditRegistrationForm } from './edit-registration-form';
-import { SingleTicket } from '../digital-ticket';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -79,6 +78,11 @@ export function RidersListTable() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -130,59 +134,7 @@ export function RidersListTable() {
     }
     setIsDeleting(null);
   };
-
-  const handleDownloadTicket = async (reg: Registration, riderNumber: 1 | 2) => {
-    setIsDownloading(true);
-    // Create a temporary off-screen div to render the ticket
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    document.body.appendChild(tempContainer);
-    
-    // Dynamically import and render the ticket component inside the temp div
-    const ReactDOM = (await import('react-dom/client')).createRoot(tempContainer);
-    ReactDOM.render(<SingleTicket id={`ticket-temp-${riderNumber}`} registration={reg} riderNumber={riderNumber} />);
-
-    // Give it a moment to render
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const nodeToCapture = tempContainer.querySelector(`#ticket-temp-${riderNumber}`);
-    
-    if (!nodeToCapture) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find ticket to capture.' });
-        setIsDownloading(false);
-        document.body.removeChild(tempContainer);
-        return;
-    }
-
-    try {
-        const dataUrl = await htmlToImage.toPng(nodeToCapture as HTMLElement, {
-            pixelRatio: 3,
-            useCORS: true,
-            cacheBust: true,
-        });
-        
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: [nodeToCapture.clientWidth, nodeToCapture.clientHeight]
-        });
-        
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
-        
-        const riderName = riderNumber === 1 ? reg.fullName : reg.fullName2;
-        pdf.save(`${riderName}-ticket.pdf`);
-    } catch (e) {
-        console.error(e);
-        toast({ variant: 'destructive', title: 'Download Failed', 'description': 'Could not download the ticket.' });
-    } finally {
-        setIsDownloading(false);
-        // Clean up the temporary container
-        document.body.removeChild(tempContainer);
-    }
-  };
-
-
+  
   const handleExport = () => {
     if (!filteredRegistrations.length) return;
 
@@ -257,7 +209,7 @@ export function RidersListTable() {
                  ))
             ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => {
-                    const ticketUrl = `/ticket/${reg.id}`;
+                    const ticketUrl = `${origin}/ticket/${reg.id}`;
                     return (
                     <Card key={reg.id}>
                         <CardContent className="p-4">
@@ -292,7 +244,6 @@ export function RidersListTable() {
                                                 <div className="flex items-center gap-2 pt-2">
                                                     <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, ticketUrl))} target="_blank"><Send /> Send</Link></Button>
                                                     <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Message</Link></Button>
-                                                     <Button variant="outline" size="sm" onClick={() => handleDownloadTicket(reg, 1)} disabled={isDownloading}>{isDownloading ? <Loader2 className="animate-spin" /> : <Download />}</Button>
                                                 </div>
                                             </div>
 
@@ -307,7 +258,6 @@ export function RidersListTable() {
                                                     <div className="flex items-center gap-2 pt-2">
                                                         <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider', ticketUrl))} target="_blank"><Send /> Send</Link></Button>
                                                         <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank"><MessageCircle /> Message</Link></Button>
-                                                        <Button variant="outline" size="sm" onClick={() => handleDownloadTicket(reg, 2)} disabled={isDownloading}>{isDownloading ? <Loader2 className="animate-spin" /> : <Download />}</Button>
                                                     </div>
                                                 </div>
                                             )}
@@ -364,7 +314,7 @@ export function RidersListTable() {
                   <TableSkeleton />
             ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => {
-                    const ticketUrl = `/ticket/${reg.id}`;
+                    const ticketUrl = `${origin}/ticket/${reg.id}`;
                     return (
                         <TableRow key={reg.id}>
                             <TableCell>
@@ -402,7 +352,6 @@ export function RidersListTable() {
                                                 <div className="flex items-center gap-2 pt-2">
                                                     <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber, getTicketMessage(reg.fullName, ticketUrl))} target="_blank"><Send /> Send</Link></Button>
                                                     <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber)} target="_blank"><MessageCircle /> Message</Link></Button>
-                                                    <Button variant="outline" size="sm" onClick={() => handleDownloadTicket(reg, 1)} disabled={isDownloading}>{isDownloading ? <Loader2 className="animate-spin" /> : <Download />}</Button>
                                                 </div>
                                             </div>
 
@@ -417,7 +366,6 @@ export function RidersListTable() {
                                                     <div className="flex items-center gap-2 pt-2">
                                                         <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2, getTicketMessage(reg.fullName2 || 'Rider', ticketUrl))} target="_blank"><Send /> Send</Link></Button>
                                                         <Button asChild variant="outline" size="sm"><Link href={formatWhatsAppLink(reg.phoneNumber2)} target="_blank"><MessageCircle /> Message</Link></Button>
-                                                        <Button variant="outline" size="sm" onClick={() => handleDownloadTicket(reg, 2)} disabled={isDownloading}>{isDownloading ? <Loader2 className="animate-spin" /> : <Download />}</Button>
                                                     </div>
                                                 </div>
                                             )}
