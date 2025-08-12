@@ -219,9 +219,9 @@ type EditRegistrationInput = z.infer<typeof editRegistrationFormSchema> & {
 };
 
 export async function updateRegistrationDetails(values: EditRegistrationInput) {
-    const isSuperAdmin = await checkSuperAdminPermissions(values.adminId);
-    if (!isSuperAdmin) {
-      return { success: false, message: "Permission denied. Only Super Admins can edit registrations." };
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
+      return { success: false, message: "Permission denied." };
     }
 
     const { registrationId, adminId, ...dataToUpdate } = values;
@@ -291,9 +291,9 @@ const updateStatusSchema = z.object({
 });
 
 export async function updateRegistrationStatus(values: z.infer<typeof updateStatusSchema>) {
-    const isSuperAdmin = await checkSuperAdminPermissions(values.adminId);
-    if (!isSuperAdmin) {
-      return { success: false, message: "Permission denied. Only Super Admins can change status." };
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
+      return { success: false, message: "Permission denied." };
     }
 
     const parsed = updateStatusSchema.safeParse(values);
@@ -323,9 +323,9 @@ const deleteRegistrationSchema = z.object({
 });
 
 export async function deleteRegistration(values: z.infer<typeof deleteRegistrationSchema>) {
-    const isSuperAdmin = await checkSuperAdminPermissions(values.adminId);
-    if (!isSuperAdmin) {
-      return { success: false, message: "Permission denied. Only Super Admins can delete registrations." };
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
+      return { success: false, message: "Permission denied." };
     }
 
     const parsed = deleteRegistrationSchema.safeParse(values);
@@ -871,11 +871,17 @@ export async function manageLocation(values: z.infer<typeof locationSchema> & { 
   if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
-  const parsed = locationSchema.safeParse(data);
+  
+  // Set default value
+  const finalData = {
+    origin: data.origin || "5g holidays escape, Kushalnagar",
+    destination: data.destination || "Telefun Mobiles, Madikeri",
+  };
+
+  const parsed = locationSchema.safeParse(finalData);
   if (!parsed.success) return { success: false, message: "Invalid data." };
 
   try {
-    // There will be only one document in the 'settings' collection for the route.
     await setDoc(doc(db, "settings", "route"), parsed.data);
     revalidatePath('/');
     return { success: true, message: "Route location updated successfully." };
@@ -894,7 +900,13 @@ export async function manageEventTime(values: z.infer<typeof eventTimeSchema> & 
   if (!isAdmin) {
     return { success: false, message: "Permission denied." };
   }
-  const parsed = eventTimeSchema.safeParse(data);
+  
+  // Set default value
+  const finalData = {
+      eventDate: data.eventDate || new Date("2025-08-16T10:00:00")
+  }
+
+  const parsed = eventTimeSchema.safeParse(finalData);
   if (!parsed.success) return { success: false, message: "Invalid data." };
 
   try {

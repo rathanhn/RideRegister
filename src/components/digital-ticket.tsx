@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye, Loader2 } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -13,6 +13,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Logo from '@/Logo.png';
 import Link from 'next/link';
+import { useEventSettings } from '@/hooks/use-event-settings';
+import { format } from 'date-fns';
 
 
 interface DigitalTicketProps {
@@ -30,12 +32,13 @@ const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
-export function SingleTicket({ registration, riderNumber, userEmail }: SingleTicketProps) {
+export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
   const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
   const isCheckedIn = riderNumber === 1 ? registration.rider1CheckedIn : registration.rider2CheckedIn;
   const photoUrl = riderNumber === 1 ? registration.photoURL : registration.photoURL2;
+  const { settings, loading } = useEventSettings();
 
   const qrData = JSON.stringify({
     registrationId: registration.id,
@@ -67,21 +70,29 @@ export function SingleTicket({ registration, riderNumber, userEmail }: SingleTic
                 <h4 className="font-bold text-2xl">{riderName}</h4>
                 <p className="text-sm text-muted-foreground">{riderPhone}</p>
             </div>
-
+            
+            {loading ? (
+                 <div className="flex justify-center items-center h-12 w-full"><Loader2 className="h-6 w-6 animate-spin" /></div>
+            ) : (
              <div className="w-full grid grid-cols-3 gap-2 text-center text-xs py-2 border-y border-white/10">
                 <div className="flex flex-col items-center gap-1">
                     <Calendar className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">Aug 15, 2025</span>
+                    <span className="font-semibold">
+                         {settings.startTime ? format(settings.startTime, 'MMM d, yyyy') : 'TBD'}
+                    </span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <Clock className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">6:00 AM</span>
+                    <span className="font-semibold">
+                        {settings.startTime ? format(settings.startTime, 'p') : 'TBD'}
+                    </span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <MapPin className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">Madikeri</span>
+                    <span className="font-semibold">{settings.originShort || 'TBD'}</span>
                 </div>
             </div>
+            )}
             
              <div className="grid grid-cols-2 gap-x-8 pt-2">
                  <div className="text-center">
@@ -136,10 +147,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         <Carousel className="w-full max-w-xl mx-auto">
           <CarouselContent>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={1} userEmail={user.email}/>
+              <SingleTicket registration={registration} riderNumber={1} />
             </CarouselItem>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={2} userEmail={user.email}/>
+              <SingleTicket registration={registration} riderNumber={2} />
             </CarouselItem>
           </CarouselContent>
           <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
@@ -147,7 +158,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         </Carousel>
     ) : (
        <div className="max-w-xl mx-auto">
-          <SingleTicket registration={registration} riderNumber={1} userEmail={user.email} />
+          <SingleTicket registration={registration} riderNumber={1} />
       </div>
     )
   );
