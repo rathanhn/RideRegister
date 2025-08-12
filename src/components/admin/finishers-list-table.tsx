@@ -132,7 +132,7 @@ export function FinishersListTable() {
         
         const dataUrl = await htmlToImage.toPng(node, {
             cacheBust: true,
-            pixelRatio: 2,
+            pixelRatio: 3,
             useCORS: true, 
         });
 
@@ -244,24 +244,24 @@ export function FinishersListTable() {
             </Table>
         </div>
         
-        <DialogContent className="max-w-5xl w-full">
+         <DialogContent className="max-w-4xl w-full p-2 sm:p-4 md:p-6 overflow-y-auto max-h-[90vh]">
             <DialogHeader>
                 <DialogTitle>Certificate Preview</DialogTitle>
                 <DialogDescription>
                     This is a preview of the certificate for {viewingParticipant?.name}.
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col items-center justify-center p-4">
-                <div className="w-[1123px] h-[794px] transform-gpu scale-[0.35] sm:scale-[0.5] md:scale-[0.7] lg:scale-[0.8] origin-top">
-                  {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} riderPhotoUrl={viewingParticipant.photoUrl} />}
+            <div className="flex flex-col items-center justify-center py-4">
+                <div className="transform-gpu scale-[0.3] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.7] origin-top">
+                    {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} riderPhotoUrl={viewingParticipant.photoUrl} />}
                 </div>
-               <Button onClick={handleDownload} disabled={isDownloading} className="mt-4">
-                  {isDownloading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                      <Award className="mr-2 h-4 w-4" />
-                  )}
-                  {isDownloading ? "Downloading..." : "Download PDF"}
+                <Button onClick={handleDownload} disabled={isDownloading} className="mt-4">
+                    {isDownloading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Award className="mr-2 h-4 w-4" />
+                    )}
+                    {isDownloading ? "Downloading..." : "Download PDF"}
                 </Button>
             </div>
         </DialogContent>
