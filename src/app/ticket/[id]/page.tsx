@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Registration } from '@/lib/types';
@@ -18,18 +19,13 @@ function filter(node: HTMLElement): boolean {
   if (node.tagName === 'i') {
     return false;
   }
-
-  // Example of a more specific filter if needed:
-  // if (node.classList && node.classList.contains('icon-class-to-exclude')) {
-  //   return false;
-  // }
-  
   return true;
 }
 
 
-export default function PublicTicketPage({ params }: { params: { id: string } }) {
-    const { id } = params;
+export default function PublicTicketPage() {
+    const params = useParams();
+    const id = params.id as string;
     const [registration, setRegistration] = useState<Registration | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
