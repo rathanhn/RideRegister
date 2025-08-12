@@ -215,7 +215,7 @@ export function RegistrationForm() {
         let finalPhotoUrl1: string | undefined = undefined;
         let finalPhotoUrl2: string | undefined = undefined;
 
-        if (values.photoURL instanceof File) {
+        if (values.photoURL && values.photoURL instanceof File) {
             const dataUri = await fileToDataUri(values.photoURL);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST', body: JSON.stringify({ file: dataUri }), headers: { 'Content-Type': 'application/json' },
@@ -225,7 +225,7 @@ export function RegistrationForm() {
             finalPhotoUrl1 = url;
         }
 
-        if (registrationType === 'duo' && values.photoURL2 instanceof File) {
+        if (registrationType === 'duo' && values.photoURL2 && values.photoURL2 instanceof File) {
             const dataUri = await fileToDataUri(values.photoURL2);
             const uploadResponse = await fetch('/api/upload', {
                 method: 'POST', body: JSON.stringify({ file: dataUri }), headers: { 'Content-Type': 'application/json' },
