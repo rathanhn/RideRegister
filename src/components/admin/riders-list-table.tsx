@@ -81,7 +81,9 @@ export function RidersListTable() {
   const [origin, setOrigin] = useState('');
 
   useEffect(() => {
-    setOrigin(window.location.origin);
+    if (typeof window !== 'undefined') {
+        setOrigin(window.location.origin);
+    }
   }, []);
 
   useEffect(() => {
@@ -209,7 +211,7 @@ export function RidersListTable() {
                  ))
             ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => {
-                    const ticketUrl = `${origin}/ticket/${reg.id}`;
+                    const ticketUrl = origin ? `${origin}/ticket/${reg.id}` : '';
                     return (
                     <Card key={reg.id}>
                         <CardContent className="p-4">
@@ -233,6 +235,7 @@ export function RidersListTable() {
                                             <DialogTitle>Rider Actions</DialogTitle>
                                             <DialogDescription>{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</DialogDescription>
                                         </DialogHeader>
+                                        {origin ? (
                                         <div className="space-y-4 py-4">
                                             <div className="p-3 border rounded-md bg-background space-y-2">
                                                 <p className="font-semibold">{reg.fullName}</p>
@@ -285,6 +288,7 @@ export function RidersListTable() {
                                                 )}
                                             </div>
                                         </div>
+                                         ) : (<div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin"/></div>)}
                                     </DialogContent>
                                 </Dialog>
                             </div>
@@ -314,7 +318,7 @@ export function RidersListTable() {
                   <TableSkeleton />
             ) : filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg) => {
-                    const ticketUrl = `${origin}/ticket/${reg.id}`;
+                    const ticketUrl = origin ? `${origin}/ticket/${reg.id}` : '';
                     return (
                         <TableRow key={reg.id}>
                             <TableCell>
@@ -341,6 +345,7 @@ export function RidersListTable() {
                                             <DialogTitle>Rider Actions</DialogTitle>
                                             <DialogDescription>{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</DialogDescription>
                                         </DialogHeader>
+                                         {origin ? (
                                         <div className="space-y-4 py-4">
                                             <div className="p-3 border rounded-md bg-background space-y-2">
                                                 <p className="font-semibold">{reg.fullName}</p>
@@ -393,6 +398,7 @@ export function RidersListTable() {
                                                 )}
                                             </div>
                                         </div>
+                                        ) : (<div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin"/></div>)}
                                     </DialogContent>
                                 </Dialog>
                             </TableCell>
@@ -414,3 +420,4 @@ export function RidersListTable() {
 }
 
     
+
