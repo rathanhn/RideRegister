@@ -31,7 +31,7 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
           <div className="absolute bottom-4 left-4 w-16 h-16 border-b-2 border-l-2 border-amber-400"></div>
           <div className="absolute bottom-4 right-4 w-16 h-16 border-b-2 border-r-2 border-amber-400"></div>
 
-          <div className="flex justify-center mb-4">
+          <div className="block mx-auto mb-4">
             <Image src={Logo} alt="TeleFun Logo" width={80} height={80} className="rounded-full" />
           </div>
 
@@ -42,7 +42,7 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
           <p className="mt-6 text-lg">This certificate is proudly presented to</p>
           
           <div className="my-8 w-full max-w-lg text-center">
-            <p className="text-6xl font-extrabold text-amber-600 pb-2" style={{ fontFamily: "'Dancing Script', cursive" }}>
+            <p className="text-6xl font-extrabold text-amber-600 pb-1" style={{ fontFamily: "'Dancing Script', cursive" }}>
               {riderName || "Honorable Rider"}
             </p>
             <div className="h-[2px] bg-amber-700 w-full"></div>
