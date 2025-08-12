@@ -22,6 +22,11 @@ import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import * as htmlToImage from 'html-to-image';
+import jsPDF from 'jspdf';
+import { RideCertificate } from '../ride-certificate';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 
 
 type FinishedParticipant = {
@@ -50,6 +55,9 @@ export function FinishersListTable() {
     query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
   );
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] = useState<FinishedParticipant | null>(null);
 
   const finishedParticipants = useMemo(() => {
     if (!registrations) return [];
@@ -114,6 +122,41 @@ export function FinishersListTable() {
     link.click();
     document.body.removeChild(link);
   };
+   
+  const handleDownload = async () => {
+        const node = document.getElementById('certificate');
+        if (!node || !selectedParticipant) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Certificate element not found.' });
+            return;
+        }
+
+        setIsDownloading(true);
+
+        try {
+            await document.fonts.ready;
+            
+            const dataUrl = await htmlToImage.toPng(node, {
+                cacheBust: true,
+                pixelRatio: 3, 
+                useCORS: true,
+            });
+
+            const pdf = new jsPDF({ 
+                orientation: 'landscape', 
+                unit: 'px', 
+                format: [1123, 794] 
+            });
+
+            pdf.addImage(dataUrl, 'PNG', 0, 0, 1123, 794);
+            pdf.save(`${selectedParticipant.name}-certificate.pdf`);
+
+        } catch (e) {
+          console.error(e);
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not download certificate.' });
+        } finally {
+          setIsDownloading(false);
+        }
+    };
 
   if (error) {
     return (

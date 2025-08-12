@@ -31,6 +31,11 @@ interface SingleTicketProps {
   userEmail?: string | null;
 }
 
+function filter(node: HTMLElement): boolean {
+  return (node.tagName !== 'i');
+}
+
+
 const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
@@ -160,6 +165,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             pixelRatio: 3,
             useCORS: true,
             cacheBust: true,
+            filter: filter
         });
         
         const pdf = new jsPDF({

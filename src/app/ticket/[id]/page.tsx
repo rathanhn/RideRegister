@@ -14,13 +14,17 @@ import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 
+function filter(node: HTMLElement): boolean {
+  return (node.tagName !== 'i');
+}
+
 export default function PublicTicketPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const [registration, setRegistration] = useState<Registration | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState<number | null>(null);
     const { toast } = useToast();
-    const { id } = params;
 
     useEffect(() => {
         if (!id) {
@@ -69,6 +73,7 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
                 pixelRatio: 3,
                 useCORS: true,
                 cacheBust: true,
+                filter: filter,
             });
             
             const pdf = new jsPDF({

@@ -10,6 +10,10 @@ import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 
+function filter(node: HTMLElement): boolean {
+  return (node.tagName !== 'i');
+}
+
 function CertificatePreviewContent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
@@ -33,7 +37,8 @@ function CertificatePreviewContent() {
             const dataUrl = await htmlToImage.toPng(node, {
                 cacheBust: true,
                 pixelRatio: 3,
-                useCORS: true, 
+                useCORS: true,
+                filter: filter,
             });
 
             const pdf = new jsPDF({ 
