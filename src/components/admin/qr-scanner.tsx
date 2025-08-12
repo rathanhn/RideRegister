@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import jsQR from 'jsqr';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck, ShieldAlert, CheckCircle, Flag } from 'lucide-react';
+import { Loader2, AlertTriangle, Camera, CameraOff, UserCheck, ShieldAlert, CheckCircle, Flag, RotateCcw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { checkInRider, finishRider } from '@/app/actions';
+import { checkInRider, finishRider, revertCheckIn, revertFinish } from '@/app/actions';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 
@@ -210,6 +210,40 @@ export function QrScanner() {
     setIsProcessing(false);
   }
 
+  const handleRevertCheckIn = async () => {
+    if (!scannedData || !scannedRegistration || !user) return;
+    setIsProcessing(true);
+    const result = await revertCheckIn({
+        registrationId: scannedData.registrationId,
+        riderNumber: scannedData.rider,
+        adminId: user.uid,
+    });
+    if (result.success) {
+        toast({ title: "Success", description: result.message });
+        setScannedRegistration(null);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsProcessing(false);
+  }
+  
+  const handleRevertFinish = async () => {
+    if (!scannedData || !scannedRegistration || !user) return;
+    setIsProcessing(true);
+    const result = await revertFinish({
+        registrationId: scannedData.registrationId,
+        riderNumber: scannedData.rider,
+        adminId: user.uid,
+    });
+    if (result.success) {
+        toast({ title: "Success", description: result.message });
+        setScannedRegistration(null);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsProcessing(false);
+  }
+
   const riderIsCheckedIn = scannedRegistration && scannedData ? 
     (scannedData.rider === 1 ? scannedRegistration.rider1CheckedIn : scannedRegistration.rider2CheckedIn)
     : false;
@@ -285,26 +319,54 @@ export function QrScanner() {
                     </div>
                 )}
                 <Separator />
-                <AlertDialogFooter className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                 <AlertDialogFooter className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                      <Button variant="outline" onClick={() => setScannedRegistration(null)}>Cancel</Button>
-                     <Button 
-                        onClick={handleCheckIn} 
-                        disabled={isProcessing || riderIsCheckedIn || scannedRegistration?.status !== 'approved' || !canEdit}
-                        className="bg-green-600 hover:bg-green-700"
-                    >
-                        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {riderIsCheckedIn ? 'Already Checked-In' : 'Check-In'}
-                    </Button>
-                    <Button 
-                        onClick={handleFinish} 
-                        disabled={isProcessing || riderIsFinished || scannedRegistration?.status !== 'approved' || !canEdit || !riderIsCheckedIn}
-                    >
-                        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {riderIsFinished ? 'Already Finished' : 'Mark as Finished'}
-                    </Button>
+                    
+                     {!riderIsCheckedIn ? (
+                        <Button 
+                            onClick={handleCheckIn} 
+                            disabled={isProcessing || scannedRegistration?.status !== 'approved' || !canEdit}
+                            className="bg-green-600 hover:bg-green-700"
+                        >
+                            {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Check-In
+                        </Button>
+                     ) : (
+                        <Button 
+                            onClick={handleRevertCheckIn} 
+                            disabled={isProcessing || !canEdit}
+                            variant="destructive"
+                        >
+                            {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                             <RotateCcw className="mr-2 h-4 w-4" />
+                            Revert Check-In
+                        </Button>
+                     )}
+
+                     {!riderIsFinished ? (
+                        <Button 
+                            onClick={handleFinish} 
+                            disabled={isProcessing || !riderIsCheckedIn || scannedRegistration?.status !== 'approved' || !canEdit}
+                        >
+                            {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Mark as Finished
+                        </Button>
+                     ) : (
+                        <Button 
+                            onClick={handleRevertFinish} 
+                            disabled={isProcessing || !canEdit}
+                            variant="destructive"
+                        >
+                            {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                             <RotateCcw className="mr-2 h-4 w-4" />
+                            Revert Finish
+                        </Button>
+                     )}
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
     </div>
   );
 }
+
+    

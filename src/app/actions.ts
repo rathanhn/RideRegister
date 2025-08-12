@@ -413,6 +413,55 @@ export async function finishRider(values: z.infer<typeof finishRiderSchema>) {
     }
 }
 
+// Schema for reverting a rider's check-in
+const revertCheckInSchema = z.object({
+  registrationId: z.string().min(1, "Registration ID is required."),
+  riderNumber: z.coerce.number().min(1).max(2),
+  adminId: z.string().min(1, "Admin ID is required."),
+});
+
+export async function revertCheckIn(values: z.infer<typeof revertCheckInSchema>) {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
+      return { success: false, message: "Permission denied." };
+    }
+    const parsed = revertCheckInSchema.safeParse(values);
+    if (!parsed.success) return { success: false, message: "Invalid data for check-in reversal." };
+    try {
+        const { registrationId, riderNumber } = parsed.data;
+        const registrationRef = doc(db, "registrations", registrationId);
+        const fieldToUpdate = riderNumber === 1 ? 'rider1CheckedIn' : 'rider2CheckedIn';
+        await updateDoc(registrationRef, { [fieldToUpdate]: false });
+        return { success: true, message: `Rider ${riderNumber} check-in has been reverted.` };
+    } catch (error) {
+        return { success: false, message: "Could not revert check-in." };
+    }
+}
+
+// Schema for reverting a rider's finish status
+const revertFinishSchema = z.object({
+  registrationId: z.string().min(1, "Registration ID is required."),
+  riderNumber: z.coerce.number().min(1).max(2),
+  adminId: z.string().min(1, "Admin ID is required."),
+});
+
+export async function revertFinish(values: z.infer<typeof revertFinishSchema>) {
+    const isAdmin = await checkAdminPermissions(values.adminId);
+    if (!isAdmin) {
+      return { success: false, message: "Permission denied." };
+    }
+    const parsed = revertFinishSchema.safeParse(values);
+    if (!parsed.success) return { success: false, message: "Invalid data for finish reversal." };
+    try {
+        const { registrationId, riderNumber } = parsed.data;
+        const registrationRef = doc(db, "registrations", registrationId);
+        const fieldToUpdate = riderNumber === 1 ? 'rider1Finished' : 'rider2Finished';
+        await updateDoc(registrationRef, { [fieldToUpdate]: false });
+        return { success: true, message: `Rider ${riderNumber} finish status has been reverted.` };
+    } catch (error) {
+        return { success: false, message: "Could not revert finish status." };
+    }
+}
 
 // Schema for adding a question
 const addQuestionSchema = z.object({
@@ -942,3 +991,5 @@ export async function manageGeneralSettings(values: z.infer<typeof generalSettin
     return { success: false, message: "Failed to update settings." };
   }
 }
+
+    
