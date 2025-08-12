@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { RideCertificate } from '../ride-certificate';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 
 
 type FinishedParticipant = {
@@ -172,7 +172,7 @@ export function FinishersListTable() {
   }
 
   return (
-    <Dialog open={!!viewingParticipant} onOpenChange={(isOpen) => !isOpen && setViewingParticipant(null)}>
+    <Dialog onOpenChange={(isOpen) => !isOpen && setViewingParticipant(null)}>
         {/* Hidden certificate component for rendering */}
         <div style={{ position: 'fixed', left: '-2000px', top: 0, zIndex: -100 }}>
              <RideCertificate 
@@ -268,10 +268,17 @@ export function FinishersListTable() {
             </Table>
         </div>
         
-        <DialogContent className="max-w-fit w-auto p-0 border-0 bg-transparent shadow-none">
-            {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} />}
+        <DialogContent className="max-w-4xl">
+            <DialogHeader>
+                <DialogTitle>Certificate Preview</DialogTitle>
+                <DialogDescription>
+                    This is a preview of the certificate for {viewingParticipant?.name}.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center items-center p-4">
+              {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} />}
+            </div>
         </DialogContent>
     </Dialog>
   );
 }
-
