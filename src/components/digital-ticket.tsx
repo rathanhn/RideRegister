@@ -115,7 +115,7 @@ export function SingleTicket({ id, registration, riderNumber }: SingleTicketProp
             </div>
             
             <div className="w-[120px] h-[120px] p-2 bg-white rounded-md flex items-center justify-center border mt-2">
-                <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} />
+                <Image src={generateQrCodeUrl(qrData)} alt="QR Code" width={110} height={110} unoptimized/>
             </div>
              <div className="mt-1 flex flex-col items-center gap-1">
                 <p className="text-xs text-muted-foreground">Reg. ID</p>
@@ -154,12 +154,15 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     setIsDownloading(riderNumber);
 
     try {
-        const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 2 });
+        const dataUrl = await htmlToImage.toPng(node, {
+            pixelRatio: 3,
+            useCORS: true,
+            cacheBust: true,
+        });
         
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'px',
-            // Rough aspect ratio, adjust as needed
             format: [node.offsetWidth, node.offsetHeight]
         });
         
@@ -178,7 +181,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
   const ticketContainer = (
     registration.registrationType === 'duo' ? (
-        <Carousel className="w-full max-w-xl mx-auto">
+        <Carousel className="w-full max-w-sm mx-auto">
           <CarouselContent>
             <CarouselItem>
               <div className="p-1">
@@ -195,7 +198,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
           <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
         </Carousel>
     ) : (
-       <div className="max-w-xl mx-auto p-1">
+       <div className="max-w-sm mx-auto p-1">
           <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
       </div>
     )
@@ -204,7 +207,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   return (
     <div className="space-y-6">
       {ticketContainer}
-      <div className="max-w-xl mx-auto space-y-4">
+      <div className="max-w-sm mx-auto space-y-4">
          <div className="w-full text-center p-4 border-2 border-dashed border-primary/50 rounded-lg bg-secondary/30 space-y-3">
              <h4 className="font-bold text-lg flex items-center justify-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />

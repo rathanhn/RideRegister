@@ -133,30 +133,34 @@ export function RidersListTable() {
 
   const handleDownloadTicket = async (reg: Registration, riderNumber: 1 | 2) => {
     setIsDownloading(true);
-    const ticketNode = document.createElement('div');
-    // Position it off-screen
-    ticketNode.style.position = 'absolute';
-    ticketNode.style.left = '-9999px';
-    document.body.appendChild(ticketNode);
-
-    // This is a bit of a hack, but we need to render the ticket to capture it.
-    const root = (await import('react-dom/client')).createRoot(ticketNode);
-    root.render(<SingleTicket id={`ticket-temp-${riderNumber}`} registration={reg} riderNumber={riderNumber} />);
+    // Create a temporary off-screen div to render the ticket
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    document.body.appendChild(tempContainer);
+    
+    // Dynamically import and render the ticket component inside the temp div
+    const ReactDOM = (await import('react-dom/client')).createRoot(tempContainer);
+    ReactDOM.render(<SingleTicket id={`ticket-temp-${riderNumber}`} registration={reg} riderNumber={riderNumber} />);
 
     // Give it a moment to render
     await new Promise(resolve => setTimeout(resolve, 500));
-
-    const nodeToCapture = ticketNode.querySelector(`#ticket-temp-${riderNumber}`);
-
+    
+    const nodeToCapture = tempContainer.querySelector(`#ticket-temp-${riderNumber}`);
+    
     if (!nodeToCapture) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not find ticket to capture.' });
         setIsDownloading(false);
-        document.body.removeChild(ticketNode);
+        document.body.removeChild(tempContainer);
         return;
     }
 
     try {
-        const dataUrl = await htmlToImage.toPng(nodeToCapture as HTMLElement, { pixelRatio: 3 });
+        const dataUrl = await htmlToImage.toPng(nodeToCapture as HTMLElement, {
+            pixelRatio: 3,
+            useCORS: true,
+            cacheBust: true,
+        });
         
         const pdf = new jsPDF({
             orientation: 'p',
@@ -173,7 +177,8 @@ export function RidersListTable() {
         toast({ variant: 'destructive', title: 'Download Failed', 'description': 'Could not download the ticket.' });
     } finally {
         setIsDownloading(false);
-        document.body.removeChild(ticketNode);
+        // Clean up the temporary container
+        document.body.removeChild(tempContainer);
     }
   };
 
@@ -461,4 +466,3 @@ export function RidersListTable() {
 }
 
     
-

@@ -6,14 +6,20 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Registration } from '@/lib/types';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Ticket } from 'lucide-react';
+import { Loader2, AlertTriangle, Ticket, Download } from 'lucide-react';
 import { SingleTicket } from '@/components/digital-ticket';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import * as htmlToImage from 'html-to-image';
+import jsPDF from 'jspdf';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PublicTicketPage({ params }: { params: { id: string } }) {
     const [registration, setRegistration] = useState<Registration | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isDownloading, setIsDownloading] = useState<number | null>(null);
+    const { toast } = useToast();
 
     useEffect(() => {
         const { id } = params;
@@ -49,26 +55,75 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
         fetchTicket();
     }, [params]);
     
+    const handleDownload = async (riderNumber: 1 | 2) => {
+        const ticketId = `ticket-${riderNumber}`;
+        const node = document.getElementById(ticketId);
+        if (!node || !registration) return;
+
+        setIsDownloading(riderNumber);
+
+        try {
+            const dataUrl = await htmlToImage.toPng(node, {
+                pixelRatio: 3,
+                useCORS: true,
+                cacheBust: true,
+            });
+            
+            const pdf = new jsPDF({
+                orientation: 'p',
+                unit: 'px',
+                format: [node.offsetWidth, node.offsetHeight]
+            });
+            
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+            
+            const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
+            pdf.save(`${riderName}-ticket.pdf`);
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: 'Download Failed', 'description': 'Could not download the ticket.' });
+        } finally {
+            setIsDownloading(null);
+        }
+    }
+
+
     const renderTicket = () => {
         if (!registration) return null;
 
         if (registration.registrationType === 'duo') {
             return (
                 <div className="space-y-4">
-                    <SingleTicket registration={registration} riderNumber={1} />
-                    <SingleTicket registration={registration} riderNumber={2} />
+                    <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
+                     <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
+                        {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                        Download Ticket (Rider 1)
+                    </Button>
+                    <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
+                     <Button onClick={() => handleDownload(2)} variant="outline" className="w-full" disabled={isDownloading === 2}>
+                        {isDownloading === 2 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                        Download Ticket (Rider 2)
+                    </Button>
                 </div>
             )
         }
         
-        return <SingleTicket registration={registration} riderNumber={1} />
+        return (
+            <div className="space-y-4">
+                <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
+                 <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
+                    {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                    Download Ticket
+                </Button>
+            </div>
+        )
     }
 
     return (
         <div className="flex flex-col min-h-screen bg-secondary/50">
             <Header />
             <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
-                <div className="w-full max-w-xl mx-auto space-y-4">
+                <div className="w-full max-w-sm mx-auto space-y-4">
                     {loading && (
                         <Card className="text-center">
                            <CardContent className="p-12 flex flex-col items-center justify-center gap-4">

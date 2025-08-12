@@ -130,9 +130,9 @@ export function FinishersListTable() {
     try {
         await document.fonts.ready;
         
-        const dataUrl = await htmlToImage.toPng(node, { 
+        const dataUrl = await htmlToImage.toPng(node, {
             cacheBust: true,
-            pixelRatio: 3, // Upscale for better quality
+            pixelRatio: 3, 
         });
 
         const pdf = new jsPDF({ 
@@ -243,7 +243,7 @@ export function FinishersListTable() {
             </Table>
         </div>
         
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-5xl">
             <DialogHeader>
                 <DialogTitle>Certificate Preview</DialogTitle>
                 <DialogDescription>
@@ -251,7 +251,9 @@ export function FinishersListTable() {
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center justify-center p-4">
-              {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} />}
+                <div className="transform-gpu scale-[0.8] origin-top">
+                  {viewingParticipant && <RideCertificate riderName={viewingParticipant.name} />}
+                </div>
                <Button onClick={handleDownload} disabled={isDownloading} className="mt-4">
                   {isDownloading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
