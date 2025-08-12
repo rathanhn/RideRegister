@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -14,13 +14,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, Flag, User } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, Flag, User, Award } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { RideCertificate } from '../ride-certificate';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+
 
 type FinishedParticipant = {
     id: string;
@@ -48,6 +52,8 @@ export function FinishersListTable() {
     query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
   );
   const [searchTerm, setSearchTerm] = useState('');
+  const certificateRef = useRef<HTMLDivElement>(null);
+  const [downloadingParticipant, setDownloadingParticipant] = useState<FinishedParticipant | null>(null);
 
   const finishedParticipants = useMemo(() => {
     if (!registrations) return [];
@@ -112,6 +118,45 @@ export function FinishersListTable() {
     link.click();
     document.body.removeChild(link);
   };
+  
+   const handleDownloadCertificate = async (participant: FinishedParticipant) => {
+    setDownloadingParticipant(participant);
+
+    // This timeout gives React a moment to render the certificate component with the new participant's data
+    // before we try to capture it.
+    setTimeout(async () => {
+        if (certificateRef.current) {
+            try {
+                const canvas = await html2canvas(certificateRef.current, {
+                    scale: 3, // Higher scale for better quality
+                    useCORS: true,
+                    backgroundColor: null,
+                });
+                const imgData = canvas.toDataURL('image/png');
+                
+                // A4 dimensions in mm: 210 x 297
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4',
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`${participant.name}-Certificate.pdf`);
+
+            } catch (error) {
+                console.error("Error generating PDF:", error);
+            } finally {
+                setDownloadingParticipant(null); // Reset after download attempt
+            }
+        } else {
+             setDownloadingParticipant(null);
+        }
+    }, 100);
+   }
 
 
   if (error) {
@@ -125,6 +170,14 @@ export function FinishersListTable() {
 
   return (
     <div>
+        {/* Hidden certificate component for rendering */}
+        <div style={{ position: 'fixed', left: '-2000px', top: 0 }}>
+             <RideCertificate 
+                ref={certificateRef}
+                riderName={downloadingParticipant?.name || ''} 
+             />
+        </div>
+
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
             <Input 
                 placeholder="Search by name or phone..."
@@ -159,7 +212,13 @@ export function FinishersListTable() {
                                     <Badge variant="secondary" className="mt-1">{p.type}</Badge>
                                 </div>
                             </div>
-                            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
+                                <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => handleDownloadCertificate(p)} disabled={!!downloadingParticipant}>
+                                    {downloadingParticipant?.id === p.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Award className="mr-2 h-4 w-4" />}
+                                    Download Certificate
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ))
@@ -171,7 +230,7 @@ export function FinishersListTable() {
         {/* Desktop View - Table */}
         <div className="hidden md:block border rounded-lg">
             <Table>
-                <TableHeader><TableRow><TableHead>Photo</TableHead><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Photo</TableHead><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
                 {loading ? (<TableSkeleton />) : filteredParticipants.length > 0 ? (
                     filteredParticipants.map((p) => (
@@ -184,8 +243,13 @@ export function FinishersListTable() {
                         </TableCell>
                         <TableCell className="font-medium">{p.name}</TableCell>
                         <TableCell>{p.phone}</TableCell>
-                        <TableCell><Badge variant="outline">{p.type}</Badge></TableCell>
-                        <TableCell className="text-right"><Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge></TableCell>
+                        <TableCell><Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge></TableCell>
+                        <TableCell className="text-right">
+                           <Button size="sm" variant="outline" onClick={() => handleDownloadCertificate(p)} disabled={!!downloadingParticipant}>
+                               {downloadingParticipant?.id === p.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Award className="mr-2 h-4 w-4" />}
+                               Certificate
+                            </Button>
+                        </TableCell>
                     </TableRow>
                     ))
                 ) : (
@@ -197,5 +261,3 @@ export function FinishersListTable() {
     </div>
   );
 }
-
-    
