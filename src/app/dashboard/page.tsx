@@ -42,6 +42,11 @@ export default function DashboardPage() {
     const [userData, setUserData] = useState<AppUser | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
+    const [origin, setOrigin] = useState('');
+
+    useEffect(() => {
+        setOrigin(window.location.origin);
+    }, []);
 
     useEffect(() => {
         if (loading) return;
@@ -107,7 +112,8 @@ export default function DashboardPage() {
                 const names = registrationData.registrationType === 'duo' 
                     ? `${registrationData.fullName} & ${registrationData.fullName2}` 
                     : registrationData.fullName;
-                const message = `Hi Team Telefun, please review my registration.\n\nName(s): ${names}\nRegistration ID: ${registrationData.id}`;
+                const adminUrl = `${origin}/admin`;
+                const message = `Hi Team Telefun, please review my registration.\n\nName(s): ${names}\nRegistration ID: ${registrationData.id}\n\nManage here: ${adminUrl}`;
                 const whatsappUrl = `https://wa.me/916363148287?text=${encodeURIComponent(message)}`;
 
                 return (
