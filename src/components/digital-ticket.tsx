@@ -154,6 +154,8 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     setIsDownloading(riderNumber);
 
     try {
+        await document.fonts.ready;
+        
         const dataUrl = await htmlToImage.toPng(node, {
             pixelRatio: 3,
             useCORS: true,
@@ -216,7 +218,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
              <p className="text-sm text-muted-foreground">
                 Save your ticket for offline access or share it with friends!
              </p>
-             <div className="w-full flex flex-col sm:flex-row gap-2 pt-2">
+             <div className="w-full flex flex-col gap-2 pt-2">
                  <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
                     {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
                     Download Ticket{registration.registrationType === 'duo' ? ' (Rider 1)' : ''}
@@ -228,7 +230,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                     </Button>
                 )}
             </div>
-            <div className="w-full flex flex-col sm:flex-row gap-2 pt-2">
+            <div className="w-full flex flex-col gap-2 pt-2">
                 <Button asChild variant="outline" className="w-full">
                     <Link href={shareUrl} target="_blank">
                         <Eye className="mr-2 h-4 w-4" />

@@ -96,16 +96,20 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
         if (registration.registrationType === 'duo') {
             return (
                 <div className="space-y-4">
-                    <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
-                     <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
-                        {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                        Download Ticket (Rider 1)
-                    </Button>
-                    <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
-                     <Button onClick={() => handleDownload(2)} variant="outline" className="w-full" disabled={isDownloading === 2}>
-                        {isDownloading === 2 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                        Download Ticket (Rider 2)
-                    </Button>
+                    <div>
+                        <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
+                        <Button onClick={() => handleDownload(1)} variant="outline" className="w-full mt-2" disabled={isDownloading === 1}>
+                            {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                            Download Ticket (Rider 1)
+                        </Button>
+                    </div>
+                     <div className="mt-4">
+                        <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
+                        <Button onClick={() => handleDownload(2)} variant="outline" className="w-full mt-2" disabled={isDownloading === 2}>
+                            {isDownloading === 2 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                            Download Ticket (Rider 2)
+                        </Button>
+                    </div>
                 </div>
             )
         }
