@@ -15,8 +15,18 @@ import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 
 function filter(node: HTMLElement): boolean {
-  return (node.tagName !== 'i');
+  if (node.tagName === 'i') {
+    return false;
+  }
+
+  // Example of a more specific filter if needed:
+  // if (node.classList && node.classList.contains('icon-class-to-exclude')) {
+  //   return false;
+  // }
+  
+  return true;
 }
+
 
 export default function PublicTicketPage({ params }: { params: { id: string } }) {
     const { id } = params;
@@ -73,7 +83,7 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
                 pixelRatio: 3,
                 useCORS: true,
                 cacheBust: true,
-                filter: filter,
+                filter: filter
             });
             
             const pdf = new jsPDF({
@@ -98,34 +108,26 @@ export default function PublicTicketPage({ params }: { params: { id: string } })
     const renderTicket = () => {
         if (!registration) return null;
 
-        if (registration.registrationType === 'duo') {
-            return (
-                <div className="space-y-4">
-                    <div>
-                        <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
-                        <Button onClick={() => handleDownload(1)} variant="outline" className="w-full mt-2" disabled={isDownloading === 1}>
-                            {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                            Download Ticket (Rider 1)
-                        </Button>
-                    </div>
-                     <div className="mt-4">
-                        <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
-                        <Button onClick={() => handleDownload(2)} variant="outline" className="w-full mt-2" disabled={isDownloading === 2}>
-                            {isDownloading === 2 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                            Download Ticket (Rider 2)
-                        </Button>
-                    </div>
-                </div>
-            )
-        }
-        
         return (
             <div className="space-y-4">
                 <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
-                 <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
-                    {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                    Download Ticket
-                </Button>
+                {registration.registrationType === 'duo' && (
+                     <div className="mt-4">
+                        <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
+                    </div>
+                )}
+                 <div className="w-full flex flex-col gap-2 pt-2">
+                    <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
+                        {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                        Download Ticket{registration.registrationType === 'duo' ? ' (Rider 1)' : ''}
+                    </Button>
+                    {registration.registrationType === 'duo' && (
+                        <Button onClick={() => handleDownload(2)} variant="outline" className="w-full" disabled={isDownloading === 2}>
+                            {isDownloading === 2 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                            Download Ticket (Rider 2)
+                        </Button>
+                    )}
+                </div>
             </div>
         )
     }
