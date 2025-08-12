@@ -2,9 +2,9 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye, Loader2 } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye, Loader2, Download } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -15,6 +15,8 @@ import Logo from '@/Logo.png';
 import Link from 'next/link';
 import { useEventSettings } from '@/hooks/use-event-settings';
 import { format } from 'date-fns';
+import * as htmlToImage from 'html-to-image';
+import jsPDF from 'jspdf';
 
 
 interface DigitalTicketProps {
@@ -23,6 +25,7 @@ interface DigitalTicketProps {
 }
 
 interface SingleTicketProps {
+  id: string;
   registration: Registration;
   riderNumber: 1 | 2;
   userEmail?: string | null;
@@ -32,7 +35,7 @@ const generateQrCodeUrl = (text: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
 }
 
-export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
+export function SingleTicket({ id, registration, riderNumber }: SingleTicketProps) {
   const isDuo = registration.registrationType === 'duo';
   const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
   const riderPhone = riderNumber === 1 ? registration.phoneNumber : registration.phoneNumber2;
@@ -46,7 +49,7 @@ export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
   });
 
   return (
-    <div className="bg-[#09090b] text-white rounded-lg shadow-2xl border border-primary/20 overflow-hidden font-body">
+    <div id={id} className="bg-[#09090b] text-white rounded-lg shadow-2xl border border-primary/20 overflow-hidden font-body">
         <div className="p-4 bg-muted/10 relative">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -126,6 +129,7 @@ export function SingleTicket({ registration, riderNumber }: SingleTicketProps) {
 
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
+  const [isDownloading, setIsDownloading] = useState<number | null>(null);
   
   const shareUrl = `${window.location.origin}/ticket/${registration.id}`;
 
@@ -138,27 +142,61 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
         action: <Clipboard className="text-primary" />,
       });
     } catch (error) {
-       toast({ variant: 'destructive', title: 'Copy Failed', description: 'Could not copy the link.' });
+       toast({ variant: 'destructive', title: 'Copy Failed', 'description': 'Could not copy the link.' });
     }
   };
+
+  const handleDownload = async (riderNumber: 1 | 2) => {
+    const ticketId = `ticket-${riderNumber}`;
+    const node = document.getElementById(ticketId);
+    if (!node) return;
+
+    setIsDownloading(riderNumber);
+
+    try {
+        const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 2 });
+        
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            // Rough aspect ratio, adjust as needed
+            format: [node.offsetWidth, node.offsetHeight]
+        });
+        
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+        
+        const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
+        pdf.save(`${riderName}-ticket.pdf`);
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Download Failed', 'description': 'Could not download the ticket.' });
+    } finally {
+        setIsDownloading(null);
+    }
+  }
+
 
   const ticketContainer = (
     registration.registrationType === 'duo' ? (
         <Carousel className="w-full max-w-xl mx-auto">
           <CarouselContent>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={1} />
+              <div className="p-1">
+                <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
+              </div>
             </CarouselItem>
             <CarouselItem>
-              <SingleTicket registration={registration} riderNumber={2} />
+               <div className="p-1">
+                <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
+              </div>
             </CarouselItem>
           </CarouselContent>
           <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
           <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
         </Carousel>
     ) : (
-       <div className="max-w-xl mx-auto">
-          <SingleTicket registration={registration} riderNumber={1} />
+       <div className="max-w-xl mx-auto p-1">
+          <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
       </div>
     )
   );
@@ -170,16 +208,28 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
          <div className="w-full text-center p-4 border-2 border-dashed border-primary/50 rounded-lg bg-secondary/30 space-y-3">
              <h4 className="font-bold text-lg flex items-center justify-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Share Your Excitement!
+                Share & Download
              </h4>
              <p className="text-sm text-muted-foreground">
-                Take a screenshot of your ticket and post it on social media. Don&apos;t forget to tag <strong className="text-primary">@telefun_</strong>!
+                Save your ticket for offline access or share it with friends!
              </p>
              <div className="w-full flex flex-col sm:flex-row gap-2 pt-2">
+                 <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
+                    {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                    Download Ticket{registration.registrationType === 'duo' ? ' (Rider 1)' : ''}
+                </Button>
+                {registration.registrationType === 'duo' && (
+                     <Button onClick={() => handleDownload(2)} variant="outline" className="w-full" disabled={isDownloading === 2}>
+                        {isDownloading === 2 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                        Download Ticket (Rider 2)
+                    </Button>
+                )}
+            </div>
+            <div className="w-full flex flex-col sm:flex-row gap-2 pt-2">
                 <Button asChild variant="outline" className="w-full">
                     <Link href={shareUrl} target="_blank">
                         <Eye className="mr-2 h-4 w-4" />
-                        View Ticket
+                        View Public Link
                     </Link>
                 </Button>
                 <Button onClick={handleCopyLink} variant="outline" className="w-full">
@@ -193,7 +243,7 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
             <div className="flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 <p>
-                    <strong>Tip:</strong> Take a screenshot of your ticket for offline access.
+                    <strong>Tip:</strong> Take a screenshot of your ticket for easy offline access.
                 </p>
             </div>
         </div>

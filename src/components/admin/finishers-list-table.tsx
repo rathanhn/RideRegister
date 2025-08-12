@@ -121,7 +121,7 @@ export function FinishersListTable() {
     document.body.removeChild(link);
   };
   
-   const handleDownload = async () => {
+  const handleDownload = async () => {
     const node = document.getElementById('certificate');
     if (!node) return;
 
@@ -132,7 +132,7 @@ export function FinishersListTable() {
         
         const dataUrl = await htmlToImage.toPng(node, { 
             cacheBust: true,
-            pixelRatio: 2, // Upscale for better quality
+            pixelRatio: 3, // Upscale for better quality
         });
 
         const pdf = new jsPDF({ 
