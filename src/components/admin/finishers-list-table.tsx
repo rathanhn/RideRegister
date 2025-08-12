@@ -22,9 +22,8 @@ import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { RideCertificate } from '../ride-certificate';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import Link from 'next/link';
 
 
 type FinishedParticipant = {
@@ -53,8 +52,6 @@ export function FinishersListTable() {
     query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
   );
   const [searchTerm, setSearchTerm] = useState('');
-  const certificateRef = useRef<HTMLDivElement>(null);
-  const [downloadingParticipant, setDownloadingParticipant] = useState<FinishedParticipant | null>(null);
   const [viewingParticipant, setViewingParticipant] = useState<FinishedParticipant | null>(null);
 
 
@@ -121,45 +118,6 @@ export function FinishersListTable() {
     link.click();
     document.body.removeChild(link);
   };
-  
-   const handleDownloadCertificate = async (participant: FinishedParticipant) => {
-    setDownloadingParticipant(participant);
-
-    // This timeout gives React a moment to render the certificate component with the new participant's data
-    // before we try to capture it.
-    setTimeout(async () => {
-        if (certificateRef.current) {
-            try {
-                const canvas = await html2canvas(certificateRef.current, {
-                    scale: 3, // Higher scale for better quality
-                    useCORS: true,
-                    backgroundColor: null,
-                });
-                const imgData = canvas.toDataURL('image/png');
-                
-                // A4 dimensions in mm: 210 x 297
-                const pdf = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'mm',
-                    format: 'a4',
-                });
-
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`${participant.name}-Certificate.pdf`);
-
-            } catch (error) {
-                console.error("Error generating PDF:", error);
-            } finally {
-                setDownloadingParticipant(null); // Reset after download attempt
-            }
-        } else {
-             setDownloadingParticipant(null);
-        }
-    }, 100);
-   }
 
 
   if (error) {
@@ -173,14 +131,6 @@ export function FinishersListTable() {
 
   return (
     <Dialog onOpenChange={(isOpen) => !isOpen && setViewingParticipant(null)}>
-        {/* Hidden certificate component for rendering */}
-        <div style={{ position: 'fixed', left: '-2000px', top: 0, zIndex: -100 }}>
-             <RideCertificate 
-                ref={certificateRef}
-                riderName={downloadingParticipant?.name || ''} 
-             />
-        </div>
-
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
             <Input 
                 placeholder="Search by name or phone..."
@@ -220,9 +170,10 @@ export function FinishersListTable() {
                                 <DialogTrigger asChild>
                                     <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View</Button>
                                 </DialogTrigger>
-                                <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => handleDownloadCertificate(p)} disabled={!!downloadingParticipant}>
-                                    {downloadingParticipant?.id === p.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Award className="mr-2 h-4 w-4" />}
-                                    Download
+                                <Button size="sm" variant="outline" className="mt-2 sm:mt-0" asChild>
+                                    <Link href={`/api/generate-pdf?name=${encodeURIComponent(p.name)}`} target="_blank">
+                                        <Award className="mr-2 h-4 w-4" /> Download
+                                    </Link>
                                 </Button>
                             </div>
                         </CardContent>
@@ -254,9 +205,10 @@ export function FinishersListTable() {
                            <DialogTrigger asChild>
                                 <Button size="sm" variant="outline" onClick={() => setViewingParticipant(p)}><Eye className="mr-2 h-4 w-4" /> View</Button>
                            </DialogTrigger>
-                           <Button size="sm" variant="outline" onClick={() => handleDownloadCertificate(p)} disabled={!!downloadingParticipant}>
-                               {downloadingParticipant?.id === p.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Award className="mr-2 h-4 w-4" />}
-                               Certificate
+                            <Button size="sm" variant="outline" asChild>
+                               <Link href={`/api/generate-pdf?name=${encodeURIComponent(p.name)}`} target="_blank">
+                                   <Award className="mr-2 h-4 w-4" /> Certificate
+                                </Link>
                             </Button>
                         </TableCell>
                     </TableRow>

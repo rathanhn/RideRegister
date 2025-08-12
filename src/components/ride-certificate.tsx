@@ -42,7 +42,7 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
           <p className="mt-6 text-lg">This certificate is proudly presented to</p>
           
           <div className="my-8 w-full max-w-lg text-center">
-            <p className="text-6xl font-extrabold text-amber-600 pb-1" style={{ fontFamily: "'Dancing Script', cursive" }}>
+            <p className="text-6xl font-extrabold text-amber-600 pb-2" style={{ fontFamily: "'Dancing Script', cursive" }}>
               {riderName || "Honorable Rider"}
             </p>
             <div className="h-[2px] bg-amber-700 w-full"></div>
