@@ -75,7 +75,7 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
            <div className="w-full flex justify-around max-w-3xl pb-4">
                 <div className="text-center">
                 <p className="text-xl font-semibold border-b-2 border-primary pb-1" style={{ fontFamily: "'Playfair Display', serif" }}>Event Organizer</p>
-                <p className="text-sm mt-1 text-gray-400">TeleFun Mobile</p>
+                <p className="text-sm mt-1 text-gray-400">Team Telefun</p>
                 </div>
                 <div className="text-center">
                 <p className="text-xl font-semibold border-b-2 border-primary pb-1" style={{ fontFamily: "'Playfair Display', serif" }}>Date of Event</p>
