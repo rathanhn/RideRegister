@@ -66,9 +66,9 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                     </Button>
                 </div>
 
-                <Card className="mt-12 text-left">
+                <Card className="mt-12 text-center">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 font-headline">
+                        <CardTitle className="flex items-center justify-center gap-2 font-headline">
                            <Rocket className="h-6 w-6 text-primary"/> Get Ready for the Thrill!
                         </CardTitle>
                         <CardDescription>
@@ -81,9 +81,9 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                                 Special Highlight: Bike Stunt Show Powered by TeleFun Mobiles
                             </p>
                              <p className="mt-2 font-semibold">
-                                BY TEAM POWER STROKZ
+                                <b>BY TEAM POWER STROKZ</b>
                             </p>
-                            <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-x-8 gap-y-2 text-sm">
+                            <div className="mt-4 flex flex-col items-center gap-x-8 gap-y-2 text-sm">
                                 <div className="flex items-center gap-3">
                                     <Calendar className="h-4 w-4 text-primary"/>
                                     <strong>Date:</strong> 16th August 2025
@@ -93,11 +93,11 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                                     <strong>Location:</strong> 5G Holidays Escape Resort, Kushalnagar
                                 </div>
                             </div>
-                            <p className="mt-4 font-bold text-lg text-center text-primary">
-                                Come for the ride, stay for the thrill!
-                            </p>
                         </div>
                         <StuntPerformers />
+                         <p className="mt-4 font-bold text-lg text-primary">
+                            Come for the ride, stay for the thrill!
+                        </p>
                     </CardContent>
                 </Card>
             </div>
