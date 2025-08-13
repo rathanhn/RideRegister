@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye, Loader2, Download } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye, Loader2, Download, Instagram } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -135,6 +135,7 @@ export function SingleTicket({ id, registration, riderNumber }: SingleTicketProp
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState<number | null>(null);
+  const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   
   const shareUrl = `${window.location.origin}/ticket/${registration.id}`;
 
@@ -186,6 +187,37 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
     }
   }
 
+  const handleShareToStory = async () => {
+    const ticketId = 'ticket-1'; 
+    const node = document.getElementById(ticketId);
+    if (!node) return;
+    
+    setIsGeneratingStory(true);
+    
+    try {
+        await document.fonts.ready;
+        const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 3, useCORS: true, cacheBust: true, filter });
+
+        const link = document.createElement('a');
+        link.download = 'freedom-ride-ticket.png';
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+            title: 'Image Saved!',
+            description: 'Your ticket image has been downloaded. You can now upload it to your Instagram Story!',
+        });
+
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Image Generation Failed', 'description': 'Could not create the ticket image.' });
+    } finally {
+        setIsGeneratingStory(false);
+    }
+};
+
 
   const ticketContainer = (
     registration.registrationType === 'duo' ? (
@@ -235,6 +267,10 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                         Download Ticket (Rider 2)
                     </Button>
                 )}
+                 <Button onClick={handleShareToStory} disabled={isGeneratingStory} variant="outline" className="w-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white border-0 hover:text-white hover:opacity-90 transition-opacity">
+                    {isGeneratingStory ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Instagram className="mr-2 h-4 w-4" />}
+                    Share to Instagram Story
+                </Button>
             </div>
             <div className="w-full flex flex-col gap-2 pt-2">
                 <Button asChild variant="outline" className="w-full">
