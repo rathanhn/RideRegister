@@ -252,8 +252,8 @@ function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, regi
                     Download Ticket (PDF)
                 </Button>
                  <Button onClick={handleShare} disabled={isSharing} variant="outline" className="w-full">
-                    {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4" />}
-                    Share Ticket
+                    {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Instagram className="mr-2 h-4 w-4" />}
+                    Share to Instagram Story
                 </Button>
             </div>
             <div className="w-full flex flex-col gap-2 pt-2">
