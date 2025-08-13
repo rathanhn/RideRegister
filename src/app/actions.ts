@@ -860,6 +860,66 @@ export async function deleteOrganizer(id: string, adminId: string) {
   }
 }
 
+
+const stuntPerformerSchema = z.object({
+  name: z.string().min(3, "Name is required."),
+  role: z.string().min(3, "Role is required."),
+  imageUrl: z.string().url("A valid URL is required.").or(z.literal("")).optional(),
+  imageHint: z.string().optional(),
+  contactNumber: z.string().optional(),
+});
+
+export async function manageStuntPerformer(values: z.infer<typeof stuntPerformerSchema> & { adminId: string; performerId?: string }) {
+  const { adminId, performerId, ...data } = values;
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = stuntPerformerSchema.safeParse(data);
+  if (!parsed.success) {
+    console.error("Stunt performer validation failed:", parsed.error.flatten().fieldErrors);
+    return { success: false, message: "Invalid data." };
+  }
+
+  try {
+    const dataToSave = { ...parsed.data };
+    
+    Object.keys(dataToSave).forEach((key) => {
+        if (dataToSave[key as keyof typeof dataToSave] === "") {
+            delete dataToSave[key as keyof typeof dataToSave];
+        }
+    });
+    
+    if (performerId) {
+      await updateDoc(doc(db, "stuntPerformers", performerId), dataToSave);
+      revalidatePath('/');
+      return { success: true, message: "Performer updated." };
+    } else {
+      await addDoc(collection(db, "stuntPerformers"), { ...dataToSave, createdAt: serverTimestamp() });
+      revalidatePath('/');
+      return { success: true, message: "Performer added." };
+    }
+  } catch (error) {
+    console.error("Error managing stunt performer:", error);
+    return { success: false, message: "Failed to manage stunt performer." };
+  }
+}
+
+export async function deleteStuntPerformer(id: string, adminId: string) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+  try {
+    await deleteDoc(doc(db, "stuntPerformers", id));
+    revalidatePath('/');
+    return { success: true, message: "Performer deleted." };
+  } catch (error) {
+    return { success: false, message: "Failed to delete performer." };
+  }
+}
+
+
 const promotionSchema = z.object({
   title: z.string().min(3, "Title is required."),
   description: z.string().min(10, "Description is required."),

@@ -31,6 +31,17 @@ export interface Organizer {
   createdAt: any; // Firestore timestamp
 }
 
+export interface StuntPerformer {
+  id:string;
+  name: string;
+  role: string;
+  imageUrl: string;
+  imageHint: string;
+  contactNumber?: string;
+  createdAt: any; // Firestore timestamp
+}
+
+
 export interface ScheduleEvent {
     id: string;
     time: string;
