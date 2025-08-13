@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import HeroImage from "@/hero.png";
 import { Gift, UtensilsCrossed, BadgePercent, Calendar, MapPin } from "lucide-react";
+import { StuntPerformers } from "./stunt-performers";
 
 export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
     return (
@@ -84,6 +85,9 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                         🎯 Special Highlight: Bike Stunt Show Powered by TeleFun Mobiles 🏍💨
                     </p>
                     <p className="mt-4 font-bold text-xl text-center">Come for the ride, stay for the thrill! 🚀</p>
+                </div>
+                <div className="mt-8">
+                    <StuntPerformers />
                 </div>
             </div>
         </div>

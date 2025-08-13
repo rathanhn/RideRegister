@@ -65,9 +65,9 @@ export function StuntPerformers() {
   }
 
   return (
-    <Card>
+    <Card className="bg-transparent border-none shadow-none">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-headline">
+        <CardTitle className="flex items-center justify-center gap-2 font-headline">
           <Rocket className="h-6 w-6 text-primary" />
           Performed By
         </CardTitle>
