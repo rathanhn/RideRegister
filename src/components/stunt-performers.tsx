@@ -44,35 +44,27 @@ export function StuntPerformers() {
 
   const performers = performerData?.docs.map(doc => ({ id: doc.id, ...doc.data() } as StuntPerformer)) || [];
 
+  if (error) {
+    return null;
+  }
+  
   if (loading) {
       return (
-         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline">
-                    <Rocket className="h-6 w-6 text-primary" />
-                    Performed By
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                 <Carousel className="w-full"><CarouselContent><PerformerSkeleton /><PerformerSkeleton /><PerformerSkeleton /></CarouselContent></Carousel>
-            </CardContent>
-        </Card>
+         <div>
+            <h4 className="font-semibold text-lg mb-4">Performed By</h4>
+            <Carousel className="w-full"><CarouselContent><PerformerSkeleton /><PerformerSkeleton /><PerformerSkeleton /></CarouselContent></Carousel>
+        </div>
       )
   }
 
-  if (error || performers.length === 0) {
-    return null;
+  if (performers.length === 0) {
+      return null;
   }
 
+
   return (
-    <Card className="bg-transparent border-none shadow-none">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-center gap-2 font-headline">
-          <Rocket className="h-6 w-6 text-primary" />
-          Performed By
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div>
+        <h4 className="font-semibold text-lg mb-4">Performed By</h4>
         <Carousel
           opts={{
             align: "start",
@@ -84,7 +76,7 @@ export function StuntPerformers() {
             {performers.map((performer) => (
               <CarouselItem key={performer.id} className="md:basis-1/2 lg:basis-1/3">
                 <div className="p-1">
-                  <Card className="text-center">
+                  <Card className="text-center bg-secondary/50">
                     <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
                        <Avatar className="h-[120px] w-[120px] border-4 border-primary/50 text-4xl">
                            <AvatarImage src={performer.imageUrl} alt={performer.name} className="object-cover"/>
@@ -106,10 +98,9 @@ export function StuntPerformers() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious className="left-[-1rem]" />
+          <CarouselNext className="right-[-1rem]" />
         </Carousel>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import HeroImage from "@/hero.png";
-import { Gift, UtensilsCrossed, BadgePercent, Calendar, MapPin } from "lucide-react";
+import { Gift, UtensilsCrossed, BadgePercent, Calendar, MapPin, Rocket } from "lucide-react";
 import { StuntPerformers } from "./stunt-performers";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 
 export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
     return (
@@ -65,30 +66,40 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                     </Button>
                 </div>
 
-                <div className="mt-12 p-6 bg-secondary/50 rounded-lg border-l-4 border-primary">
-                    <h3 className="font-bold text-2xl text-left">Get Ready for the Thrill!</h3>
-                    <p className="mt-2 text-left text-muted-foreground">
-                        Experience thrilling stunts and exciting action at the Freedom Ride 2K25!
-                        <span className="block font-semibold mt-2"><strong>BY TEAM POWER STROKZ</strong></span>
-                    </p>
-                    <div className="mt-4 flex flex-col md:flex-row justify-center items-center gap-x-8 gap-y-2">
-                        <div className="flex items-center gap-3">
-                            <Calendar className="h-5 w-5 text-primary"/>
-                            <strong>Date: 16th August 2025</strong>
+                <Card className="mt-12 text-left">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 font-headline">
+                           <Rocket className="h-6 w-6 text-primary"/> Get Ready for the Thrill!
+                        </CardTitle>
+                        <CardDescription>
+                            Experience thrilling stunts and exciting action at the Freedom Ride 2K25!
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div>
+                            <p className="mt-2 text-muted-foreground">
+                                Special Highlight: Bike Stunt Show Powered by TeleFun Mobiles
+                            </p>
+                             <p className="mt-2 font-semibold">
+                                BY TEAM POWER STROKZ
+                            </p>
+                            <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-x-8 gap-y-2 text-sm">
+                                <div className="flex items-center gap-3">
+                                    <Calendar className="h-4 w-4 text-primary"/>
+                                    <strong>Date:</strong> 16th August 2025
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <MapPin className="h-4 w-4 text-primary"/>
+                                    <strong>Location:</strong> 5G Holidays Escape Resort, Kushalnagar
+                                </div>
+                            </div>
+                            <p className="mt-4 font-bold text-lg text-center text-primary">
+                                Come for the ride, stay for the thrill!
+                            </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                             <MapPin className="h-5 w-5 text-primary"/>
-                             <strong>Location: 5G Holidays Escape Resort, Kushalnagar</strong>
-                        </div>
-                    </div>
-                     <p className="mt-4 font-semibold text-lg text-center text-primary">
-                        Special Highlight: Bike Stunt Show Powered by TeleFun Mobiles
-                    </p>
-                    <p className="mt-4 font-bold text-xl text-center">Come for the ride, stay for the thrill! 🚀</p>
-                </div>
-                <div className="mt-8">
-                    <StuntPerformers />
-                </div>
+                        <StuntPerformers />
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
