@@ -83,16 +83,6 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                              <p className="mt-2 font-semibold">
                                 <b>BY TEAM POWER STROKZ</b>
                             </p>
-                            <div className="mt-4 flex flex-col items-center justify-center gap-x-8 gap-y-2 text-sm sm:flex-row">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4 text-primary"/>
-                                    <strong>Date:</strong> 16th August 2025
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4 text-primary"/>
-                                    <strong>Location:</strong> 5G Holidays Escape Resort, Kushalnagar
-                                </div>
-                            </div>
                         </div>
                         <StuntPerformers />
                          <p className="mt-4 font-bold text-lg text-primary">
