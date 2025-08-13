@@ -1052,4 +1052,54 @@ export async function manageGeneralSettings(values: z.infer<typeof generalSettin
   }
 }
 
+// === LOCATION PARTNER ACTIONS ===
+
+const locationPartnerSchema = z.object({
+  name: z.string().min(3, "Name is required."),
+  imageUrl: z.string().url("A valid URL is required."),
+  imageHint: z.string().min(2, "Image hint is required."),
+  websiteUrl: z.string().url().optional(),
+});
+
+export async function manageLocationPartner(values: z.infer<typeof locationPartnerSchema> & { adminId: string; partnerId?: string }) {
+  const { adminId, partnerId, ...data } = values;
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+  const parsed = locationPartnerSchema.safeParse(data);
+  if (!parsed.success) {
+    console.error("Location partner validation failed:", parsed.error.flatten().fieldErrors);
+    return { success: false, message: "Invalid data." };
+  }
+
+  try {
+    if (partnerId) {
+      await updateDoc(doc(db, "locationPartners", partnerId), parsed.data);
+      revalidatePath('/');
+      return { success: true, message: "Location partner updated." };
+    } else {
+      await addDoc(collection(db, "locationPartners"), { ...parsed.data, createdAt: serverTimestamp() });
+      revalidatePath('/');
+      return { success: true, message: "Location partner added." };
+    }
+  } catch (error) {
+    console.error("Error managing location partner:", error);
+    return { success: false, message: "Failed to manage location partner." };
+  }
+}
+
+export async function deleteLocationPartner(id: string, adminId: string) {
+  const isAdmin = await checkAdminPermissions(adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+  try {
+    await deleteDoc(doc(db, "locationPartners", id));
+    revalidatePath('/');
+    return { success: true, message: "Location partner deleted." };
+  } catch (error) {
+    return { success: false, message: "Failed to delete location partner." };
+  }
+}
     

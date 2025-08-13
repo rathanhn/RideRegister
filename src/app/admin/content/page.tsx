@@ -8,6 +8,7 @@ import { LocationManager } from "./location-manager";
 import { EventTimeManager } from "./event-time-manager";
 import { GeneralSettingsManager } from "@/components/admin/general-settings-manager";
 import { StuntPerformerManager } from "./stunt-performer-manager";
+import { LocationPartnerManager } from "./location-partner-manager";
 
 
 export default function ContentManagement() {
@@ -17,6 +18,7 @@ export default function ContentManagement() {
         <ScheduleManager />
         <OrganizerManager />
         <StuntPerformerManager />
+        <LocationPartnerManager />
         <PromotionManager />
         <LocationManager />
         <EventTimeManager />

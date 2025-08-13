@@ -31,6 +31,15 @@ export interface Organizer {
   createdAt: any; // Firestore timestamp
 }
 
+export interface LocationPartner {
+  id: string;
+  name: string;
+  imageUrl: string;
+  imageHint: string;
+  websiteUrl?: string;
+  createdAt: any; // Firestore timestamp
+}
+
 export interface StuntPerformer {
   id:string;
   name: string;

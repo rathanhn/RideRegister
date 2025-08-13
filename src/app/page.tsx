@@ -23,6 +23,7 @@ import type { EventSettings } from "@/lib/types";
 import { GoogleReviews } from "@/components/google-reviews";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { LocationPartnerCard } from "@/components/location-partner-card";
 
 
 export default function Home() {
@@ -80,6 +81,8 @@ export default function Home() {
         </div>
         
         <Organizers />
+        
+        <LocationPartnerCard />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <Announcements />
