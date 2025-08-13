@@ -72,23 +72,23 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                            <Rocket className="h-6 w-6 text-primary"/> Get Ready for the Thrill!
                         </CardTitle>
                         <CardDescription>
-                            Experience thrilling stunts and exciting action at the Freedom Ride 2K25!
+                            Get ready for jaw-dropping stunts and adrenaline-pumping action at the Freedom Ride 2K25!
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div>
-                            <p className="mt-2 text-muted-foreground">
+                        <div className="text-center">
+                             <p className="mt-2 text-muted-foreground">
                                 Special Highlight: Bike Stunt Show Powered by TeleFun Mobiles
                             </p>
                              <p className="mt-2 font-semibold">
                                 <b>BY TEAM POWER STROKZ</b>
                             </p>
-                            <div className="mt-4 flex flex-col items-center gap-x-8 gap-y-2 text-sm">
-                                <div className="flex items-center gap-3">
+                            <div className="mt-4 flex flex-col items-center justify-center gap-x-8 gap-y-2 text-sm sm:flex-row">
+                                <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-primary"/>
                                     <strong>Date:</strong> 16th August 2025
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                     <MapPin className="h-4 w-4 text-primary"/>
                                     <strong>Location:</strong> 5G Holidays Escape Resort, Kushalnagar
                                 </div>
