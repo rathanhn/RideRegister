@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
 
 const PartnerSkeleton = () => (
-    <Card>
+    <Card className="border-none shadow-none">
         <CardHeader>
             <Skeleton className="h-6 w-1/2" />
         </CardHeader>
@@ -46,7 +46,7 @@ export function LocationPartnerCard() {
   }
 
   return (
-    <Card>
+    <Card className="border-none shadow-none">
         <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
                 <MapPin className="h-6 w-6 text-primary" />
