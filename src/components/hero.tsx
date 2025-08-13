@@ -68,7 +68,7 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                     <h3 className="font-bold text-2xl text-left">🏍💨 Get Ready for the Thrill!</h3>
                     <p className="mt-2 text-left text-muted-foreground">
                         Experience thrilling stunts and exciting action at the Freedom Ride 2K25 this Independence Day weekend!
-                        <span className="block font-semibold mt-2">BY TEAM POWER STROKZ</span>
+                        <span className="block font-semibold mt-2"><strong>BY TEAM POWER STROKZ</strong></span>
                     </p>
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                         <div className="flex items-center gap-3">
