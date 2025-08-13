@@ -6,7 +6,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { LocationPartner } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, AlertTriangle, ExternalLink, MapPin } from 'lucide-react';
+import { Loader2, AlertTriangle, ExternalLink, MapPin, Instagram } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -71,8 +71,8 @@ export function LocationPartnerCard() {
                     {partner.websiteUrl && (
                         <Button asChild>
                             <Link href={partner.websiteUrl} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="mr-2 h-4 w-4" />
-                                Visit Website
+                                <Instagram className="mr-2 h-4 w-4" />
+                                View on Instagram
                             </Link>
                         </Button>
                     )}

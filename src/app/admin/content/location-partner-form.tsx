@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
   name: z.string().min(3, "Name is required."),
-  websiteUrl: z.string().url("A valid website URL is required.").optional(),
+  websiteUrl: z.string().url("A valid Instagram profile URL is required.").optional(),
   imageUrl: z.string().url("A valid promotion photo is required."),
   imageHint: z.string().min(2, "Image hint is required"),
 });
@@ -138,7 +138,7 @@ export function LocationPartnerForm({ isOpen, setIsOpen, partner, user }: Locati
               <FormItem><FormLabel>Partner Name</FormLabel><FormControl><Input {...field} placeholder="e.g., 5G Holiday Escape Resort" /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField name="websiteUrl" control={form.control} render={({ field }) => (
-              <FormItem><FormLabel>Website URL (Optional)</FormLabel><FormControl><Input {...field} placeholder="https://example.com" /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Instagram URL (Optional)</FormLabel><FormControl><Input {...field} placeholder="https://instagram.com/profilename" /></FormControl><FormMessage /></FormItem>
             )} />
             
             <FormItem>
