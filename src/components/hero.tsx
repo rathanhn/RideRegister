@@ -66,9 +66,9 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                 </div>
 
                 <div className="mt-12 p-6 bg-secondary/50 rounded-lg border-l-4 border-primary">
-                    <h3 className="font-bold text-2xl text-left">🏍💨 Get Ready for the Thrill!</h3>
+                    <h3 className="font-bold text-2xl text-left">Get Ready for the Thrill!</h3>
                     <p className="mt-2 text-left text-muted-foreground">
-                        Experience thrilling stunts and exciting action at the Freedom Ride 2K25 this Independence Day weekend!
+                        Experience thrilling stunts and exciting action at the Freedom Ride 2K25!
                         <span className="block font-semibold mt-2"><strong>BY TEAM POWER STROKZ</strong></span>
                     </p>
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -81,8 +81,8 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                              <strong>Location: 5G Holidays Escape Resort, Kushalnagar</strong>
                         </div>
                     </div>
-                     <p className="mt-4 font-semibold text-lg text-left text-primary">
-                        🎯 Special Highlight: Bike Stunt Show Powered by TeleFun Mobiles 🏍💨
+                     <p className="mt-4 font-semibold text-lg text-center text-primary">
+                        Special Highlight: Bike Stunt Show Powered by TeleFun Mobiles
                     </p>
                     <p className="mt-4 font-bold text-xl text-center">Come for the ride, stay for the thrill! 🚀</p>
                 </div>
