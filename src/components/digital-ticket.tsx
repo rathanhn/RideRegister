@@ -32,7 +32,6 @@ interface SingleTicketProps {
 }
 
 function filter(node: HTMLElement): boolean {
-  if (node.tagName === 'i') return false;
   if (node.tagName === 'LINK' && (node as HTMLLinkElement).href.includes('fonts.googleapis.com')) {
     return false;
   }
@@ -136,144 +135,105 @@ export function SingleTicket({ id, registration, riderNumber }: SingleTicketProp
 }
 
 
-export function DigitalTicket({ registration, user }: DigitalTicketProps) {
-  const { toast } = useToast();
-  const [isDownloading, setIsDownloading] = useState<number | null>(null);
-  const [isGeneratingStory, setIsGeneratingStory] = useState(false);
-  
-  const shareUrl = `${window.location.origin}/ticket/${registration.id}`;
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      toast({ 
-        title: 'Link Copied!', 
-        description: 'A shareable link to your ticket has been copied.',
-        action: <Clipboard className="text-primary" />,
-      });
-    } catch (error) {
-       toast({ variant: 'destructive', title: 'Copy Failed', 'description': 'Could not copy the link.' });
-    }
-  };
-
-  const handleDownload = async (riderNumber: 1 | 2) => {
-    const ticketId = `ticket-${riderNumber}`;
-    const node = document.getElementById(ticketId);
-    if (!node) return;
-
-    setIsDownloading(riderNumber);
-
-    try {
-        await document.fonts.ready;
-        
-        const dataUrl = await htmlToImage.toPng(node, {
-            pixelRatio: 3,
-            useCORS: true,
-            cacheBust: true,
-            filter: filter
-        });
-        
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: [node.offsetWidth, node.offsetHeight]
-        });
-        
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
-        
-        const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
-        pdf.save(`${riderName}-ticket.pdf`);
-    } catch (e) {
-        console.error(e);
-        toast({ variant: 'destructive', title: 'Download Failed', 'description': 'Could not download the ticket.' });
-    } finally {
-        setIsDownloading(null);
-    }
-  }
-
-  const handleShareToStory = async () => {
-    const ticketId = 'ticket-1'; 
-    const node = document.getElementById(ticketId);
-    if (!node) return;
+function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, registration: Registration }) {
+    const { toast } = useToast();
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isGeneratingStory, setIsGeneratingStory] = useState(false);
     
-    setIsGeneratingStory(true);
-    
-    try {
-        await document.fonts.ready;
-        const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 3, useCORS: true, cacheBust: true, filter });
+    const shareUrl = `${window.location.origin}/ticket/${registration.id}`;
 
-        const link = document.createElement('a');
-        link.download = 'freedom-ride-ticket.png';
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        toast({
-            title: 'Image Saved!',
-            description: 'Your ticket image has been downloaded. You can now upload it to your Instagram Story!',
-        });
+    const handleCopyLink = async () => {
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            toast({ 
+                title: 'Link Copied!', 
+                description: 'A shareable link to your ticket has been copied.',
+                action: <Clipboard className="text-primary" />,
+            });
+        } catch (error) {
+           toast({ variant: 'destructive', title: 'Copy Failed', 'description': 'Could not copy the link.' });
+        }
+    };
 
-    } catch (e) {
-        console.error(e);
-        toast({ variant: 'destructive', title: 'Image Generation Failed', 'description': 'Could not create the ticket image.' });
-    } finally {
-        setIsGeneratingStory(false);
+    const handleDownload = async () => {
+        const ticketId = `ticket-${riderNumber}`;
+        const node = document.getElementById(ticketId);
+        if (!node) return;
+
+        setIsDownloading(true);
+
+        try {
+            await document.fonts.ready;
+            
+            const dataUrl = await htmlToImage.toPng(node, {
+                pixelRatio: 3, useCORS: true, cacheBust: true, filter
+            });
+            
+            const pdf = new jsPDF({
+                orientation: 'p', unit: 'px', format: [node.offsetWidth, node.offsetHeight]
+            });
+            
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+            
+            const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
+            pdf.save(`${riderName}-ticket.pdf`);
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: 'Download Failed', 'description': 'Could not download the ticket.' });
+        } finally {
+            setIsDownloading(null);
+        }
     }
-};
 
+    const handleShareToStory = async () => {
+        const ticketId = `ticket-${riderNumber}`; 
+        const node = document.getElementById(ticketId);
+        if (!node) return;
+        
+        setIsGeneratingStory(true);
+        
+        try {
+            await document.fonts.ready;
+            const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 3, useCORS: true, cacheBust: true, filter });
 
-  const ticketContainer = (
-    registration.registrationType === 'duo' ? (
-        <Carousel className="w-full max-w-sm mx-auto">
-          <CarouselContent>
-            <CarouselItem>
-              <div className="p-1">
-                <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
-              </div>
-            </CarouselItem>
-            <CarouselItem>
-               <div className="p-1">
-                <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
-              </div>
-            </CarouselItem>
-          </CarouselContent>
-          <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
-          <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
-        </Carousel>
-    ) : (
-       <div className="max-w-sm mx-auto p-1">
-          <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
-      </div>
-    )
-  );
+            const link = document.createElement('a');
+            const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
+            link.download = `${riderName}-freedom-ride-ticket.png`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            toast({
+                title: 'Image Saved!',
+                description: 'Your ticket image has been downloaded. You can now upload it to your Instagram Story!',
+            });
 
-  return (
-    <div className="space-y-6">
-      {ticketContainer}
-      <div className="max-w-sm mx-auto space-y-4">
-         <div className="w-full text-center p-4 border-2 border-dashed border-primary/50 rounded-lg bg-secondary/30 space-y-3">
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: 'Image Generation Failed', 'description': 'Could not create the ticket image.' });
+        } finally {
+            setIsGeneratingStory(false);
+        }
+    };
+
+    return (
+        <div className="w-full text-center p-4 border-2 border-dashed border-primary/50 rounded-lg bg-secondary/30 space-y-3">
              <h4 className="font-bold text-lg flex items-center justify-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Share & Download
+                Actions for {registration.registrationType === 'duo' ? `Rider ${riderNumber}` : 'your Ticket'}
              </h4>
              <p className="text-sm text-muted-foreground">
                 Save your ticket for offline access or share it with friends!
              </p>
              <div className="w-full flex flex-col gap-2 pt-2">
-                 <Button onClick={() => handleDownload(1)} variant="outline" className="w-full" disabled={isDownloading === 1}>
-                    {isDownloading === 1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                    Download Ticket{registration.registrationType === 'duo' ? ' (Rider 1)' : ''}
+                 <Button onClick={handleDownload} variant="outline" className="w-full" disabled={isDownloading}>
+                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                    Download Ticket
                 </Button>
-                {registration.registrationType === 'duo' && (
-                     <Button onClick={() => handleDownload(2)} variant="outline" className="w-full" disabled={isDownloading === 2}>
-                        {isDownloading === 2 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                        Download Ticket (Rider 2)
-                    </Button>
-                )}
                  <Button onClick={handleShareToStory} disabled={isGeneratingStory} variant="outline" className="w-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white border-0 hover:text-white hover:opacity-90 transition-opacity">
                     {isGeneratingStory ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Instagram className="mr-2 h-4 w-4" />}
-                    Share to Instagram Story
+                    Save for Story
                 </Button>
             </div>
             <div className="w-full flex flex-col gap-2 pt-2">
@@ -289,7 +249,49 @@ export function DigitalTicket({ registration, user }: DigitalTicketProps) {
                 </Button>
             </div>
         </div>
-        
+    );
+}
+
+
+export function DigitalTicket({ registration, user }: DigitalTicketProps) {
+
+  const ticketItems = [
+    <div className="space-y-4">
+        <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
+        <TicketActions registration={registration} riderNumber={1}/>
+    </div>
+  ];
+
+  if (registration.registrationType === 'duo') {
+      ticketItems.push(
+        <div className="space-y-4">
+            <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
+            <TicketActions registration={registration} riderNumber={2}/>
+        </div>
+      );
+  }
+
+  const ticketContainer =
+    registration.registrationType === 'duo' ? (
+      <Carousel className="w-full max-w-sm mx-auto">
+        <CarouselContent>
+          {ticketItems.map((item, index) => (
+            <CarouselItem key={index}>
+              <div className="p-1">{item}</div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
+        <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
+      </Carousel>
+    ) : (
+      <div className="max-w-sm mx-auto p-1">{ticketItems[0]}</div>
+    );
+
+  return (
+    <div className="space-y-6">
+      {ticketContainer}
+      <div className="max-w-sm mx-auto">
         <div className="text-center text-sm text-muted-foreground p-3 border rounded-lg">
             <div className="flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
