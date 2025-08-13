@@ -32,7 +32,11 @@ interface SingleTicketProps {
 }
 
 function filter(node: HTMLElement): boolean {
-  return (node.tagName !== 'i');
+  if (node.tagName === 'i') return false;
+  if (node.tagName === 'LINK' && (node as HTMLLinkElement).href.includes('fonts.googleapis.com')) {
+    return false;
+  }
+  return true;
 }
 
 
