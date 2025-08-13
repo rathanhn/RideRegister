@@ -66,7 +66,7 @@ export function LocationPartnerCard() {
                 <div className="space-y-4">
                     <h3 className="text-2xl font-bold">{partner.name}</h3>
                     <p className="text-muted-foreground">
-                        We are proud to partner with {partner.name} as the official start and end point for our event.
+                        We are proud to partner with {partner.name}, the official end point for our ride, where lunch and the stunt show will take place.
                     </p>
                     {partner.websiteUrl && (
                         <Button asChild>
