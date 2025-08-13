@@ -2,9 +2,9 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye, Loader2, Download, Instagram } from 'lucide-react';
+import { Bike, CheckCircle, Users, User as UserIcon, AlertTriangle, Calendar, Clock, MapPin, Sparkles, Clipboard, Eye, Loader2, Download, Instagram, Share2 } from 'lucide-react';
 import type { Registration } from '@/lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -32,6 +32,7 @@ interface SingleTicketProps {
 }
 
 function filter(node: HTMLElement): boolean {
+  if (node.tagName === 'i') return false;
   if (node.tagName === 'LINK' && (node as HTMLLinkElement).href.includes('fonts.googleapis.com')) {
     return false;
   }
@@ -138,8 +139,15 @@ export function SingleTicket({ id, registration, riderNumber }: SingleTicketProp
 function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, registration: Registration }) {
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
-    const [isGeneratingStory, setIsGeneratingStory] = useState(false);
-    
+    const [isSharing, setIsSharing] = useState(false);
+    const [isShareApiSupported, setIsShareApiSupported] = useState(false);
+
+    useEffect(() => {
+        if (navigator.share && navigator.canShare) {
+            setIsShareApiSupported(true);
+        }
+    }, []);
+
     const shareUrl = `${window.location.origin}/ticket/${registration.id}`;
 
     const handleCopyLink = async () => {
@@ -185,35 +193,47 @@ function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, regi
         }
     }
 
-    const handleShareToStory = async () => {
+    const handleShare = async () => {
         const ticketId = `ticket-${riderNumber}`; 
         const node = document.getElementById(ticketId);
         if (!node) return;
         
-        setIsGeneratingStory(true);
+        setIsSharing(true);
         
         try {
             await document.fonts.ready;
             const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 3, useCORS: true, cacheBust: true, filter });
-
-            const link = document.createElement('a');
-            const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
-            link.download = `${riderName}-freedom-ride-ticket.png`;
-            link.href = dataUrl;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
             
-            toast({
-                title: 'Image Saved!',
-                description: 'Your ticket image has been downloaded. You can now upload it to your Instagram Story!',
-            });
+            const blob = await (await fetch(dataUrl)).blob();
+            const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
+            const file = new File([blob], `${riderName}-ticket.png`, { type: blob.type });
 
-        } catch (e) {
-            console.error(e);
-            toast({ variant: 'destructive', title: 'Image Generation Failed', 'description': 'Could not create the ticket image.' });
+            if (isShareApiSupported && navigator.canShare({ files: [file] })) {
+                 await navigator.share({
+                    title: 'TeleFun Freedom Ride Ticket',
+                    text: `Here's my ticket for the TeleFun Freedom Ride!`,
+                    files: [file],
+                });
+            } else {
+                 const link = document.createElement('a');
+                 link.download = `${riderName}-freedom-ride-ticket.png`;
+                 link.href = dataUrl;
+                 document.body.appendChild(link);
+                 link.click();
+                 document.body.removeChild(link);
+                 toast({
+                     title: 'Image Saved!',
+                     description: "Your browser doesn't support direct sharing, so the ticket image has been downloaded. You can share it manually!",
+                 });
+            }
+
+        } catch (e: any) {
+            if (e.name !== 'AbortError') { // Don't show error if user cancelled share
+                 console.error(e);
+                toast({ variant: 'destructive', title: 'Share Failed', 'description': 'Could not share the ticket image.' });
+            }
         } finally {
-            setIsGeneratingStory(false);
+            setIsSharing(false);
         }
     };
 
@@ -229,11 +249,11 @@ function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, regi
              <div className="w-full flex flex-col gap-2 pt-2">
                  <Button onClick={handleDownload} variant="outline" className="w-full" disabled={isDownloading}>
                     {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                    Download Ticket
+                    Download Ticket (PDF)
                 </Button>
-                 <Button onClick={handleShareToStory} disabled={isGeneratingStory} variant="outline" className="w-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white border-0 hover:text-white hover:opacity-90 transition-opacity">
-                    {isGeneratingStory ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Instagram className="mr-2 h-4 w-4" />}
-                    Save for Story
+                 <Button onClick={handleShare} disabled={isSharing} variant="outline" className="w-full">
+                    {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4" />}
+                    Share Ticket
                 </Button>
             </div>
             <div className="w-full flex flex-col gap-2 pt-2">
@@ -255,42 +275,37 @@ function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, regi
 
 export function DigitalTicket({ registration, user }: DigitalTicketProps) {
 
-  const ticketItems = [
-    <div className="space-y-4">
-        <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
-        <TicketActions registration={registration} riderNumber={1}/>
-    </div>
-  ];
-
-  if (registration.registrationType === 'duo') {
-      ticketItems.push(
-        <div className="space-y-4">
-            <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
-            <TicketActions registration={registration} riderNumber={2}/>
-        </div>
-      );
-  }
-
-  const ticketContainer =
-    registration.registrationType === 'duo' ? (
-      <Carousel className="w-full max-w-sm mx-auto">
-        <CarouselContent>
-          {ticketItems.map((item, index) => (
-            <CarouselItem key={index}>
-              <div className="p-1">{item}</div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
-        <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
-      </Carousel>
-    ) : (
-      <div className="max-w-sm mx-auto p-1">{ticketItems[0]}</div>
-    );
-
   return (
     <div className="space-y-6">
-      {ticketContainer}
+       <Carousel className="w-full max-w-sm mx-auto">
+        <CarouselContent>
+           <CarouselItem>
+              <div className="p-1">
+                 <div className="space-y-4">
+                    <SingleTicket id="ticket-1" registration={registration} riderNumber={1} />
+                    <TicketActions registration={registration} riderNumber={1}/>
+                </div>
+              </div>
+            </CarouselItem>
+           {registration.registrationType === 'duo' && (
+             <CarouselItem>
+              <div className="p-1">
+                 <div className="space-y-4">
+                    <SingleTicket id="ticket-2" registration={registration} riderNumber={2} />
+                    <TicketActions registration={registration} riderNumber={2}/>
+                </div>
+              </div>
+            </CarouselItem>
+           )}
+        </CarouselContent>
+         {registration.registrationType === 'duo' && (
+            <>
+                <CarouselPrevious className="left-[-10px] sm:left-[-20px] h-8 w-8" />
+                <CarouselNext className="right-[-10px] sm:right-[-20px] h-8 w-8" />
+            </>
+         )}
+      </Carousel>
+
       <div className="max-w-sm mx-auto">
         <div className="text-center text-sm text-muted-foreground p-3 border rounded-lg">
             <div className="flex items-center justify-center">
