@@ -71,7 +71,7 @@ export function Hero({ registrationsOpen }: { registrationsOpen: boolean }) {
                         Experience thrilling stunts and exciting action at the Freedom Ride 2K25!
                         <span className="block font-semibold mt-2"><strong>BY TEAM POWER STROKZ</strong></span>
                     </p>
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <div className="mt-4 flex flex-col md:flex-row justify-center items-center gap-x-8 gap-y-2">
                         <div className="flex items-center gap-3">
                             <Calendar className="h-5 w-5 text-primary"/>
                             <strong>Date: 16th August 2025</strong>
