@@ -67,7 +67,7 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
     
     const canCancel = registration && (registration.status === 'approved' || registration.status === 'pending');
     const canAddCoRider = registration && registration.status === 'approved' && registration.registrationType === 'solo';
-    const canDownloadCertificate = registration && registration.certificateGranted;
+    const canDownloadCertificate = registration?.certificateGranted === true;
     
     const certificateLink = `/certificate-preview?name=${encodeURIComponent(user?.displayName || 'Rider')}&photo=${encodeURIComponent(user?.photoURL || '')}`;
 
@@ -78,21 +78,21 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
                 <CardDescription>Other event-related actions are available here.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                 <div className="p-4 border rounded-md flex items-center justify-between">
-                    <div>
+                 <div className="p-4 border rounded-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex-grow">
                         <h4 className="font-semibold flex items-center gap-2"><Award className="text-primary"/> Completion Certificate</h4>
                         <p className="text-sm text-muted-foreground">Download your official ride completion certificate.</p>
+                         {!canDownloadCertificate && (
+                            <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                                Your certificate is not yet available. It will be enabled by an admin after you finish the ride.
+                            </p>
+                        )}
                     </div>
-                    <Button asChild disabled={!canDownloadCertificate}>
+                    <Button asChild disabled={!canDownloadCertificate} className="w-full sm:w-auto flex-shrink-0">
                         <Link href={certificateLink} target="_blank">
                             Download Certificate
                         </Link>
                     </Button>
-                    {!canDownloadCertificate && (
-                        <p className="text-xs text-muted-foreground text-right mt-1">
-                            Available after admin grants access.
-                        </p>
-                    )}
                 </div>
 
                  {canAddCoRider && (
