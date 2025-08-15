@@ -384,7 +384,7 @@ export function RegistrationForm() {
                         className="hidden"
                         ref={photoInputRef1}
                         onChange={(e) => handlePhotoChange(e, 1)}
-                        accept="image/png, image/jpeg"
+                        accept="image/png, image/jpeg, image/heic, image/heif"
                       />
                   </div>
               </FormControl>
@@ -451,7 +451,7 @@ export function RegistrationForm() {
                                     className="hidden"
                                     ref={photoInputRef2}
                                     onChange={(e) => handlePhotoChange(e, 2)}
-                                    accept="image/png, image/jpeg"
+                                    accept="image/png, image/jpeg, image/heic, image/heif"
                                 />
                             </div>
                         </FormControl>

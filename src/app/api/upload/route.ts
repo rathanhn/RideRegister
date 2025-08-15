@@ -17,6 +17,8 @@ export async function POST(request: Request) {
 
     const result = await cloudinary.uploader.upload(file, {
       folder: 'rideregister',
+      format: 'jpg', // Automatically convert to JPG
+      quality: 'auto',
     });
 
     return NextResponse.json({ url: result.secure_url });
@@ -26,5 +28,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Could not upload photo: ${errorMessage}` }, { status: 500 });
   }
 }
-
-    
