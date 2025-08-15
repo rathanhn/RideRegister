@@ -1,10 +1,11 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useState, useMemo, useEffect } from 'react';
+import { useCollection, useDocument } from 'react-firebase-hooks/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import {
   Table,
   TableBody,
@@ -14,8 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, Flag, User, Award, Eye } from 'lucide-react';
-import type { Registration } from '@/lib/types';
+import { Loader2, AlertTriangle, Download, Flag, User, Award, Eye, RotateCcw, CheckCircle } from 'lucide-react';
+import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
@@ -23,10 +24,7 @@ import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import * as htmlToImage from 'html-to-image';
-import jsPDF from 'jspdf';
-import { RideCertificate } from '../ride-certificate';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { grantCertificate, revokeCertificate } from '@/app/actions';
 
 
 type FinishedParticipant = {
@@ -36,6 +34,7 @@ type FinishedParticipant = {
     phone: string;
     photoUrl?: string;
     type: 'Solo' | 'Duo (Rider 1)' | 'Duo (Rider 2)';
+    certificateGranted?: boolean;
 }
 
 const TableSkeleton = () => (
@@ -45,6 +44,7 @@ const TableSkeleton = () => (
             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
             <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+            <TableCell className="text-right space-x-2"><Skeleton className="h-8 w-20 inline-block" /><Skeleton className="h-8 w-20 inline-block" /></TableCell>
         </TableRow>
     ))
 );
@@ -54,10 +54,25 @@ export function FinishersListTable() {
   const [registrations, loading, error] = useCollection(
     query(collection(db, 'registrations'), orderBy('createdAt', 'desc'))
   );
+  const [user, authLoading] = useAuthState(auth);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] = useState<FinishedParticipant | null>(null);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+
+   useEffect(() => {
+    if (user) {
+      const fetchUserRole = async () => {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role as UserRole);
+        }
+      };
+      fetchUserRole();
+    }
+  }, [user]);
+
+  const canEdit = userRole === 'admin' || userRole === 'superadmin';
 
   const finishedParticipants = useMemo(() => {
     if (!registrations) return [];
@@ -75,6 +90,7 @@ export function FinishersListTable() {
               phone: reg.phoneNumber,
               photoUrl: reg.photoURL,
               type: reg.registrationType === 'solo' ? 'Solo' : 'Duo (Rider 1)',
+              certificateGranted: reg.certificateGranted,
           });
       }
       if (reg.rider2Finished && reg.fullName2 && reg.phoneNumber2) {
@@ -85,6 +101,7 @@ export function FinishersListTable() {
               phone: reg.phoneNumber2,
               photoUrl: reg.photoURL2,
               type: 'Duo (Rider 2)',
+              certificateGranted: reg.certificateGranted,
           });
       }
     });
@@ -103,11 +120,11 @@ export function FinishersListTable() {
   const handleExport = () => {
     if (!filteredParticipants.length) return;
 
-    const headers = ["Participant ID", "Registration ID", "Name", "Phone", "Type"];
+    const headers = ["Participant ID", "Registration ID", "Name", "Phone", "Type", "Certificate Granted"];
     const csvRows = [
       headers.join(','),
       ...filteredParticipants.map(p => {
-        const row = [p.id, p.registrationId, `"${p.name}"`, p.phone, p.type];
+        const row = [p.id, p.registrationId, `"${p.name}"`, p.phone, p.type, p.certificateGranted ? 'Yes' : 'No'];
         return row.join(',');
       })
     ];
@@ -123,40 +140,20 @@ export function FinishersListTable() {
     document.body.removeChild(link);
   };
    
-  const handleDownload = async () => {
-        const node = document.getElementById('certificate');
-        if (!node || !selectedParticipant) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Certificate element not found.' });
-            return;
-        }
+  const handleCertificateToggle = async (participant: FinishedParticipant) => {
+    if (!user || !canEdit) return;
 
-        setIsDownloading(true);
-
-        try {
-            await document.fonts.ready;
-            
-            const dataUrl = await htmlToImage.toPng(node, {
-                cacheBust: true,
-                pixelRatio: 3, 
-                useCORS: true,
-            });
-
-            const pdf = new jsPDF({ 
-                orientation: 'landscape', 
-                unit: 'px', 
-                format: [1123, 794] 
-            });
-
-            pdf.addImage(dataUrl, 'PNG', 0, 0, 1123, 794);
-            pdf.save(`${selectedParticipant.name}-certificate.pdf`);
-
-        } catch (e) {
-          console.error(e);
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not download certificate.' });
-        } finally {
-          setIsDownloading(false);
-        }
-    };
+    setIsProcessing(participant.registrationId);
+    const action = participant.certificateGranted ? revokeCertificate : grantCertificate;
+    const result = await action({ adminId: user.uid, registrationId: participant.registrationId });
+    
+    if (result.success) {
+      toast({ title: 'Success', description: result.message });
+    } else {
+      toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsProcessing(null);
+  };
 
   if (error) {
     return (
@@ -177,6 +174,8 @@ export function FinishersListTable() {
     return `/certificate-preview?${params.toString()}`;
   }
 
+  const isLoading = loading || authLoading;
+
   return (
     <>
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
@@ -194,7 +193,7 @@ export function FinishersListTable() {
         
         {/* Mobile View - Cards */}
         <div className="md:hidden space-y-4">
-           {loading ? (
+           {isLoading ? (
                 [...Array(3)].map((_, i) => (
                     <Card key={i}><CardContent className="p-4 flex items-center gap-3"><Skeleton className="h-12 w-12 rounded-full" /><div className="space-y-1 flex-grow"><Skeleton className="h-5 w-32" /><Skeleton className="h-4 w-24" /></div></CardContent></Card>
                 ))
@@ -221,6 +220,12 @@ export function FinishersListTable() {
                                     </Link>
                                 </Button>
                             </div>
+                            {canEdit && (
+                                <Button size="sm" variant="outline" disabled={isProcessing === p.registrationId} onClick={() => handleCertificateToggle(p)}>
+                                    {isProcessing === p.registrationId ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (p.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
+                                    {p.certificateGranted ? 'Revoke Certificate' : 'Grant Certificate'}
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 ))
@@ -232,9 +237,9 @@ export function FinishersListTable() {
         {/* Desktop View - Table */}
         <div className="hidden md:block border rounded-lg">
             <Table>
-                <TableHeader><TableRow><TableHead>Photo</TableHead><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Certificate</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Photo</TableHead><TableHead>Name</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
-                {loading ? (<TableSkeleton />) : filteredParticipants.length > 0 ? (
+                {isLoading ? (<TableSkeleton />) : filteredParticipants.length > 0 ? (
                     filteredParticipants.map((p) => (
                     <TableRow key={p.id}>
                         <TableCell>
@@ -244,19 +249,29 @@ export function FinishersListTable() {
                             </Avatar>
                         </TableCell>
                         <TableCell className="font-medium">{p.name}</TableCell>
-                        <TableCell>{p.phone}</TableCell>
-                        <TableCell><Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge></TableCell>
+                        <TableCell>
+                            <div className="flex flex-col gap-1">
+                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 w-fit"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
+                                {p.certificateGranted && <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-fit"><CheckCircle className="mr-2 h-4 w-4" />Certificate Granted</Badge>}
+                            </div>
+                        </TableCell>
                         <TableCell className="text-right space-x-2">
                             <Button asChild size="sm" variant="outline">
                                 <Link href={generatePreviewUrl(p)} target="_blank">
                                     <Eye className="mr-2 h-4 w-4" /> View
                                 </Link>
                             </Button>
+                             {canEdit && (
+                                <Button size="sm" variant="outline" disabled={isProcessing === p.registrationId} onClick={() => handleCertificateToggle(p)}>
+                                    {isProcessing === p.registrationId ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (p.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
+                                    {p.certificateGranted ? 'Revoke' : 'Grant'}
+                                </Button>
+                            )}
                         </TableCell>
                     </TableRow>
                     ))
                 ) : (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24">{searchTerm ? 'No finishers match your search.' : 'No riders have finished yet.'}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={4} className="text-center h-24">{searchTerm ? 'No finishers match your search.' : 'No riders have finished yet.'}</TableCell></TableRow>
                 )}
                 </TableBody>
             </Table>

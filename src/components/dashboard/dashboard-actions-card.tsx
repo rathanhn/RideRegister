@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { Registration, AppUser } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ban, Loader2, Send, UserPlus } from "lucide-react";
+import { Gift, Ban, Loader2, Send, UserPlus, Award } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { cancelRegistration } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { AddCoRiderForm } from './add-co-rider-form';
+import Link from 'next/link';
 
 interface DashboardActionsCardProps {
     registration: Registration | null;
@@ -66,6 +67,9 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
     
     const canCancel = registration && (registration.status === 'approved' || registration.status === 'pending');
     const canAddCoRider = registration && registration.status === 'approved' && registration.registrationType === 'solo';
+    const canDownloadCertificate = registration && registration.certificateGranted;
+    
+    const certificateLink = `/certificate-preview?name=${encodeURIComponent(user?.displayName || 'Rider')}&photo=${encodeURIComponent(user?.photoURL || '')}`;
 
     return (
         <Card>
@@ -74,6 +78,23 @@ export function DashboardActionsCard({ registration, user }: DashboardActionsCar
                 <CardDescription>Other event-related actions are available here.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                 <div className="p-4 border rounded-md flex items-center justify-between">
+                    <div>
+                        <h4 className="font-semibold flex items-center gap-2"><Award className="text-primary"/> Completion Certificate</h4>
+                        <p className="text-sm text-muted-foreground">Download your official ride completion certificate.</p>
+                    </div>
+                    <Button asChild disabled={!canDownloadCertificate}>
+                        <Link href={certificateLink} target="_blank">
+                            Download Certificate
+                        </Link>
+                    </Button>
+                    {!canDownloadCertificate && (
+                        <p className="text-xs text-muted-foreground text-right mt-1">
+                            Available after admin grants access.
+                        </p>
+                    )}
+                </div>
+
                  {canAddCoRider && (
                     <>
                         <div className="p-4 border rounded-md flex items-center justify-between">

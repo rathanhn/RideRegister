@@ -88,6 +88,7 @@ export interface Registration {
     rider2CheckedIn?: boolean;
     rider1Finished?: boolean;
     rider2Finished?: boolean;
+    certificateGranted?: boolean;
     cancellationReason?: string;
     statusLastUpdatedAt?: any; // Firestore timestamp
     statusLastUpdatedBy?: string; // Admin User ID

@@ -1058,7 +1058,7 @@ const locationPartnerSchema = z.object({
   name: z.string().min(3, "Name is required."),
   imageUrl: z.string().url("A valid URL is required."),
   imageHint: z.string().min(2, "Image hint is required."),
-  websiteUrl: z.string().url().optional(),
+  websiteUrl: z.string().url("A valid Instagram profile URL is required.").optional(),
 });
 
 export async function manageLocationPartner(values: z.infer<typeof locationPartnerSchema> & { adminId: string; partnerId?: string }) {
@@ -1102,4 +1102,44 @@ export async function deleteLocationPartner(id: string, adminId: string) {
     return { success: false, message: "Failed to delete location partner." };
   }
 }
-    
+
+// CERTIFICATE ACTIONS
+
+const certificateSchema = z.object({
+  registrationId: z.string().min(1),
+  adminId: z.string().min(1),
+});
+
+export async function grantCertificate(values: z.infer<typeof certificateSchema>) {
+  const isAdmin = await checkAdminPermissions(values.adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+
+  try {
+    const registrationRef = doc(db, "registrations", values.registrationId);
+    await updateDoc(registrationRef, { certificateGranted: true });
+    revalidatePath('/admin');
+    revalidatePath('/dashboard');
+    return { success: true, message: "Certificate granted to rider." };
+  } catch (error) {
+    return { success: false, message: "Failed to grant certificate." };
+  }
+}
+
+export async function revokeCertificate(values: z.infer<typeof certificateSchema>) {
+  const isAdmin = await checkAdminPermissions(values.adminId);
+  if (!isAdmin) {
+    return { success: false, message: "Permission denied." };
+  }
+
+  try {
+    const registrationRef = doc(db, "registrations", values.registrationId);
+    await updateDoc(registrationRef, { certificateGranted: false });
+    revalidatePath('/admin');
+    revalidatePath('/dashboard');
+    return { success: true, message: "Certificate revoked." };
+  } catch (error) {
+    return { success: false, message: "Failed to revoke certificate." };
+  }
+}
