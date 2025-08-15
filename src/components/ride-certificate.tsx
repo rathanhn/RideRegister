@@ -49,8 +49,8 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
 
             <p className="mt-6 text-lg text-gray-300">This certificate is proudly presented to</p>
             
-            <Avatar className="h-40 w-40 border-4 border-primary/50 my-6">
-                <AvatarImage src={riderPhotoUrl} alt={riderName} />
+             <Avatar className="h-40 w-40 border-4 border-primary/50 my-6">
+                <AvatarImage src={riderPhotoUrl} alt={riderName} className="object-cover"/>
                 <AvatarFallback><User className="w-20 h-20" /></AvatarFallback>
             </Avatar>
 

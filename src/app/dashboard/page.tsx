@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks, MessageCircle, Instagram } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield, ArrowRight, Ban, Clock, Ticket, MessageSquare, ListChecks, MessageCircle, Instagram, Award } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Registration, AppUser } from '@/lib/types';
@@ -19,6 +19,7 @@ import { DashboardProfileCard } from '@/components/dashboard/dashboard-profile-c
 import { RideInfoCard } from '@/components/dashboard/ride-info-card';
 import { DashboardActionsCard } from '@/components/dashboard/dashboard-actions-card';
 import { QnaSection } from '@/components/qna-section';
+import { CertificateCard } from '@/components/dashboard/certificate-card';
 
 const DashboardSkeleton = () => (
     <div className="space-y-4">
@@ -180,7 +181,7 @@ export default function DashboardPage() {
     }
 
     const renderContent = () => {
-        if (!registrationData) {
+        if (!registrationData || !user || !userData) {
              return (
                 <Card>
                     <CardHeader>
@@ -202,7 +203,7 @@ export default function DashboardPage() {
         }
 
         const registrationStatusContent = getRegistrationStatusContent();
-
+        
         return (
              <Tabs defaultValue="ticket" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
@@ -211,6 +212,9 @@ export default function DashboardPage() {
                     <TabsTrigger value="actions"><ListChecks className="w-4 h-4 mr-2" />Actions</TabsTrigger>
                 </TabsList>
                 <TabsContent value="ticket" className="space-y-4">
+                    {registrationData.certificateGranted && (
+                      <CertificateCard user={userData} />
+                    )}
                     {registrationStatusContent}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <DashboardProfileCard user={userData} registration={registrationData} />
