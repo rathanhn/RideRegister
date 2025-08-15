@@ -20,18 +20,23 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
     const [origin, setOrigin] = useState('');
 
     useEffect(() => {
+        // This ensures the code only runs on the client, after hydration
         setOrigin(window.location.origin);
     }, []);
 
     const riderName = user.displayName || "Valued Rider";
     const riderPhotoUrl = user.photoURL || '';
 
-    const certificatePreviewUrl = new URL(`${origin}/certificate-preview`);
-    certificatePreviewUrl.searchParams.set('name', riderName);
-    certificatePreviewUrl.searchParams.set('photo', riderPhotoUrl);
-    certificatePreviewUrl.searchParams.set('regId', registration.id);
-
+    const certificatePreviewUrl = origin ? new URL(`${origin}/certificate-preview`) : null;
+    if (certificatePreviewUrl) {
+      certificatePreviewUrl.searchParams.set('name', riderName);
+      certificatePreviewUrl.searchParams.set('photo', riderPhotoUrl);
+      certificatePreviewUrl.searchParams.set('regId', registration.id);
+    }
+    
     const handleShare = async () => {
+        if (!certificatePreviewUrl) return;
+
         if (navigator.share) {
             setIsSharing(true);
             try {
@@ -62,17 +67,26 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row gap-2">
-                <Button asChild className="w-full">
-                    <Link href={certificatePreviewUrl.toString()} target="_blank" rel="noopener noreferrer">
-                        <Download className="mr-2 h-4 w-4" />
-                        Download / View
-                    </Link>
-                </Button>
-                {navigator.share && (
-                     <Button onClick={handleShare} disabled={isSharing} variant="outline" className="w-full">
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Share Certificate
-                    </Button>
+                {!origin ? (
+                    <>
+                        <Button disabled className="w-full"><Download className="mr-2 h-4 w-4" /> Loading...</Button>
+                        {navigator.share && <Button disabled variant="outline" className="w-full"><Share2 className="mr-2 h-4 w-4" /> Loading...</Button>}
+                    </>
+                ) : (
+                    <>
+                        <Button asChild className="w-full">
+                            <Link href={certificatePreviewUrl?.toString() || ''} target="_blank" rel="noopener noreferrer">
+                                <Download className="mr-2 h-4 w-4" />
+                                Download / View
+                            </Link>
+                        </Button>
+                        {navigator.share && (
+                            <Button onClick={handleShare} disabled={isSharing} variant="outline" className="w-full">
+                                <Share2 className="mr-2 h-4 w-4" />
+                                Share Certificate
+                            </Button>
+                        )}
+                    </>
                 )}
             </CardContent>
         </Card>
