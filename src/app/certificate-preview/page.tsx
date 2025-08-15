@@ -2,7 +2,7 @@
 "use client";
 
 import { useSearchParams } from 'next/navigation';
-import React, { Suspense } from 'react';
+import React, { Suspense, useRef, useState, useEffect } from 'react';
 import { RideCertificate } from '@/components/ride-certificate';
 import { Button } from '@/components/ui/button';
 import { Loader2, Award } from 'lucide-react';
@@ -10,21 +10,27 @@ import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 
-function filter(node: HTMLElement): boolean {
-  if (node.tagName === 'i') return false;
-  if (node.tagName === 'LINK' && (node as HTMLLinkElement).href.includes('fonts.googleapis.com')) {
-    return false;
-  }
-  return true;
-}
+// Function to generate image data from the certificate element
+const generateImageDataUrl = async (node: HTMLElement): Promise<string> => {
+    // Use toCanvas to have more control and avoid font/CORS issues
+    const canvas = await htmlToImage.toCanvas(node, {
+        pixelRatio: 3,
+        useCORS: true,
+        skipAutoScale: true, // Prevents issues with scaling
+        skipFonts: true, // Prevents errors from trying to inline Google Fonts
+    });
+    return canvas.toDataURL('image/png', 1.0);
+};
 
 function CertificatePreviewContent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const [isDownloading, setIsDownloading] = React.useState(false);
-    const [origin, setOrigin] = React.useState('');
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [origin, setOrigin] = useState('');
+    const certificateRef = useRef<HTMLDivElement>(null);
 
-    React.useEffect(() => {
+
+    useEffect(() => {
         setOrigin(window.location.origin);
     }, []);
 
@@ -33,8 +39,7 @@ function CertificatePreviewContent() {
     const registrationId = searchParams.get('regId') || '';
 
     const handleDownload = async () => {
-        const node = document.getElementById('certificate');
-        if (!node) {
+        if (!certificateRef.current) {
             toast({ variant: 'destructive', title: 'Error', description: 'Certificate element not found.' });
             return;
         }
@@ -42,15 +47,7 @@ function CertificatePreviewContent() {
         setIsDownloading(true);
 
         try {
-            await document.fonts.ready;
-            
-            const dataUrl = await htmlToImage.toPng(node, {
-                cacheBust: true,
-                pixelRatio: 3,
-                useCORS: true,
-                filter: filter,
-            });
-
+            const dataUrl = await generateImageDataUrl(certificateRef.current);
             const pdf = new jsPDF({ 
                 orientation: 'landscape', 
                 unit: 'px', 
@@ -72,6 +69,7 @@ function CertificatePreviewContent() {
         <div className="min-h-screen bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center p-4">
             <div className="transform-gpu scale-[0.3] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.8] origin-center">
                 <RideCertificate 
+                    ref={certificateRef}
                     riderName={riderName} 
                     riderPhotoUrl={riderPhotoUrl} 
                     registrationId={registrationId} 

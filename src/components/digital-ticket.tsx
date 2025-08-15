@@ -31,13 +31,17 @@ interface SingleTicketProps {
   userEmail?: string | null;
 }
 
-function filter(node: HTMLElement): boolean {
-  if (node.tagName === 'i') return false;
-  if (node.tagName === 'LINK' && (node as HTMLLinkElement).href.includes('fonts.googleapis.com')) {
-    return false;
-  }
-  return true;
-}
+// Function to generate image data from the ticket element
+const generateImageDataUrl = async (node: HTMLElement): Promise<string> => {
+    // Use toCanvas to have more control and avoid font/CORS issues
+    const canvas = await htmlToImage.toCanvas(node, {
+        pixelRatio: 3,
+        useCORS: true,
+        skipAutoScale: true, // Prevents issues with scaling
+        skipFonts: true, // Prevents errors from trying to inline Google Fonts
+    });
+    return canvas.toDataURL('image/png', 1.0);
+};
 
 
 const generateQrCodeUrl = (text: string) => {
@@ -171,12 +175,7 @@ function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, regi
         setIsDownloading(true);
 
         try {
-            await document.fonts.ready;
-            
-            const dataUrl = await htmlToImage.toPng(node, {
-                pixelRatio: 3, useCORS: true, cacheBust: true, filter
-            });
-            
+            const dataUrl = await generateImageDataUrl(node);
             const pdf = new jsPDF({
                 orientation: 'p', unit: 'px', format: [node.offsetWidth, node.offsetHeight]
             });
@@ -201,9 +200,7 @@ function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, regi
         setIsSharing(true);
         
         try {
-            await document.fonts.ready;
-            const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 3, useCORS: true, cacheBust: true, filter });
-            
+            const dataUrl = await generateImageDataUrl(node);
             const blob = await (await fetch(dataUrl)).blob();
             const riderName = riderNumber === 1 ? registration.fullName : registration.fullName2;
             const file = new File([blob], `${riderName}-ticket.png`, { type: blob.type });

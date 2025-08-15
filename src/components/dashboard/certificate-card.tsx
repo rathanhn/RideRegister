@@ -16,15 +16,17 @@ interface CertificateCardProps {
     registration: Registration;
 }
 
-// Filter function to exclude problematic elements for html-to-image
-function filter(node: HTMLElement): boolean {
-  // Ignore any <link> tags with an href, which cause security errors
-  if (node.tagName === 'LINK' && node.hasAttribute('href')) {
-    return false;
-  }
-  return true;
-}
-
+// Function to generate image data from the certificate element
+const generateImageDataUrl = async (node: HTMLElement): Promise<string> => {
+    // Use toCanvas to have more control and avoid font/CORS issues
+    const canvas = await htmlToImage.toCanvas(node, {
+        pixelRatio: 3,
+        useCORS: true,
+        skipAutoScale: true, // Prevents issues with scaling
+        skipFonts: true, // Prevents errors from trying to inline Google Fonts
+    });
+    return canvas.toDataURL('image/png', 1.0);
+};
 
 export function CertificateCard({ user, registration }: CertificateCardProps) {
     const { toast } = useToast();
@@ -44,8 +46,7 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
         if (!certificateRef.current) return;
         setIsDownloading(true);
         try {
-            await document.fonts.ready;
-            const dataUrl = await htmlToImage.toPng(certificateRef.current, { pixelRatio: 3, useCORS: true, cacheBust: true, filter });
+            const dataUrl = await generateImageDataUrl(certificateRef.current);
             const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1123, 794] });
             pdf.addImage(dataUrl, 'PNG', 0, 0, 1123, 794);
             pdf.save(`${riderName}-certificate.pdf`);
@@ -61,8 +62,7 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
         if (!certificateRef.current) return;
         setIsSharing(true);
         try {
-            await document.fonts.ready;
-            const dataUrl = await htmlToImage.toPng(certificateRef.current, { pixelRatio: 3, useCORS: true, cacheBust: true, filter });
+            const dataUrl = await generateImageDataUrl(certificateRef.current);
             const blob = await (await fetch(dataUrl)).blob();
             const file = new File([blob], `${riderName}-certificate.png`, { type: blob.type });
 
