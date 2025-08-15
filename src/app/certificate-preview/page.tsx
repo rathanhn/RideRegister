@@ -9,14 +9,22 @@ import { Loader2, Award } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
+import { set } from 'date-fns';
+
+// A more robust filter function
+const filter = (node: HTMLElement): boolean => {
+  // Do not inline any external resources, rely on the proxy for images
+  if (node.tagName === 'LINK') return false;
+  if (node.tagName === 'I') return false; // example for ignoring icon fonts
+  return true;
+};
 
 // Function to generate image data from the certificate element
 const generateImageDataUrl = async (node: HTMLElement): Promise<string> => {
     // Use toCanvas to have more control and avoid font/CORS issues
     const canvas = await htmlToImage.toCanvas(node, {
         pixelRatio: 3,
-        useCORS: true,
-        skipAutoScale: true, // Prevents issues with scaling
+        filter: filter,
         skipFonts: true, // Prevents errors from trying to inline Google Fonts
     });
     return canvas.toDataURL('image/png', 1.0);
@@ -28,15 +36,38 @@ function CertificatePreviewContent() {
     const [isDownloading, setIsDownloading] = useState(false);
     const [origin, setOrigin] = useState('');
     const certificateRef = useRef<HTMLDivElement>(null);
-
-
-    useEffect(() => {
-        setOrigin(window.location.origin);
-    }, []);
+    const [proxiedPhotoUrl, setProxiedPhotoUrl] = useState<string | undefined>(undefined);
+    const [isLoadingPhoto, setIsLoadingPhoto] = useState(true);
 
     const riderName = searchParams.get('name') || 'Honorable Rider';
     const riderPhotoUrl = searchParams.get('photo') || undefined;
     const registrationId = searchParams.get('regId') || '';
+
+    useEffect(() => {
+        setOrigin(window.location.origin);
+        
+        const fetchProxiedImage = async () => {
+            if (!riderPhotoUrl) {
+                setIsLoadingPhoto(false);
+                return;
+            }
+            try {
+                const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(riderPhotoUrl)}`);
+                if (!response.ok) throw new Error('Failed to load image');
+                const { dataUri } = await response.json();
+                setProxiedPhotoUrl(dataUri);
+            } catch (error) {
+                console.error("Failed to proxy image for certificate", error);
+                setProxiedPhotoUrl(riderPhotoUrl); // Fallback to direct URL, might not render in PDF
+            } finally {
+                setIsLoadingPhoto(false);
+            }
+        };
+
+        fetchProxiedImage();
+
+    }, [riderPhotoUrl]);
+
 
     const handleDownload = async () => {
         if (!certificateRef.current) {
@@ -64,6 +95,10 @@ function CertificatePreviewContent() {
           setIsDownloading(false);
         }
     };
+    
+    if (isLoadingPhoto) {
+        return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
+    }
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center p-4">
@@ -71,13 +106,13 @@ function CertificatePreviewContent() {
                 <RideCertificate 
                     ref={certificateRef}
                     riderName={riderName} 
-                    riderPhotoUrl={riderPhotoUrl} 
+                    riderPhotoUrl={proxiedPhotoUrl} 
                     registrationId={registrationId} 
                     origin={origin}
                 />
             </div>
-            <Button onClick={handleDownload} disabled={isDownloading} className="mt-8">
-                {isDownloading ? (
+            <Button onClick={handleDownload} disabled={isDownloading || isLoadingPhoto} className="mt-8">
+                {isDownloading || isLoadingPhoto ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                     <Award className="mr-2 h-4 w-4" />

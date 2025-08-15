@@ -31,13 +31,18 @@ interface SingleTicketProps {
   userEmail?: string | null;
 }
 
+const filter = (node: HTMLElement): boolean => {
+  // Do not inline any external resources, rely on the proxy for images
+  if (node.tagName === 'LINK') return false;
+  return true;
+};
+
 // Function to generate image data from the ticket element
 const generateImageDataUrl = async (node: HTMLElement): Promise<string> => {
     // Use toCanvas to have more control and avoid font/CORS issues
     const canvas = await htmlToImage.toCanvas(node, {
         pixelRatio: 3,
-        useCORS: true,
-        skipAutoScale: true, // Prevents issues with scaling
+        filter: filter,
         skipFonts: true, // Prevents errors from trying to inline Google Fonts
     });
     return canvas.toDataURL('image/png', 1.0);
@@ -188,7 +193,7 @@ function TicketActions({ riderNumber, registration }: { riderNumber: 1 | 2, regi
             console.error(e);
             toast({ variant: 'destructive', title: 'Download Failed', 'description': 'Could not download the ticket.' });
         } finally {
-            setIsDownloading(null);
+            setIsDownloading(false);
         }
     }
 
