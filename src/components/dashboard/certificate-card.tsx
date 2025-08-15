@@ -1,129 +1,80 @@
 
 "use client";
 
-import React, { useState, useRef } from 'react';
-import * as htmlToImage from 'html-to-image';
-import jsPDF from 'jspdf';
+import React, { useState, useEffect } from 'react';
 import type { AppUser, Registration } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Download, Loader2, Share2 } from "lucide-react";
+import { Award, Download, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { RideCertificate } from '../ride-certificate';
+import Link from 'next/link';
 
 interface CertificateCardProps {
     user: AppUser;
     registration: Registration;
 }
 
-// Function to generate image data from the certificate element
-const generateImageDataUrl = async (node: HTMLElement): Promise<string> => {
-    // Use toCanvas to have more control and avoid font/CORS issues
-    const canvas = await htmlToImage.toCanvas(node, {
-        pixelRatio: 3,
-        useCORS: true,
-        skipAutoScale: true, // Prevents issues with scaling
-        skipFonts: true, // Prevents errors from trying to inline Google Fonts
-    });
-    return canvas.toDataURL('image/png', 1.0);
-};
-
 export function CertificateCard({ user, registration }: CertificateCardProps) {
     const { toast } = useToast();
-    const [isDownloading, setIsDownloading] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
-    const certificateRef = useRef<HTMLDivElement>(null);
     const [origin, setOrigin] = useState('');
 
-    React.useEffect(() => {
+    useEffect(() => {
         setOrigin(window.location.origin);
     }, []);
 
     const riderName = user.displayName || "Valued Rider";
-    const riderPhotoUrl = user.photoURL || undefined;
+    const riderPhotoUrl = user.photoURL || '';
 
-    const handleDownload = async () => {
-        if (!certificateRef.current) return;
-        setIsDownloading(true);
-        try {
-            const dataUrl = await generateImageDataUrl(certificateRef.current);
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1123, 794] });
-            pdf.addImage(dataUrl, 'PNG', 0, 0, 1123, 794);
-            pdf.save(`${riderName}-certificate.pdf`);
-        } catch (e) {
-            console.error(e);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not download certificate.' });
-        } finally {
-            setIsDownloading(false);
-        }
-    };
-    
+    const certificatePreviewUrl = new URL(`${origin}/certificate-preview`);
+    certificatePreviewUrl.searchParams.set('name', riderName);
+    certificatePreviewUrl.searchParams.set('photo', riderPhotoUrl);
+    certificatePreviewUrl.searchParams.set('regId', registration.id);
+
     const handleShare = async () => {
-        if (!certificateRef.current) return;
-        setIsSharing(true);
-        try {
-            const dataUrl = await generateImageDataUrl(certificateRef.current);
-            const blob = await (await fetch(dataUrl)).blob();
-            const file = new File([blob], `${riderName}-certificate.png`, { type: blob.type });
-
-            if (navigator.share && navigator.canShare({ files: [file] })) {
-                 await navigator.share({
+        if (navigator.share) {
+            setIsSharing(true);
+            try {
+                await navigator.share({
                     title: 'TeleFun Freedom Ride Certificate',
                     text: `I completed the TeleFun Freedom Ride! Here's my certificate.`,
-                    files: [file],
+                    url: certificatePreviewUrl.toString(),
                 });
-            } else {
-                 const link = document.createElement('a');
-                 link.download = `${riderName}-freedom-ride-certificate.png`;
-                 link.href = dataUrl;
-                 document.body.appendChild(link);
-                 link.click();
-                 document.body.removeChild(link);
-                 toast({
-                     title: 'Image Saved!',
-                     description: "Your browser doesn't support direct sharing, so the certificate image has been downloaded. You can share it manually!",
-                 });
+            } catch (e: any) {
+                if (e.name !== 'AbortError') {
+                    console.error(e);
+                    toast({ variant: 'destructive', title: 'Share Failed', 'description': 'Could not share the certificate.' });
+                }
+            } finally {
+                setIsSharing(false);
             }
-        } catch (e: any) {
-             if (e.name !== 'AbortError') {
-                 console.error(e);
-                toast({ variant: 'destructive', title: 'Share Failed', 'description': 'Could not share the certificate image.' });
-            }
-        } finally {
-            setIsSharing(false);
+        } else {
+            toast({ title: 'Share Not Supported', description: 'Your browser does not support the Web Share API.' });
         }
     };
 
     return (
-        <>
-            <Card className="border-primary/50 bg-primary/5">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6 text-primary" /> Certificate of Completion</CardTitle>
-                    <CardDescription>
-                        Congratulations on completing the ride! Download your certificate below.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col sm:flex-row gap-2">
-                    <Button onClick={handleDownload} disabled={isDownloading} className="w-full">
-                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                        Download (PDF)
-                    </Button>
+        <Card className="border-primary/50 bg-primary/5">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6 text-primary" /> Certificate of Completion</CardTitle>
+                <CardDescription>
+                    Congratulations on completing the ride! Download or share your certificate below.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row gap-2">
+                <Button asChild className="w-full">
+                    <Link href={certificatePreviewUrl.toString()} target="_blank" rel="noopener noreferrer">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download / View
+                    </Link>
+                </Button>
+                {navigator.share && (
                      <Button onClick={handleShare} disabled={isSharing} variant="outline" className="w-full">
-                        {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4" />}
+                        <Share2 className="mr-2 h-4 w-4" />
                         Share Certificate
                     </Button>
-                </CardContent>
-            </Card>
-            {/* Hidden certificate for image generation */}
-            <div className="fixed -z-50 -left-[2000px] top-0">
-                 <RideCertificate 
-                    ref={certificateRef} 
-                    riderName={riderName} 
-                    riderPhotoUrl={riderPhotoUrl} 
-                    registrationId={registration.id}
-                    origin={origin}
-                />
-            </div>
-        </>
+                )}
+            </CardContent>
+        </Card>
     );
 }
