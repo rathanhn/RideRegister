@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useRef, useState, useEffect } from 'react';
 import { RideCertificate } from '@/components/ride-certificate';
 import { Button } from '@/components/ui/button';
-import { Loader2, Award } from 'lucide-react';
+import { Loader2, Award, Share2 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +32,7 @@ const generateImageDataUrl = async (node: HTMLElement): Promise<string> => {
 function CertificatePreviewContent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const [isDownloading, setIsDownloading] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [origin, setOrigin] = useState('');
     const certificateRef = useRef<HTMLDivElement>(null);
     const [proxiedPhotoUrl, setProxiedPhotoUrl] = useState<string | undefined>(undefined);
@@ -70,13 +70,11 @@ function CertificatePreviewContent() {
     }, [riderPhotoUrl]);
 
 
-    const handleDownload = async () => {
+    const generatePdf = async () => {
         if (!certificateRef.current) {
             toast({ variant: 'destructive', title: 'Error', description: 'Certificate element not found.' });
-            return;
+            return null;
         }
-
-        setIsDownloading(true);
 
         try {
             const dataUrl = await generateImageDataUrl(certificateRef.current);
@@ -87,15 +85,56 @@ function CertificatePreviewContent() {
             });
 
             pdf.addImage(dataUrl, 'PNG', 0, 0, 1123, 794);
-            pdf.save(`${riderName}-certificate.pdf`);
+            return pdf;
 
         } catch (e) {
           console.error(e);
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not download certificate.' });
-        } finally {
-          setIsDownloading(false);
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not generate certificate.' });
+          return null;
         }
+    }
+    
+    const handleDownload = async () => {
+        setIsProcessing(true);
+        const pdf = await generatePdf();
+        if (pdf) {
+            pdf.save(`${riderName}-certificate.pdf`);
+        }
+        setIsProcessing(false);
     };
+
+    const handleShare = async () => {
+        setIsProcessing(true);
+        const pdf = await generatePdf();
+        if (!pdf || !navigator.share) {
+            setIsProcessing(false);
+            return;
+        }
+
+        const pdfBlob = pdf.output('blob');
+        const file = new File([pdfBlob], `${riderName}-certificate.pdf`, { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+             try {
+                await navigator.share({
+                    title: 'TeleFun Freedom Ride Certificate',
+                    text: `I completed the TeleFun Freedom Ride! Here's my certificate.`,
+                    files: [file],
+                });
+            } catch (e: any) {
+                if (e.name !== 'AbortError') {
+                    console.error(e);
+                    toast({ variant: 'destructive', title: 'Share Failed', 'description': 'Could not share the certificate.' });
+                }
+            }
+        } else {
+            toast({
+                title: 'Share Not Supported',
+                description: 'Your browser does not support sharing files. Try downloading instead.',
+            });
+        }
+        setIsProcessing(false);
+    }
     
     if (isLoadingPhoto) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -112,14 +151,26 @@ function CertificatePreviewContent() {
                     origin={origin}
                 />
             </div>
-            <Button onClick={handleDownload} disabled={isDownloading || isLoadingPhoto} className="mt-8">
-                {isDownloading || isLoadingPhoto ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <Award className="mr-2 h-4 w-4" />
+            <div className="flex flex-col sm:flex-row gap-2 mt-8">
+                <Button onClick={handleDownload} disabled={isProcessing || isLoadingPhoto} className="w-full sm:w-auto">
+                    {isProcessing || isLoadingPhoto ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Award className="mr-2 h-4 w-4" />
+                    )}
+                    {isProcessing ? "Generating..." : "Download as PDF"}
+                </Button>
+                {navigator.share && (
+                     <Button onClick={handleShare} disabled={isProcessing || isLoadingPhoto} variant="outline" className="w-full sm:w-auto">
+                        {isProcessing || isLoadingPhoto ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Share2 className="mr-2 h-4 w-4" />
+                        )}
+                        {isProcessing ? "Preparing..." : "Share Certificate"}
+                    </Button>
                 )}
-                {isDownloading ? "Generating PDF..." : "Download as PDF"}
-            </Button>
+            </div>
         </div>
     );
 }

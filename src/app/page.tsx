@@ -7,7 +7,7 @@ import { Offers } from "@/components/offers";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { StoreDetails } from "@/components/store-details";
 import { RouteMap } from "@/components/route-map";
-import { MapPin, Info, Phone } from "lucide-react";
+import { MapPin, Info, Phone, Award } from "lucide-react";
 import { Organizers } from "@/components/organizers";
 import { EventSchedule } from "@/components/event-schedule";
 import { Hero } from "@/components/hero";
@@ -24,6 +24,7 @@ import { GoogleReviews } from "@/components/google-reviews";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LocationPartnerCard } from "@/components/location-partner-card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 
 export default function Home() {
@@ -74,6 +75,21 @@ export default function Home() {
         )}
         <Hero registrationsOpen={registrationsOpen}/>
         <RegisteredRiders />
+        
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader className="items-center text-center">
+              <Award className="h-10 w-10 text-primary mb-2" />
+              <CardTitle className="font-headline">Get Your Digital Certificate!</CardTitle>
+              <CardDescription>
+                  All riders who successfully complete the Freedom Ride will receive a personalized digital certificate of completion to commemorate their achievement.
+              </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+              <Button asChild>
+                  <Link href="/register">Register to Ride</Link>
+              </Button>
+          </CardContent>
+        </Card>
         
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <EventSchedule />
