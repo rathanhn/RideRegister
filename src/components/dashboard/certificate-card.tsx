@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import type { AppUser, Registration } from "@/lib/types";
@@ -29,7 +29,7 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
-    const certificateRef = React.createRef<HTMLDivElement>();
+    const certificateRef = useRef<HTMLDivElement>(null);
     const [origin, setOrigin] = useState('');
 
     React.useEffect(() => {
