@@ -23,12 +23,6 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
     const eventDate = format(new Date("2025-08-16"), "do 'of' MMMM yyyy");
     const verificationUrl = origin ? `${origin}/ticket/${registrationId}` : '';
     const qrCodeUrl = verificationUrl ? generateQrCodeUrl(verificationUrl) : '';
-    
-    // Use the image proxy if the photo URL is from an external source like Cloudinary
-    const finalPhotoUrl = riderPhotoUrl?.startsWith('https')
-      ? `/api/image-proxy?url=${encodeURIComponent(riderPhotoUrl)}`
-      : riderPhotoUrl;
-
 
     return (
       <div
@@ -63,8 +57,8 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
             <p className="mt-6 text-lg text-gray-300">This certificate is proudly presented to</p>
             
              <div className="h-40 w-40 rounded-full border-4 border-primary/50 my-6 flex items-center justify-center overflow-hidden bg-muted">
-                {finalPhotoUrl ? (
-                    <img src={finalPhotoUrl} alt={riderName} className="h-full w-full object-cover" crossOrigin="anonymous" />
+                {riderPhotoUrl ? (
+                    <img src={riderPhotoUrl} alt={riderName} className="h-full w-full object-cover" crossOrigin="anonymous" />
                 ) : (
                     <User className="w-20 h-20 text-muted-foreground" />
                 )}

@@ -6,12 +6,14 @@ export async function GET(request: Request) {
   const imageUrl = searchParams.get('url');
 
   if (!imageUrl) {
+    console.error('[Image-Proxy] Image URL is required.');
     return NextResponse.json({ error: 'Image URL is required' }, { status: 400 });
   }
 
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) {
+      console.error(`[Image-Proxy] Failed to fetch image: ${response.statusText}`, { url: imageUrl });
       throw new Error(`Failed to fetch image: ${response.statusText}`);
     }
     
@@ -22,7 +24,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ dataUri });
   } catch (error) {
-    console.error('Image proxy error:', error);
+    console.error('[Image-Proxy] Image proxy error:', error);
     return NextResponse.json({ error: 'Failed to proxy image' }, { status: 500 });
   }
 }

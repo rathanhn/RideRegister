@@ -9,7 +9,6 @@ import { Loader2, Award } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
-import { set } from 'date-fns';
 
 // A more robust filter function
 const filter = (node: HTMLElement): boolean => {
@@ -52,12 +51,14 @@ function CertificatePreviewContent() {
                 return;
             }
             try {
+                console.log(`[Cert-Preview] Fetching proxied image for: ${riderPhotoUrl}`);
                 const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(riderPhotoUrl)}`);
-                if (!response.ok) throw new Error('Failed to load image');
+                if (!response.ok) throw new Error('Failed to load image via proxy');
                 const { dataUri } = await response.json();
                 setProxiedPhotoUrl(dataUri);
+                console.log(`[Cert-Preview] Successfully got data URI.`);
             } catch (error) {
-                console.error("Failed to proxy image for certificate", error);
+                console.error("[Cert-Preview] Failed to proxy image for certificate", error);
                 setProxiedPhotoUrl(riderPhotoUrl); // Fallback to direct URL, might not render in PDF
             } finally {
                 setIsLoadingPhoto(false);
