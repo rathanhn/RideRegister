@@ -23,21 +23,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, Eye, MoreVertical, User as UserIcon, Edit, Ticket } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, MessageCircle, Trash2, Send, Eye, MoreVertical, User as UserIcon, Edit, Ticket, Award, RotateCcw, CheckCircle } from 'lucide-react';
 import type { Registration, UserRole } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import Link from 'next/link';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { deleteRegistration } from '@/app/actions';
+import { deleteRegistration, grantCertificate, revokeCertificate } from '@/app/actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Separator } from '../ui/separator';
 import { Card, CardContent } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { EditRegistrationForm } from './edit-registration-form';
-import * as htmlToImage from 'html-to-image';
-import jsPDF from 'jspdf';
 
 
 // Helper function to format WhatsApp links
@@ -77,7 +75,7 @@ export function RidersListTable() {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [origin, setOrigin] = useState('');
 
   useEffect(() => {
@@ -171,6 +169,30 @@ export function RidersListTable() {
     document.body.removeChild(link);
   };
 
+  const generateCertificatePreviewUrl = (reg: Registration) => {
+    const params = new URLSearchParams({
+      name: reg.fullName,
+    });
+    if (reg.photoURL) {
+      params.append('photo', reg.photoURL);
+    }
+    return `/certificate-preview?${params.toString()}`;
+  }
+
+  const handleCertificateToggle = async (reg: Registration) => {
+    if (!user || !canEdit) return;
+
+    setIsProcessing(reg.id);
+    const action = reg.certificateGranted ? revokeCertificate : grantCertificate;
+    const result = await action({ adminId: user.uid, registrationId: reg.id });
+    
+    if (result.success) {
+      toast({ title: 'Success', description: result.message });
+    } else {
+      toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsProcessing(null);
+  };
 
   if (error) {
     return (
@@ -230,7 +252,7 @@ export function RidersListTable() {
                                     <DialogTrigger asChild>
                                         <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                                     </DialogTrigger>
-                                    <DialogContent>
+                                    <DialogContent className="max-h-[80vh] overflow-y-auto">
                                         <DialogHeader>
                                             <DialogTitle>Rider Actions</DialogTitle>
                                             <DialogDescription>{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</DialogDescription>
@@ -264,6 +286,26 @@ export function RidersListTable() {
                                                     </div>
                                                 </div>
                                             )}
+
+                                            <Separator />
+
+                                            <div className="p-3 border rounded-md bg-background space-y-2">
+                                                <p className="font-semibold">Certificate Management</p>
+                                                {reg.certificateGranted ? (
+                                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-fit"><CheckCircle className="mr-2 h-4 w-4" />Certificate Granted</Badge>
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground">Certificate has not been granted yet.</p>
+                                                )}
+                                                <div className="flex flex-col gap-2 pt-2">
+                                                    <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg)} target="_blank"><Eye className="mr-2 h-4 w-4" /> View Certificate</Link></Button>
+                                                    {canEdit && (
+                                                        <Button size="sm" variant="outline" disabled={isProcessing === reg.id} onClick={() => handleCertificateToggle(reg)}>
+                                                            {isProcessing === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (reg.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
+                                                            {reg.certificateGranted ? 'Revoke Certificate' : 'Grant Certificate'}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
 
                                             <Separator />
                                             
@@ -310,6 +352,7 @@ export function RidersListTable() {
                 <TableHead>Photo</TableHead>
                 <TableHead>Rider(s)</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Certificate</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
             </TableRow>
             </TableHeader>
@@ -335,12 +378,19 @@ export function RidersListTable() {
                                     {reg.registrationType}
                                 </Badge>
                             </TableCell>
+                            <TableCell>
+                                {reg.certificateGranted ? (
+                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Granted</Badge>
+                                ) : (
+                                    <Badge variant="outline">None</Badge>
+                                )}
+                            </TableCell>
                             <TableCell className="text-right">
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                                     </DialogTrigger>
-                                    <DialogContent>
+                                    <DialogContent className="max-h-[80vh] overflow-y-auto">
                                         <DialogHeader>
                                             <DialogTitle>Rider Actions</DialogTitle>
                                             <DialogDescription>{reg.fullName}{reg.registrationType === 'duo' && ` & ${reg.fullName2}`}</DialogDescription>
@@ -377,6 +427,26 @@ export function RidersListTable() {
 
                                             <Separator />
                                             
+                                            <div className="p-3 border rounded-md bg-background space-y-2">
+                                                <p className="font-semibold">Certificate Management</p>
+                                                {reg.certificateGranted ? (
+                                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-fit"><CheckCircle className="mr-2 h-4 w-4" />Certificate Granted</Badge>
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground">Certificate has not been granted yet.</p>
+                                                )}
+                                                <div className="flex gap-2 pt-2">
+                                                    <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg)} target="_blank"><Eye className="mr-2 h-4 w-4" /> View</Link></Button>
+                                                    {canEdit && (
+                                                        <Button size="sm" variant="outline" disabled={isProcessing === reg.id} onClick={() => handleCertificateToggle(reg)}>
+                                                            {isProcessing === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (reg.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
+                                                            {reg.certificateGranted ? 'Revoke' : 'Grant'}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <Separator />
+
                                             <div className="flex gap-2 justify-end">
                                                  <Button asChild variant="secondary" size="sm"><Link href={ticketUrl} target="_blank"><Eye /> View Ticket</Link></Button>
                                                 {canEdit && (
@@ -407,7 +477,7 @@ export function RidersListTable() {
                 })
             ) : (
                   <TableRow>
-                      <TableCell colSpan={4} className="text-center h-24">
+                      <TableCell colSpan={5} className="text-center h-24">
                           {searchTerm ? 'No approved riders match your search.' : 'No approved riders found.'}
                       </TableCell>
                   </TableRow>
@@ -418,6 +488,3 @@ export function RidersListTable() {
     </div>
   );
 }
-
-    
-
