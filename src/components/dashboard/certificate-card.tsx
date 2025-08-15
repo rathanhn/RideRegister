@@ -18,12 +18,13 @@ interface CertificateCardProps {
 
 // Filter function to exclude problematic elements for html-to-image
 function filter(node: HTMLElement): boolean {
-  if (node.tagName === 'i') return false;
-  if (node.tagName === 'LINK' && (node as HTMLLinkElement).href.includes('fonts.googleapis.com')) {
+  // Ignore any <link> tags with an href, which cause security errors
+  if (node.tagName === 'LINK' && node.hasAttribute('href')) {
     return false;
   }
   return true;
 }
+
 
 export function CertificateCard({ user, registration }: CertificateCardProps) {
     const { toast } = useToast();
