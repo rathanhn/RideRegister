@@ -212,8 +212,8 @@ export default function DashboardPage() {
                     <TabsTrigger value="actions"><ListChecks className="w-4 h-4 mr-2" />Actions</TabsTrigger>
                 </TabsList>
                 <TabsContent value="ticket" className="space-y-4">
-                    {registrationData.certificateGranted && (
-                      <CertificateCard user={userData} />
+                    {registrationData.certificateGranted && userData && (
+                      <CertificateCard user={userData} registration={registrationData} />
                     )}
                     {registrationStatusContent}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

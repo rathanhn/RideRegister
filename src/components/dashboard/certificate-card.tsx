@@ -4,15 +4,16 @@
 import { useState } from 'react';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
-import type { AppUser } from "@/lib/types";
+import type { AppUser, Registration } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Download, Loader2, Share2, Sparkles, User } from "lucide-react";
+import { Award, Download, Loader2, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RideCertificate } from '../ride-certificate';
 
 interface CertificateCardProps {
     user: AppUser;
+    registration: Registration;
 }
 
 // Filter function to exclude problematic elements for html-to-image
@@ -24,7 +25,7 @@ function filter(node: HTMLElement): boolean {
   return true;
 }
 
-export function CertificateCard({ user }: CertificateCardProps) {
+export function CertificateCard({ user, registration }: CertificateCardProps) {
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
