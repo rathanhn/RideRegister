@@ -90,6 +90,37 @@ export function QrScanner() {
     }
   }, []);
 
+  const handleScanResult = (result: string) => {
+    // Attempt to parse as JSON for ticket data
+    try {
+      const data = JSON.parse(result) as ScannedQrData;
+      if (data.registrationId && data.rider) {
+        setScannedData(data);
+        return;
+      }
+    } catch (e) {
+      // Not a JSON object, proceed to check if it's a URL
+    }
+
+    // Check if it's a verification URL
+    try {
+      const url = new URL(result);
+      if (url.pathname.startsWith('/ticket/')) {
+        toast({
+          title: "Certificate Scanned",
+          description: "Opening verification page...",
+        });
+        window.open(result, '_blank');
+        return;
+      }
+    } catch (e) {
+       // Not a valid URL, proceed to error
+    }
+
+    // If neither format is matched
+    setError("Invalid QR code. Please scan a valid ride ticket or certificate.");
+  };
+
   const startScan = async () => {
     await getCameraPermission();
     setError(null);
@@ -116,16 +147,7 @@ export function QrScanner() {
 
         if (code) {
           stopScan();
-          try {
-            const data = JSON.parse(code.data) as ScannedQrData;
-            if (data.registrationId && data.rider) {
-                setScannedData(data);
-            } else {
-                throw new Error("Invalid QR code format.");
-            }
-          } catch(e) {
-            setError("Invalid QR code. Please scan a valid ride ticket.");
-          }
+          handleScanResult(code.data);
         }
       }
     }
@@ -368,3 +390,4 @@ export function QrScanner() {
     </div>
   );
 }
+
