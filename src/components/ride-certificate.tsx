@@ -5,7 +5,6 @@ import React from 'react';
 import Image from 'next/image';
 import Logo from '@/Logo.png';
 import { format } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { User } from 'lucide-react';
 
 interface RideCertificateProps {
@@ -24,7 +23,6 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
     const eventDate = format(new Date("2025-08-16"), "do 'of' MMMM yyyy");
     const verificationUrl = origin ? `${origin}/ticket/${registrationId}` : '';
     const qrCodeUrl = verificationUrl ? generateQrCodeUrl(verificationUrl) : '';
-
 
     return (
       <div

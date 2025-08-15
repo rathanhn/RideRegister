@@ -78,7 +78,7 @@ export function SingleTicket({ id, registration, riderNumber }: SingleTicketProp
         
         <div className="p-4 flex flex-col items-center text-center gap-4">
             <Avatar className="h-28 w-28 border-4 border-primary/50">
-                <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} />
+                <AvatarImage src={photoUrl || undefined} alt={riderName || 'Rider'} crossOrigin="anonymous" />
                 <AvatarFallback><UserIcon className="w-14 h-14" /></AvatarFallback>
             </Avatar>
             
