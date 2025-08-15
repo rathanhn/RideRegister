@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import type { AppUser, Registration } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Download, Share2 } from "lucide-react";
+import { Award, Download, Share2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 
@@ -24,8 +24,9 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
         setOrigin(window.location.origin);
     }, []);
 
-    const riderName = user.displayName || "Valued Rider";
-    const riderPhotoUrl = user.photoURL || '';
+    // FIX: Use the photo from the registration data, not the user profile, to match admin logic.
+    const riderName = registration.fullName;
+    const riderPhotoUrl = registration.photoURL || '';
 
     const certificatePreviewUrl = origin ? new URL(`${origin}/certificate-preview`) : null;
     if (certificatePreviewUrl) {
@@ -68,10 +69,9 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row gap-2">
                 {!origin ? (
-                    <>
-                        <Button disabled className="w-full"><Download className="mr-2 h-4 w-4" /> Loading...</Button>
-                        {navigator.share && <Button disabled variant="outline" className="w-full"><Share2 className="mr-2 h-4 w-4" /> Loading...</Button>}
-                    </>
+                    <div className="w-full flex justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin"/>
+                    </div>
                 ) : (
                     <>
                         <Button asChild className="w-full">
