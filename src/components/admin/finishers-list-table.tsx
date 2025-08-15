@@ -82,6 +82,7 @@ export function FinishersListTable() {
       const reg = { id: doc.id, ...doc.data() } as Registration;
       if (reg.status !== 'approved') return;
 
+      // Both riders of a duo registration share the same certificate status.
       if (reg.rider1Finished) {
           participants.push({
               id: `${reg.id}-1`,
@@ -214,18 +215,21 @@ export function FinishersListTable() {
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"><Flag className="mr-2 h-4 w-4" />Finished</Badge>
-                                 <Button asChild size="sm" variant="outline" className="mt-2 sm:mt-0">
+                                {p.certificateGranted && <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-fit"><CheckCircle className="mr-2 h-4 w-4" />Certificate Granted</Badge>}
+                            </div>
+                            <div className="flex flex-col gap-2 pt-2 border-t">
+                                <Button asChild size="sm" variant="outline">
                                     <Link href={generatePreviewUrl(p)} target="_blank">
                                         <Eye className="mr-2 h-4 w-4" /> View Certificate
                                     </Link>
                                 </Button>
+                                {canEdit && (
+                                    <Button size="sm" variant="outline" disabled={isProcessing === p.registrationId} onClick={() => handleCertificateToggle(p)}>
+                                        {isProcessing === p.registrationId ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (p.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
+                                        {p.certificateGranted ? 'Revoke Certificate' : 'Grant Certificate'}
+                                    </Button>
+                                )}
                             </div>
-                            {canEdit && (
-                                <Button size="sm" variant="outline" disabled={isProcessing === p.registrationId} onClick={() => handleCertificateToggle(p)}>
-                                    {isProcessing === p.registrationId ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (p.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
-                                    {p.certificateGranted ? 'Revoke Certificate' : 'Grant Certificate'}
-                                </Button>
-                            )}
                         </CardContent>
                     </Card>
                 ))
