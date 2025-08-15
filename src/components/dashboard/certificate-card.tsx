@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import type { AppUser, Registration } from "@/lib/types";
@@ -30,6 +30,11 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const certificateRef = React.createRef<HTMLDivElement>();
+    const [origin, setOrigin] = useState('');
+
+    React.useEffect(() => {
+        setOrigin(window.location.origin);
+    }, []);
 
     const riderName = user.displayName || "Valued Rider";
     const riderPhotoUrl = user.photoURL || undefined;
@@ -110,7 +115,13 @@ export function CertificateCard({ user, registration }: CertificateCardProps) {
             </Card>
             {/* Hidden certificate for image generation */}
             <div className="fixed -z-50 -left-[2000px] top-0">
-                 <RideCertificate ref={certificateRef} riderName={riderName} riderPhotoUrl={riderPhotoUrl} />
+                 <RideCertificate 
+                    ref={certificateRef} 
+                    riderName={riderName} 
+                    riderPhotoUrl={riderPhotoUrl} 
+                    registrationId={registration.id}
+                    origin={origin}
+                />
             </div>
         </>
     );

@@ -22,9 +22,15 @@ function CertificatePreviewContent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = React.useState(false);
+    const [origin, setOrigin] = React.useState('');
+
+    React.useEffect(() => {
+        setOrigin(window.location.origin);
+    }, []);
 
     const riderName = searchParams.get('name') || 'Honorable Rider';
     const riderPhotoUrl = searchParams.get('photo') || undefined;
+    const registrationId = searchParams.get('regId') || '';
 
     const handleDownload = async () => {
         const node = document.getElementById('certificate');
@@ -65,7 +71,12 @@ function CertificatePreviewContent() {
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center p-4">
             <div className="transform-gpu scale-[0.3] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.8] origin-center">
-                <RideCertificate riderName={riderName} riderPhotoUrl={riderPhotoUrl} />
+                <RideCertificate 
+                    riderName={riderName} 
+                    riderPhotoUrl={riderPhotoUrl} 
+                    registrationId={registrationId} 
+                    origin={origin}
+                />
             </div>
             <Button onClick={handleDownload} disabled={isDownloading} className="mt-8">
                 {isDownloading ? (

@@ -168,6 +168,7 @@ export function FinishersListTable() {
   const generatePreviewUrl = (participant: FinishedParticipant) => {
     const params = new URLSearchParams({
       name: participant.name,
+      regId: participant.registrationId
     });
     if (participant.photoUrl) {
       params.append('photo', participant.photoUrl);

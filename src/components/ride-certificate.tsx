@@ -11,11 +11,20 @@ import { User } from 'lucide-react';
 interface RideCertificateProps {
   riderName: string;
   riderPhotoUrl?: string;
+  registrationId: string;
+  origin: string;
+}
+
+const generateQrCodeUrl = (text: string) => {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(text)}&qzone=1&margin=0`;
 }
 
 export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateProps>(
-  ({ riderName, riderPhotoUrl }, ref) => {
+  ({ riderName, riderPhotoUrl, registrationId, origin }, ref) => {
     const eventDate = format(new Date("2025-08-16"), "do 'of' MMMM yyyy");
+    const verificationUrl = origin ? `${origin}/ticket/${registrationId}` : '';
+    const qrCodeUrl = verificationUrl ? generateQrCodeUrl(verificationUrl) : '';
+
 
     return (
       <div
@@ -69,6 +78,17 @@ export const RideCertificate = React.forwardRef<HTMLDivElement, RideCertificateP
           
            <div className="w-full flex justify-between items-end absolute bottom-0 left-0 p-8">
              <div className="w-20 h-20 border-b-4 border-l-4 border-primary"></div>
+             {qrCodeUrl && (
+                <div className="bg-white p-1 rounded-sm">
+                    <Image
+                        src={qrCodeUrl}
+                        alt="Verification QR Code"
+                        width={100}
+                        height={100}
+                        unoptimized
+                    />
+                </div>
+             )}
              <div className="w-20 h-20 border-b-4 border-r-4 border-primary"></div>
           </div>
 

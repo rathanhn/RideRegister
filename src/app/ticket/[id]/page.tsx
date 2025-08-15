@@ -7,13 +7,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Registration } from '@/lib/types';
 import { Header } from '@/components/header';
-import { Loader2, AlertTriangle, Ticket, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, Ticket, Download, CheckCircle, Award } from 'lucide-react';
 import { SingleTicket } from '@/components/digital-ticket';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 function filter(node: HTMLElement): boolean {
   if (node.tagName === 'i') return false;
@@ -47,7 +48,7 @@ export default function PublicTicketPage() {
 
                 if (regDoc.exists()) {
                     const data = { id: regDoc.id, ...regDoc.data() } as Registration;
-                    if (data.status === 'approved') {
+                    if (data.status === 'approved' || data.status === 'cancelled') {
                         setRegistration(data);
                     } else {
                         setError("This ticket is not currently valid or has been cancelled.");
@@ -154,13 +155,20 @@ export default function PublicTicketPage() {
                     )}
                     {registration && (
                          <div className="space-y-4">
-                            <Card className="bg-green-50 border-green-200 text-green-900">
+                             <Card className="bg-green-50 border-green-200 text-green-900">
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2"><Ticket /> Public Ticket View</CardTitle>
+                                    <CardTitle className="flex items-center gap-2"><CheckCircle /> Valid Registration</CardTitle>
                                     <CardDescription className="text-green-800">
-                                        This is a shareable, public link to a ride ticket.
+                                        This is a public, shareable link for a valid ride registration.
                                     </CardDescription>
                                 </CardHeader>
+                                {registration.certificateGranted && (
+                                     <CardContent>
+                                        <Badge>
+                                            <Award className="mr-2 h-4 w-4"/> Certificate Granted
+                                        </Badge>
+                                    </CardContent>
+                                )}
                             </Card>
                              {renderTicket()}
                         </div>
