@@ -169,12 +169,13 @@ export function RidersListTable() {
     document.body.removeChild(link);
   };
 
-  const generateCertificatePreviewUrl = (reg: Registration) => {
+  const generateCertificatePreviewUrl = (name: string, photoUrl: string | undefined, regId: string) => {
     const params = new URLSearchParams({
-      name: reg.fullName,
+      name: name,
+      regId: regId,
     });
-    if (reg.photoURL) {
-      params.append('photo', reg.photoURL);
+    if (photoUrl) {
+      params.append('photo', photoUrl);
     }
     return `/certificate-preview?${params.toString()}`;
   }
@@ -288,16 +289,17 @@ export function RidersListTable() {
                                             )}
 
                                             <Separator />
-
+                                            
                                             <div className="p-3 border rounded-md bg-background space-y-2">
                                                 <p className="font-semibold">Certificate Management</p>
-                                                {reg.certificateGranted ? (
+                                                {reg.certificateGranted && (
                                                     <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-fit"><CheckCircle className="mr-2 h-4 w-4" />Certificate Granted</Badge>
-                                                ) : (
-                                                    <p className="text-sm text-muted-foreground">Certificate has not been granted yet.</p>
                                                 )}
                                                 <div className="flex flex-col gap-2 pt-2">
-                                                    <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg)} target="_blank"><Eye className="mr-2 h-4 w-4" /> View Certificate</Link></Button>
+                                                     <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg.fullName, reg.photoURL, reg.id)} target="_blank"><Eye className="mr-2 h-4 w-4" /> View (Rider 1)</Link></Button>
+                                                      {reg.registrationType === 'duo' && (
+                                                          <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg.fullName2!, reg.photoURL2, reg.id)} target="_blank"><Eye className="mr-2 h-4 w-4" /> View (Rider 2)</Link></Button>
+                                                      )}
                                                     {canEdit && (
                                                         <Button size="sm" variant="outline" disabled={isProcessing === reg.id} onClick={() => handleCertificateToggle(reg)}>
                                                             {isProcessing === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (reg.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
@@ -429,20 +431,19 @@ export function RidersListTable() {
                                             
                                             <div className="p-3 border rounded-md bg-background space-y-2">
                                                 <p className="font-semibold">Certificate Management</p>
-                                                {reg.certificateGranted ? (
-                                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-fit"><CheckCircle className="mr-2 h-4 w-4" />Certificate Granted</Badge>
-                                                ) : (
-                                                    <p className="text-sm text-muted-foreground">Certificate has not been granted yet.</p>
-                                                )}
-                                                <div className="flex gap-2 pt-2">
-                                                    <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg)} target="_blank"><Eye className="mr-2 h-4 w-4" /> View</Link></Button>
-                                                    {canEdit && (
-                                                        <Button size="sm" variant="outline" disabled={isProcessing === reg.id} onClick={() => handleCertificateToggle(reg)}>
-                                                            {isProcessing === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (reg.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
-                                                            {reg.certificateGranted ? 'Revoke' : 'Grant'}
-                                                        </Button>
+                                                {reg.certificateGranted && <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-fit"><CheckCircle className="mr-2 h-4 w-4" />Certificate Granted</Badge>}
+                                                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                                                    <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg.fullName, reg.photoURL, reg.id)} target="_blank"><Eye className="mr-2 h-4 w-4" /> Rider 1 Cert</Link></Button>
+                                                    {reg.registrationType === 'duo' && (
+                                                        <Button asChild size="sm" variant="outline"><Link href={generateCertificatePreviewUrl(reg.fullName2!, reg.photoURL2, reg.id)} target="_blank"><Eye className="mr-2 h-4 w-4" /> Rider 2 Cert</Link></Button>
                                                     )}
                                                 </div>
+                                                {canEdit && (
+                                                    <Button className="mt-2" size="sm" variant="outline" disabled={isProcessing === reg.id} onClick={() => handleCertificateToggle(reg)}>
+                                                        {isProcessing === reg.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (reg.certificateGranted ? <RotateCcw className="mr-2 h-4 w-4" /> : <Award className="mr-2 h-4 w-4"/>)}
+                                                        {reg.certificateGranted ? 'Revoke' : 'Grant'}
+                                                    </Button>
+                                                )}
                                             </div>
 
                                             <Separator />
